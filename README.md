@@ -1,6 +1,6 @@
 # NoTap SDK
 
-**Device-Free, Passwordless Authentication for Payments**
+**Authentication Reimagined**
 
 NoTap is a next-generation authentication platform that eliminates the need for physical devices, passwords, or biometric hardware. Users authenticate using a combination of memorable factors that work on any device.
 
