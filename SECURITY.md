@@ -12,7 +12,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 ### How to Report
 
-**📧 Email:** security@notap.com
+**📧 Email:** security@notap.io
 
 **Please Include:**
 - Description of the vulnerability
