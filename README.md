@@ -1,16 +1,106 @@
 
-  <h1>NoTap SDK</h1>
+  <h1>NoTap</h1>
   <p><strong>Authentication Reimagined</strong></p>
+  <p><em>Pay With Nothing But You</em></p>
 
   <p>
-    Device-free payment authentication with zero-knowledge proofs and multi-factor verification.<br/>
-    Combines 15 creative authentication factors across 5 categories for secure, privacy-preserving payments.
+    The world's first device-free payment authentication system.<br/>
+    No phone. No card. No wallet. Just you.<br/>
+    <strong>Device-bound MFA? Not anymore.</strong>
   </p>
 </div>
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Web-lightgrey.svg)](https://github.com/keikworld/NoTap)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/keikworld/NoTap/releases)
+
+---
+
+## 🚨 The Problem
+
+**You need to make a purchase, but:**
+
+- 📱 Your phone was **stolen** or the **battery died**
+- 💳 You **forgot your wallet** at the hotel
+- 🏃 You're at the **gym** and left everything in your locker
+- 🏖️ You're at the **beach** and don't want to risk losing your phone
+- 🚕 Your **credit card was declined** and you need a taxi
+- 🎢 You're at a **theme park** and want to store everything safely
+- 💻 You need to pay on an **untrusted device** (public computer, friend's phone)
+
+**Traditional solutions don't work:**
+- ❌ **Apple Pay / Google Pay** → Requires your phone
+- ❌ **Credit Cards** → Requires your wallet
+- ❌ **Cash** → Requires you to carry cash
+- ❌ **Amazon One** → Only works at Amazon/Whole Foods (not portable)
+
+---
+
+## ✅ The NoTap Solution
+
+**Walk into any merchant empty-handed and complete your purchase.**
+
+### How It Works
+
+1. **🎯 One-Time Enrollment** (5 minutes on your device)
+   - Select 6+ authentication factors (PIN, pattern, emoji sequence, rhythm, colors, etc.)
+   - Link your payment method (Stripe, Adyen, Tilopay, etc.)
+   - Get your unique NoTap ID (UUID or memorable alias)
+
+2. **💳 Pay Anywhere, Anytime** (even without your phone/wallet)
+   - Walk into merchant with **nothing**
+   - Use **merchant's device** (POS terminal, tablet, kiosk)
+   - Enter your NoTap ID
+   - Complete your authentication factors
+   - Payment authorized → Purchase complete
+
+3. **🔒 Secure & Private**
+   - Your payment details never touch the merchant's device
+   - Multi-factor authentication (15 factors available)
+   - Zero-knowledge proof verification
+   - PSD3 SCA compliant
+
+---
+
+## 🆕 Beyond Payments: Pure Authentication
+
+**NoTap now supports TWO modes:**
+
+### 💳 Payment Mode (Traditional)
+- **Use Case:** Making purchases without your phone/wallet
+- **Flow:** Enroll → Link payment provider → Verify → Payment processed
+- **Examples:** Pay at gym, restaurant, store - hands-free
+
+### 🔐 Authentication Mode (NEW)
+- **Use Case:** Access control & API authentication WITHOUT payments
+- **Flow:** Enroll → Link to service → Verify → Access granted (no payment)
+- **Why This Matters:** Most authentication is NOT payment-related
+
+**Authentication Mode Use Cases:**
+
+#### 🏢 Enterprise Access Control
+- **Building entry** → No badge needed, authenticate at door
+- **Computer login** → Device-free MFA for workstations
+- **Secure room access** → Labs, data centers, executive offices
+- **Time clock** → Clock in/out without badge
+
+#### 🌐 API & Developer Authentication
+- **API key replacement** → NoTap ID + factors = secure API auth
+- **Webhook verification** → Authenticate webhook sources
+- **CI/CD pipeline access** → Secure deployment authentication
+- **Admin panel login** → No password, no 2FA app
+
+#### 🏥 Healthcare & Compliance
+- **EMR system access** → HIPAA-compliant device-free login
+- **Prescription verification** → Authenticate without phone
+- **Lab equipment access** → Cleanroom-safe (no devices)
+- **Patient check-in** → Hands-free hospital kiosks
+
+#### 🏦 Banking & Finance
+- **ATM without card** → Authenticate with factors only
+- **Wire transfer approval** → Multi-factor without SMS
+- **Trading platform access** → Secure trader authentication
+- **Vault access** → Physical + digital factor verification
 
 ---
 
@@ -65,6 +155,38 @@ Your authentication credentials automatically expire and renew **every 24 hours:
 - ✅ **Hardware-protected** (device secure enclave storage)
 
 Enterprise-grade key rotation similar to Kerberos tickets, OAuth refresh tokens, and TLS session keys.
+
+---
+
+## 🎯 Real-World Scenarios
+
+### 🚨 Emergency Situations
+- **Phone stolen in Barcelona?** → Pay for taxi home using driver's POS
+- **Battery died at airport?** → Buy a charger without your phone
+- **Wallet left at hotel?** → Pay for coffee in the lobby immediately
+
+### 🏃 Lifestyle & Convenience
+- **Going for a run?** → Leave everything in locker, buy water at finish line
+- **Beach day?** → Store phone safely, buy snacks/drinks empty-handed
+- **Theme park?** → Lock away valuables, pay for food/rides hands-free
+- **Gym workout?** → No armband needed, authenticate on gym's device
+
+### 💳 Backup Payment Method
+- **Credit card declined abroad?** → NoTap as instant backup
+- **Reached credit limit?** → Switch to NoTap seamlessly
+- **Card blocked (fraud alert)?** → Pay immediately while bank verifies
+
+### 🔒 Zero-Trust Devices
+- **Friend's phone?** → Authenticate without saving your card details
+- **Public computer?** → Pay safely without exposing payment info
+- **Merchant's POS?** → No risk of card skimming or data theft
+
+### 🕵️ Privacy-First Payments
+- **Work computer?** → Buy lunch/gifts without saving card on company laptop
+- **Shared device?** → Family computer, no payment history left behind
+- **Personal purchases?** → Complete privacy, IT can't see what you bought
+- **Adult content/subscriptions?** → Zero trace on device after purchase
+- **Online shopping?** → Don't trust the website? NoTap authenticates, payment handed off, nothing saved
 
 ---
 
@@ -213,6 +335,69 @@ verificationManager.verify(
 - ✅ **Device-free** - Works on any device, no enrollment lock-in
 - ✅ **24-hour TTL** - Automatic data expiry for privacy
 
+### 4. **Factor Shuffling** (Anti-Shoulder-Surfing)
+
+NoTap randomly selects factors per transaction from your enrolled set (2-3 based on risk):
+
+**Enrollment:**
+- You set up 6 factors (e.g., PIN, pattern, emoji, rhythm, colors, words)
+
+**Verification (randomized every time):**
+- **Today:** System asks for PIN + emoji sequence
+- **Tomorrow:** System asks for pattern + rhythm tap
+- **Next time:** System asks for colors + words
+
+**Security benefits:**
+- ✅ **Merchant employee sees your PIN?** They still need 4+ other factors to authenticate
+- ✅ **Someone watches over your shoulder?** They only see 2 out of 6 factors
+- ✅ **Replay attack?** Different factors required next transaction
+- ✅ **Stolen factor?** One compromised factor ≠ account compromised
+
+### 5. **Risk-Based Authentication** (Dynamic Factor Count)
+
+NoTap adjusts the number of factors based on transaction amount and fraud detection:
+
+| Scenario | Amount | Risk Level | Factors Required | Example |
+|----------|--------|------------|------------------|---------|
+| **Low-Risk Purchase** | < $30 | LOW | **2 factors** | Coffee, snacks, transit |
+| **Medium Purchase** | $30-$99 | LOW/MEDIUM | **3 factors** | Restaurant, groceries |
+| **High-Value Purchase** | ≥ $100 | LOW/HIGH | **3 factors** | Electronics, clothing |
+| **Fraud Detected** | Any | HIGH | **3 factors** | Suspicious activity |
+
+**User experience:**
+- ✅ **80% of transactions**: Only 2 quick factors (~10-15 seconds)
+- ✅ **Higher-value purchases**: 3 factors for added security (~20-30 seconds)
+- ✅ **Adaptive to risk**: System adjusts based on fraud patterns, not just amount
+
+### 6. **Dynamic Factor Escalation** (Adaptive Security)
+
+If you fail one factor, NoTap **escalates the challenge** instead of locking you out:
+
+**How it works:**
+
+1. **Initial Challenge** (Low-risk $5 coffee)
+   - System: "Complete 2 factors: PIN + Pattern"
+   - You enter PIN → ❌ **INCORRECT**
+
+2. **Escalation** (Add 1 factor, remove failed)
+   - System: "PIN failed. Complete 2 factors: **Pattern + Emoji**"
+   - PIN removed, Emoji added (no retry of failed factor)
+   - Challenge resets, you start fresh
+
+3. **Second Chance**
+   - You complete Pattern + Emoji → ✅ **SUCCESS**
+   - Payment authorized!
+
+4. **Rate Limiting** (After 2 full challenge failures)
+   - Two failed challenges → 15-minute cooldown
+   - Prevents brute-force while allowing honest mistakes
+
+**Benefits:**
+- ✅ **Honest mistakes don't lock you out** → One wrong factor doesn't mean failure
+- ✅ **Adaptive security** → Failed factor = slightly harder challenge
+- ✅ **No factor repetition** → Failed factor removed from retry
+- ✅ **Brute-force protection** → 2 challenge failures = rate limit
+
 ---
 
 ## 🏗️ Architecture
@@ -308,16 +493,122 @@ NoTap.verify(userUuid) { verified ->
 
 ---
 
-## 🌟 Why NoTap?
+## 🌟 Why NoTap vs. Alternatives?
 
-| Traditional Auth | NoTap |
-|-----------------|-------|
-| 📱 Requires specific device | ✅ Works on any device |
-| 🔐 SMS codes (SIM swap risk) | ✅ No phone number needed |
-| 🔑 Password managers | ✅ Nothing to remember or store |
-| 👤 Biometric hardware | ✅ No special hardware required |
-| 🌍 Device loss = locked out | ✅ Access from anywhere |
-| 💸 $$ SMS costs | ✅ Zero per-transaction cost |
+| Scenario | Cash/Card | Apple Pay | Amazon One | **NoTap** |
+|----------|-----------|-----------|------------|-----------|
+| **MFA Type** | ⚠️ Static (CVV) | ❌ Device-bound (SMS/biometric) | ⚠️ Biometric (palm) | ✅ **Device-free (any device)** |
+| **Phone stolen** | ❌ Need card | ❌ Need phone | ❌ Amazon only | ✅ **Works anywhere** |
+| **Wallet forgotten** | ❌ Can't pay | ⚠️ If you have phone | ❌ Venue-locked | ✅ **Any merchant** |
+| **Battery dead** | ❌ Need card | ❌ Need phone | ❌ Limited venues | ✅ **Use merchant's device** |
+| **Phone in locker** | ❌ Need card | ❌ Can't get SMS code | ❌ Venue-locked | ✅ **Authenticate on any device** |
+| **Zero-trust device** | ⚠️ Risk skimming | ⚠️ Risk phone hack | ❌ Not portable | ✅ **No card exposed** |
+| **Backup payment** | ⚠️ Carry extra cards | ⚠️ Need device sync | ❌ Not a payment system | ✅ **Always available** |
+| **Empty-handed** | ❌ Must carry items | ❌ Need phone | ⚠️ Palm only, Amazon only | ✅ **Truly hands-free** |
+| **Privacy** | ⚠️ Card saved on device | ⚠️ Apple/Google know purchases | ⚠️ Amazon tracks everything | ✅ **Zero trace after payment** |
+
+**NoTap is the ONLY device-free, portable, merchant-agnostic payment authentication solution.**
+
+**Key differentiator:** Traditional MFA is **device-bound** (your phone). NoTap is **device-free** (any device).
+
+---
+
+## 🧑‍💻 Developer Portal: Self-Service Integration
+
+**Complete developer self-service platform for seamless NoTap integration.**
+
+### Features
+
+#### 🔑 **API Key Management**
+- **Generate keys instantly** → No approval wait time
+- **Multiple environments** → Sandbox, staging, production keys
+- **Scoped permissions** → Read-only, write, admin
+- **Key rotation** → Regenerate keys without downtime
+- **Usage tracking** → Real-time API call monitoring
+
+#### 🪝 **Webhook Configuration**
+- **Event subscriptions:**
+  - `enrollment.completed` → User enrolled successfully
+  - `verification.succeeded` → Authentication passed
+  - `verification.failed` → Authentication failed
+  - `payment.processed` → Payment completed
+  - `session.expired` → Session timed out
+- **Delivery monitoring** → See webhook delivery status
+- **Retry logic** → Automatic retries with exponential backoff
+- **Signature verification** → HMAC-SHA256 webhook signatures
+- **Test webhooks** → Send test events to verify integration
+
+#### 📊 **Analytics Dashboard**
+- **Usage statistics:**
+  - Total enrollments
+  - Total verifications
+  - Success/failure rates
+  - Average authentication time
+  - Geographic distribution
+- **Real-time monitoring** → Live API call logs
+- **Error tracking** → Failed requests with stack traces
+- **Performance metrics** → Response times, latency
+
+#### 🧪 **Sandbox Testing Environment**
+- **Test mode** → Fake payments, no real charges
+- **Test users** → Pre-configured test accounts
+- **Mock responses** → Simulate success/failure scenarios
+- **Factor testing** → Test all 15 authentication factors
+- **Zero risk** → No impact on production data
+
+#### 🔐 **Security Features**
+- **JWT authentication** → Secure API access
+- **IP whitelisting** → Restrict API access by IP
+- **Rate limiting** → Prevent abuse (configurable limits)
+- **Audit logs** → Complete activity history
+- **Step-up authentication** → Sensitive actions require re-auth
+
+---
+
+## 👤 Management Portal: Self-Service Account Management
+
+**Complete user self-service portal for managing NoTap accounts.**
+
+### Features
+
+#### 📋 **Account Overview**
+- **NoTap ID display** → UUID, alias, blockchain name
+- **Enrollment date** → When you registered
+- **Last authentication** → Most recent verification
+- **Account status** → Active, suspended, locked
+- **Statistics:**
+  - Total authentications
+  - Success rate
+  - Most used factors
+  - Recent activity timeline
+
+#### 🔐 **Factor Management**
+- **View enrolled factors** → See which factors you've set up
+- **Remove factors** → Delete unused authentication factors
+- **Update factors** → Change PIN, pattern, etc.
+- **Add factors** → Enroll new authentication methods
+- **Factor usage stats** → See which factors you use most
+- **Test factors** → Verify factors work before using at merchant
+
+#### 📱 **Device Management**
+- **View devices** → See all devices you've enrolled from
+- **Revoke devices** → Remove compromised devices
+- **Device trust levels** → Primary, secondary, trusted
+- **Last seen** → When each device was last used
+
+#### 🔒 **Security Settings**
+- **Change password** → Update account password
+- **Enable 2FA** → Add extra security layer
+- **View security log** → Audit trail of account changes
+- **Failed login attempts** → See suspicious activity
+- **Step-up authentication** → Require extra auth for sensitive actions
+
+#### 🗑️ **GDPR Compliance**
+- **Data export** → Download all your data (JSON format)
+- **Account deletion** → Permanently delete your account
+- **Data retention policy** → See what data we store
+- **Privacy settings** → Control data sharing preferences
+- **Right to be forgotten** → Complete data removal
 
 ---
 
