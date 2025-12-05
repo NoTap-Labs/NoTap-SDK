@@ -630,6 +630,7 @@ _* iOS and Web SDKs coming soon_
 - 🌐 **Website**: [https://notap.io](https://notap.io)
 - 📧 **General Inquiries**: hello@notap.io
 - 🛟 **Technical Support**: support@notap.io
+- 🤝 **Partnerships**: partnership@notap.io
 - ⚖️ **Appeals**: appeals@notap.io
 - 📜 **Code of Conduct**: conduct@notap.io
 - 🆔 **Solana Name Service**: notap.sol
