@@ -15,7 +15,7 @@ Thank you for your interest in contributing to NoTap! We welcome contributions f
 
 ## Code of Conduct
 
-This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to conduct@notap.com.
+This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to conduct@notap.io.
 
 ---
 
