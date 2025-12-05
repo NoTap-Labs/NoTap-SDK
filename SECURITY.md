@@ -197,15 +197,15 @@ NoTap complies with:
 
 ## 🏆 Security Bounty Program
 
-### Coming Soon (Q1 2026)
+### Coming Soon (2026)
 
 We're launching a bug bounty program to reward security researchers:
 
 **Planned Rewards:**
-- 🥇 **Critical:** $5,000 - $10,000
-- 🥈 **High:** $1,000 - $5,000
-- 🥉 **Medium:** $500 - $1,000
-- 📝 **Low:** $100 - $500
+- 🥇 **Critical:** 
+- 🥈 **High:**
+- 🥉 **Medium:**
+- 📝 **Low:** 
 
 **Scope:** Android SDK, iOS SDK, Web SDK, Backend API
 
@@ -215,7 +215,7 @@ We're launching a bug bounty program to reward security researchers:
 
 ## 📞 Contact
 
-- **Security Issues:** security@notap.com
+- **Security Issues:** security@notap.io
 - **General Security Questions:** [GitHub Discussions - Security](https://github.com/keikworld/NoTap-SDK/discussions/categories/security)
 - **Emergency Security Contact:** +1-XXX-XXX-XXXX (Enterprise customers only)
 
