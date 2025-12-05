@@ -225,7 +225,7 @@ implementation("com.zeropay:sdk:1.0.0")
 
 ## 🤝 Need Help?
 
-- 📧 Email: support@notap.com
+- 📧 Email: support@notap.io
 - 💬 Discussions: [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
 - 🐛 Issues: [GitHub Issues](https://github.com/keikworld/NoTap/issues)
 
