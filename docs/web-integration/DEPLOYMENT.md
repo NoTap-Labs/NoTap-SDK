@@ -4,353 +4,184 @@
 
 This document explains how to deploy the NoTap web frontend (enrollment, verification, management portal) to make it accessible to users for testing.
 
+## Live URLs
+
+- **Enrollment**: https://app.notap.io/enroll
+- **Verification**: https://app.notap.io/verify
+- **Management**: https://app.notap.io/manage
+- **Developer Portal**: https://app.notap.io/developer
+- **Backend API**: https://api.notap.io
+
 ## Architecture
 
 ```
-Frontend: https://app.notap.io (or your custom domain)
-Backend:  https://api.notap.io (already deployed)
+Frontend: https://app.notap.io (Railway - static site)
+Backend:  https://api.notap.io (Railway - Node.js API)
 ```
 
-The web frontend is a **static site** (HTML/CSS/JavaScript) that calls the backend API.
+The web frontend is a **static site** (HTML/CSS/JavaScript compiled from Kotlin/JS) that calls the backend API.
 
-## Deployment Options
+## Deployment Method: Railway with Docker
 
-### Option 1: Railway (Recommended)
+### Prerequisites
 
-**Pros:**
-- ✅ Same platform as backend (easy management)
-- ✅ Custom domain support
-- ✅ Automatic HTTPS
-- ✅ Git-based deployments
-- ✅ Environment variables for API_URL
+1. Railway CLI installed: `npm install -g @railway/cli`
+2. Railway account and project access
+3. Production bundle built: `gradlew :online-web:jsBrowserProductionWebpack`
 
-**Steps:**
+### Key Files
 
-1. **Navigate to online-web directory:**
-   ```bash
-   cd online-web
-   ```
-
-2. **Initialize Railway (if not done):**
-   ```bash
-   npx railway login
-   npx railway init
-   # Select: Create new project
-   # Name: notap-web-frontend
-   ```
-
-3. **Link to Railway service:**
-   ```bash
-   npx railway link
-   # Select: notap-web-frontend
-   ```
-
-4. **Set environment variables:**
-   ```bash
-   npx railway variables set API_URL=https://api.notap.io
-   ```
-
-5. **Deploy:**
-   ```bash
-   npx railway up
-   ```
-
-6. **Get deployment URL:**
-   ```bash
-   npx railway domain
-   # Example output: https://notap-web-frontend-production.up.railway.app
-   ```
-
-7. **Set custom domain (optional):**
-   ```bash
-   npx railway domain add app.notap.io
-   # Then add DNS record: CNAME app.notap.io -> <railway-url>
-   ```
-
-### Option 2: Netlify (Alternative)
-
-**Pros:**
-- ✅ Free tier generous for static sites
-- ✅ Excellent CDN performance
-- ✅ Easy custom domains
-
-**Steps:**
-
-1. **Install Netlify CLI:**
-   ```bash
-   npm install -g netlify-cli
-   ```
-
-2. **Build production bundle:**
-   ```bash
-   cd ..
-   ./gradlew :online-web:jsBrowserProductionWebpack
-   ```
-
-3. **Deploy:**
-   ```bash
-   cd online-web
-   netlify deploy --prod --dir=build/dist/js/productionExecutable
-   ```
-
-4. **Result:**
-   ```
-   Website URL: https://notap-app.netlify.app
-   ```
-
-### Option 3: Vercel (Alternative)
-
-**Steps:**
-
-1. **Install Vercel CLI:**
-   ```bash
-   npm install -g vercel
-   ```
-
-2. **Build and deploy:**
-   ```bash
-   cd ..
-   ./gradlew :online-web:jsBrowserProductionWebpack
-   cd online-web
-   vercel --prod
-   # Select: build/dist/js/productionExecutable as public directory
-   ```
-
-### Option 4: GitHub Pages (Free)
-
-**Pros:**
-- ✅ Completely free
-- ✅ Good for testing/demos
-
-**Cons:**
-- ⚠️ No custom domain on free tier
-- ⚠️ Public repository required
-
-**Steps:**
-
-1. **Create gh-pages branch:**
-   ```bash
-   git checkout -b gh-pages
-   ```
-
-2. **Copy build output:**
-   ```bash
-   cp -r online-web/build/dist/js/productionExecutable/* .
-   git add .
-   git commit -m "Deploy web frontend"
-   git push origin gh-pages
-   ```
-
-3. **Enable GitHub Pages:**
-   - Go to repository Settings → Pages
-   - Source: gh-pages branch
-   - Result: `https://yourusername.github.io/zero-pay-sdk/`
-
-## Testing URLs
-
-Once deployed, users can access:
-
-### Enrollment Flow
-```
-https://app.notap.io/enroll
-```
-Users can:
-- Select 3+ factors (PIN, Pattern, Emoji, etc.)
-- Register blockchain name (alice.sol, vitalik.eth)
-- Complete enrollment wizard
-- Receive UUID for verification
-
-### Verification Flow
-```
-https://app.notap.io/verify
-```
-Users can:
-- Enter UUID, Alias, or SNS name
-- Complete factor challenges
-- Test payment authentication
-
-### Management Portal
-```
-https://app.notap.io/manage
-```
-Users can:
-- View enrolled factors
-- Update auto-renewal settings
-- Check crypto balance (if wallet connected)
-- View transaction history
-
-### Developer Portal
-```
-https://app.notap.io/developer
-```
-Developers can:
-- Generate API keys
-- View webhooks
-- Access sandbox mode
-- Read integration guides
-
-## Environment Variables
-
-The frontend needs to know the backend API URL:
-
-**Railway:**
-```bash
-npx railway variables set API_URL=https://api.notap.io
-```
-
-**Netlify:**
-```bash
-# netlify.toml
-[build.environment]
-  API_URL = "https://api.notap.io"
-```
-
-**Vercel:**
-```bash
-# vercel.json
+**railway.json** (CRITICAL - see notes below):
+```json
 {
-  "env": {
-    "API_URL": "https://api.notap.io"
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "sh -c \"serve -s /app/public -l tcp://0.0.0.0:${PORT}\""
   }
 }
 ```
 
-## Build Commands
+**Dockerfile**:
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g serve@14.2.1
+COPY build/dist/js/productionExecutable /app/public
+RUN addgroup -g 1001 -S nodejs && adduser -S notap -u 1001 && chown -R notap:nodejs /app
+USER notap
+CMD ["serve", "-s", "/app/public"]
+```
 
-**Development (local testing):**
+### Deployment Steps
+
+1. **Build production bundle:**
+   ```bash
+   cd /path/to/zeropay-android
+   ./gradlew :online-web:jsBrowserProductionWebpack
+   ```
+
+2. **Link to Railway service:**
+   ```bash
+   cd online-web
+   npx railway link
+   # Select: web-frontend
+   ```
+
+3. **Set PORT to match service port:**
+   ```bash
+   # Check service port in Railway dashboard: Settings → Networking
+   npx railway variables --set "PORT=8080"
+   ```
+
+4. **Deploy:**
+   ```bash
+   npx railway up
+   ```
+
+### Troubleshooting 502 Errors
+
+If you get 502 "Application failed to respond":
+
+1. **Check port match:**
+   - Railway service port (Settings → Networking): typically 8080
+   - App listening port (deploy logs): should match
+   - Fix: `npx railway variables --set "PORT=8080"`
+
+2. **Check variable expansion:**
+   - Logs show literal `$PORT`? Variable not expanding
+   - Fix: Use double quotes in startCommand: `"sh -c \"serve ... ${PORT}\""`
+   - Single quotes prevent expansion!
+
+3. **Check host binding:**
+   - Logs show `localhost:8080`? Only accessible from inside container
+   - Fix: Use `tcp://0.0.0.0:${PORT}` for 0.0.0.0 binding
+
+4. **Check file encoding (WSL/Windows):**
+   - Error: "invalid character '\x00'" = null bytes in file
+   - Fix: Recreate file with heredoc:
+     ```bash
+     cat > railway.json << 'EOF'
+     { ... }
+     EOF
+     ```
+
+### Correct Deploy Logs
+
+After successful deployment, logs should show:
+```
+Starting Container
+ UPDATE  The latest version of `serve` is 14.2.5
+ INFO  Accepting connections at http://0.0.0.0:8080
+```
+
+Key indicators:
+- ✅ `0.0.0.0:8080` (correct host and port)
+- ❌ `localhost:8080` (wrong host - 502 error)
+- ❌ `0.0.0.0:$PORT` with deprecation warning (variable not expanded)
+
+## Production Bundle
+
+The production bundle must be committed to git for Railway deployment:
+
+**Location:** `online-web/build/dist/js/productionExecutable/`
+
+**Files:**
+- `index.html` (~47 KB)
+- `online-web.js` (~387 KB)
+- `wallet.css` (~7.7 KB)
+
+**Gitignore exception** (in root `.gitignore`):
+```gitignore
+build/
+!online-web/build/
+online-web/build/*
+!online-web/build/dist/
+online-web/build/dist/*
+!online-web/build/dist/js/
+online-web/build/dist/js/*
+!online-web/build/dist/js/productionExecutable/
+```
+
+## Testing the Deployment
+
+**Quick HTTP test:**
 ```bash
-./gradlew :online-web:jsBrowserDevelopmentRun
-# Server: http://localhost:8080
+curl -sI https://app.notap.io
+# Should return: HTTP/2 200
 ```
 
-**Production (deployment):**
+**Page content test:**
 ```bash
-./gradlew :online-web:jsBrowserProductionWebpack
-# Output: online-web/build/dist/js/productionExecutable/
+curl -s https://app.notap.io | grep -o '<title>.*</title>'
+# Should return: <title>ZeroPay - Secure Payment Authentication</title>
 ```
 
-## Post-Deployment Checklist
-
-After deploying:
-
-- [ ] Test enrollment flow end-to-end
-- [ ] Test verification flow with UUID/Alias/SNS
-- [ ] Test all 10 factor canvases (PIN, Pattern, Emoji, etc.)
-- [ ] Test management portal features
-- [ ] Test developer portal API key generation
-- [ ] Verify CORS is configured on backend for frontend domain
-- [ ] Test WebAuthn biometric assist (Chrome/Safari/Firefox)
-- [ ] Test auto-renewal settings toggle
-
-## CORS Configuration (Backend)
-
-Ensure backend (`api.notap.io`) allows requests from frontend domain:
-
-**backend/server.js:**
-```javascript
-const cors = require('cors');
-
-const allowedOrigins = [
-  'https://app.notap.io',
-  'https://notap-web-frontend-production.up.railway.app',
-  'http://localhost:8080' // Development
-];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  },
-  credentials: true
-}));
-```
-
-## Sharing with Users
-
-**For Merchants (Testing Payment Authentication):**
-```
-Hi! Please test our payment authentication at:
-
-1. Enroll: https://app.notap.io/enroll
-   - Choose 3+ factors (PIN, Pattern, Emoji recommended)
-   - Save your UUID (you'll need it for verification)
-
-2. Verify: https://app.notap.io/verify
-   - Enter your UUID
-   - Complete factor challenges
-   - Simulate payment authentication
-
-Feedback welcome!
-```
-
-**For Users (Testing Enrollment):**
-```
-Try NoTap device-free authentication:
-
-https://app.notap.io/enroll
-
-Features to test:
-✅ 10 different authentication factors
-✅ Blockchain name registration (.sol, .eth)
-✅ Wallet connection (Phantom, MetaMask)
-✅ Auto-renewal settings
-✅ Biometric assist (if you fail a challenge)
-
-Let us know your experience!
-```
-
-## Troubleshooting
-
-**Issue: CORS errors**
-- Solution: Add frontend domain to backend CORS allowlist
-
-**Issue: API calls fail**
-- Solution: Check API_URL environment variable is set correctly
-
-**Issue: Build fails**
-- Solution: Run `./gradlew clean` then rebuild
-
-**Issue: 404 on routes**
-- Solution: Configure server to route all paths to index.html (SPA mode)
-
-## Monitoring
-
-**Railway:**
+**All routes (SPA - all return same HTML):**
 ```bash
-npx railway logs
+for route in / /enroll /verify /manage /developer; do
+  echo -n "$route: "
+  curl -sI "https://app.notap.io$route" | head -1
+done
 ```
 
-**Netlify:**
+## Bugster E2E Tests
+
+Web UI tests are in `.bugster/tests/`:
+
+- `enrollment_flow.yaml` - Full enrollment with PIN and Pattern
+- `verification_flow.yaml` - Payment verification with enrolled factors
+- `management_portal.yaml` - Account management and factor viewing
+
+Run with:
 ```bash
-netlify logs:function
+bugster run --verbose
 ```
 
-## Cost Estimate
+## Related Documentation
 
-| Platform | Free Tier | Cost (1,000 users/day) |
-|----------|-----------|------------------------|
-| Railway | 500 hours/month | ~$5/month |
-| Netlify | 100GB bandwidth | Free |
-| Vercel | 100GB bandwidth | Free |
-| GitHub Pages | Unlimited | Free |
-
-**Recommendation:** Start with Netlify (free) or Railway (easy management with backend).
-
-## Next Steps
-
-1. Build production bundle (running now)
-2. Choose deployment platform (Railway recommended)
-3. Deploy using steps above
-4. Test all flows
-5. Share URL with merchants and users
-6. Collect feedback
-
-## Support
-
-Issues? Check:
-- Backend logs: `npx railway logs` (in backend directory)
-- Frontend logs: Browser DevTools → Console
-- API status: https://api.notap.io/health
+- **Lesson 35**: Kotlinx-html DSL patterns (LESSONS_LEARNED.md)
+- **Lesson 36**: Railway deployment patterns (LESSONS_LEARNED.md)
+- **Backend Deployment**: See root `railway.json`
