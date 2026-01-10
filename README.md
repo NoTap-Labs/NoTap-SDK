@@ -454,14 +454,25 @@ Stripe, Adyen, Square, Tilopay, MercadoPago — with parallel session creation (
 
 ### Integration Options
 
-- **E-Commerce Plugins:** Shopify, WooCommerce ($9.99/month)
+- **E-Commerce Plugins:** Shopify, WooCommerce (via Startup tier)
 - **Direct API:** RESTful + SDKs
-- **White-Label:** Full customization available
+- **White-Label:** Enterprise tier only
 
-### Pricing
+### Pricing (by User Enrollment)
 
-- **$0.15-0.50 per verification** (or subscription)
-- **No setup fees** for standard integrations
+**Merchant Plans:**
+- **Sandbox:** Free (500 test users)
+- **Startup:** $299/month (1,000 enrolled users)
+- **Growth:** $999/month (10,000 enrolled users)
+- **Scale:** $4,999/month (100,000 enrolled users)
+- **Enterprise:** $25,000+/month (unlimited, custom)
+
+**Consumer Plans:**
+- **Free:** $0 forever (unlimited authentications)
+- **Plus:** $9.99/year (all 15 factors)
+- **Crypto:** $29.99/year (ZK privacy, daily key rotation)
+
+See [Pricing Tiers Summary](documentation/08-business/PRICING_TIERS_SUMMARY.md) for details.
 
 ---
 

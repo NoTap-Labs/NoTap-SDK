@@ -777,24 +777,24 @@ const results = await notap.verifyBatch(users); // $0.001 × 1,000 = $1.00
 
 ```
 From: NoTap Billing <support@notap.io>
-Subject: ⚠️ 80% Quota Reached - Professional Plan
+Subject: ⚠️ 80% User Quota Reached - Growth Plan
 
 Hi John,
 
-Your NoTap project "E-commerce Store" has used 80% of its monthly quota.
+Your NoTap project "E-commerce Store" has enrolled 80% of its monthly user quota.
 
 Current Usage:
-  • 80,000 / 100,000 verifications (80%)
+  • 8,000 / 10,000 enrolled users (80%)
   • 11 days remaining in billing cycle
-  • Projected end-of-month: 102,000 verifications
+  • Projected end-of-month: 10,200 users
 
 Action Needed:
-  • Monitor usage closely
-  • Consider upgrading to avoid overage charges
-  • Implement caching to reduce verification calls
+  • Monitor enrollment growth
+  • Consider upgrading to Scale tier (100,000 users)
+  • Implement enrollment optimization or delete inactive users
 
 Estimated Overage Charges:
-  • 2,000 overage verifications × $0.002 = $4.00
+  • 200 overage users × $0.08/user = $16.00/month
 
 View Usage Dashboard:
 https://developer.notap.io/billing/usage

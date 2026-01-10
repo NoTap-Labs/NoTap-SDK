@@ -1009,15 +1009,16 @@ window.addEventListener('online', () => {
 ```json
 {
   "error": "quota_exceeded",
-  "message": "Monthly quota of 1,000 verifications exceeded"
+  "message": "Monthly user enrollment quota of 1,000 exceeded for Startup tier"
 }
 ```
 
 **Solution:**
 
-1. **Upgrade plan** in Developer Portal
-2. **Optimize usage** (see [Cost Optimization](BILLING_USER_GUIDE.md#cost-optimization))
-3. **Contact sales** for custom quota
+1. **Delete inactive users** to stay within quota
+2. **Upgrade plan** in Developer Portal (Growth: $999/mo for 10,000 users)
+3. **Contact sales** for custom user quota
+4. **Monitor enrollments** via Dashboard → Billing → Usage
 
 ---
 
