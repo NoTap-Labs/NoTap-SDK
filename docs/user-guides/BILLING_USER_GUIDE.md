@@ -1,215 +1,316 @@
 # NoTap Billing - User Guide
 
-**Version:** 2.0
-**Last Updated:** 2025-12-03
-**Status:** Production Ready
+**Version:** 3.0
+**Last Updated:** 2026-01-08
+**Status:** Production Ready (Pricing Model v2.0)
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Pricing Tiers](#pricing-tiers)
-3. [Understanding Usage](#understanding-usage)
-4. [Billing Cycles](#billing-cycles)
-5. [Payment Methods](#payment-methods)
-6. [Cost Optimization](#cost-optimization)
-7. [Alerts & Notifications](#alerts--notifications)
-8. [Upgrading & Downgrading](#upgrading--downgrading)
-9. [Troubleshooting](#troubleshooting)
-10. [FAQ](#faq)
+2. [Consumer Pricing](#consumer-pricing)
+3. [Merchant Pricing](#merchant-pricing)
+4. [Understanding Usage](#understanding-usage)
+5. [Billing Cycles](#billing-cycles)
+6. [Payment Methods](#payment-methods)
+7. [Cost Optimization](#cost-optimization)
+8. [Alerts & Notifications](#alerts--notifications)
+9. [Upgrading & Downgrading](#upgrading--downgrading)
+10. [Troubleshooting](#troubleshooting)
+11. [FAQ](#faq)
 
 ---
 
 ## Overview
 
-NoTap uses a **pay-as-you-grow** pricing model with generous free tiers and predictable costs.
+NoTap uses a **B2B-first, freemium** pricing model with generous free tiers for consumers and value-based pricing for merchants.
 
 ### Billing Model
 
-**What You Pay For:**
-- ✅ **Verifications** - Each authentication attempt (success or failure)
-- ✅ **Monthly Subscription** - Base plan fee (Starter, Professional, Enterprise)
+**Consumer (B2C):**
+- ✅ **Free tier** - UNLIMITED authentications, 6 basic factors
+- ✅ **Premium tiers** - Annual subscriptions for advanced features
 
-**What's Free:**
-- ✅ **Enrollments** - Users enrolling authentication factors
-- ✅ **Sandbox Testing** - Unlimited test verifications
+**Merchant (B2B):**
+- ✅ **Users Enrolled** - Monthly fee based on enrolled user count (not auth count)
+- ✅ **Overage** - Per-user overage charges beyond quota
+
+**What's Always Free:**
+- ✅ **Sandbox Testing** - 500 test users, unlimited test authentications
 - ✅ **API Calls** - Health checks, status endpoints
 - ✅ **Webhooks** - Event notifications
-- ✅ **Support** - Email and community support (all tiers)
+- ✅ **Community Support** - Docs, forums (all tiers)
 
 ### Billing Philosophy
 
 **Transparent:** No hidden fees, no surprise charges
-**Fair:** Only pay for what you use
+**Value-Based:** Price reflects value delivered, not volume
 **Predictable:** Monthly quotas with clear overage pricing
 **Flexible:** Easy to upgrade/downgrade
 
 ---
 
-## Pricing Tiers
+## Consumer Pricing
 
-### Free Tier
+NoTap is **FREE** for consumers. Premium features available via annual subscription.
 
-**Best For:** Hobbyists, MVPs, small projects
+### Free Tier (Default)
+
+**Best For:** Everyone - 90% of users stay on Free
 
 ```
 ┌─────────────────────────────────────┐
-│  FREE                               │
+│  NoTap FREE                         │
 ├─────────────────────────────────────┤
-│  $0 / month                         │
+│  $0 / forever                       │
 │                                     │
-│  ✅ 1,000 verifications/month        │
-│  ✅ Unlimited sandbox testing        │
-│  ✅ Email support (48h response)     │
-│  ✅ Community Discord access         │
-│  ✅ 2 projects                       │
-│  ✅ Basic webhooks                   │
-│                                     │
-│  ⚠️  Hard limit (no overages)        │
+│  ✅ UNLIMITED authentications        │
+│  ✅ 6 basic factors:                 │
+│     PIN, Pattern, Emoji, Color,     │
+│     Words, NFC                      │
+│  ✅ 24h storage TTL                  │
+│  ✅ Standard security                │
+│  ✅ Community support (docs, forums) │
 │                                     │
 │  [ Sign Up Free ]                   │
 └─────────────────────────────────────┘
 ```
 
-**Limitations:**
-- ❌ Cannot exceed 1,000 verifications/month (API returns 402)
-- ❌ Single team member (no collaboration)
-- ❌ No SLA guarantee
-- ❌ No priority support
+**Why Free?** Authentication should be free (like Google Authenticator, Apple FaceID).
 
 ---
 
-### Starter Tier
+### Plus Tier
 
-**Best For:** Startups, small businesses
+**Best For:** Power users who want all factors + priority features
 
 ```
 ┌─────────────────────────────────────┐
-│  STARTER                            │
+│  NoTap PLUS                         │
 ├─────────────────────────────────────┤
-│  $49 / month                        │
+│  $9.99 / year ($0.83/month)         │
 │                                     │
-│  ✅ 10,000 verifications/month       │
-│  ✅ $0.005 per overage verification  │
-│  ✅ Unlimited sandbox testing        │
+│  ✅ UNLIMITED authentications        │
+│  ✅ All 15 factors (incl. biometrics)│
+│  ✅ 72h extended storage TTL         │
+│  ✅ Priority verification queue      │
+│  ✅ Crypto wallet payments           │
+│  ✅ Custom alias                     │
 │  ✅ Email support (24h response)     │
-│  ✅ 5 projects                       │
-│  ✅ 3 team members                   │
+│                                     │
+│  [ Get Plus - $9.99/year ]          │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Crypto Tier
+
+**Best For:** Privacy enthusiasts, crypto-native users
+
+```
+┌─────────────────────────────────────┐
+│  NoTap CRYPTO                       │
+├─────────────────────────────────────┤
+│  $29.99 / year ($2.50/month)        │
+│                                     │
+│  ✅ Everything in Plus               │
+│  ✅ Full crypto support (USDC, SOL,  │
+│     USDT, ETH)                      │
+│  ✅ Daily automatic key rotation     │
+│  ✅ Zero-knowledge privacy mode      │
+│  ✅ Blockchain audit trail           │
+│  ✅ Multi-chain names (SNS, ENS, UD) │
+│  ✅ Hardware wallet integration      │
+│  ✅ Priority crypto support          │
+│                                     │
+│  [ Get Crypto - $29.99/year ]       │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Consumer Pricing Comparison
+
+| Feature | Free | Plus | Crypto |
+|---------|------|------|--------|
+| **Price** | $0 | $9.99/year | $29.99/year |
+| **Authentications** | UNLIMITED | UNLIMITED | UNLIMITED |
+| **Factors** | 6 basic | All 15 | All 15 |
+| **Storage TTL** | 24h | 72h | 72h |
+| **Support** | Community | Email (24h) | Priority |
+| **Crypto Payments** | No | USDC, SOL | Full (4 chains) |
+| **ZK Privacy** | No | No | Yes |
+| **Key Rotation** | No | No | Daily |
+
+---
+
+## Merchant Pricing
+
+Merchants pay based on **users enrolled** (not authentication count). This captures long-term value and aligns with Auth0/Okta pricing models.
+
+### Sandbox (Free)
+
+**Best For:** Testing, POCs, hackathons
+
+```
+┌─────────────────────────────────────┐
+│  SANDBOX                            │
+├─────────────────────────────────────┤
+│  $0 / month                         │
+│                                     │
+│  ✅ 500 enrolled users (hard limit)  │
+│  ✅ Full API access                  │
+│  ✅ Test mode only (no production)   │
+│  ✅ Community support                │
+│  ✅ 1 API key                        │
+│                                     │
+│  [ Start Free ]                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Startup ($299/month)
+
+**Best For:** Indie devs, MVPs, small e-commerce
+
+```
+┌─────────────────────────────────────┐
+│  STARTUP                            │
+├─────────────────────────────────────┤
+│  $299/month or $2,990/year (17% off)│
+│                                     │
+│  ✅ 1,000 enrolled users             │
+│  ✅ $0.25/user overage               │
+│  ✅ Production API access            │
+│  ✅ Basic fraud detection            │
+│  ✅ Email support (48h response)     │
+│  ✅ 2 API keys                       │
+│  ✅ Basic webhooks                   │
+│                                     │
+│  [ Start Building - $299/mo ]       │
+└─────────────────────────────────────┘
+```
+
+**Cost Per User:** $0.30/user/month (1,000 for $299)
+
+---
+
+### Growth ($999/month)
+
+**Best For:** SMB e-commerce, SaaS, neo-banks
+
+```
+┌─────────────────────────────────────┐
+│  GROWTH                             │
+├─────────────────────────────────────┤
+│  $999/month or $9,990/year (17% off)│
+│                                     │
+│  ✅ 10,000 enrolled users            │
+│  ✅ $0.08/user overage               │
+│  ✅ All Startup features             │
+│  ✅ Advanced fraud detection (7 strat)│
+│  ✅ Custom branding (logo, colors)   │
+│  ✅ Chat support (12h response)      │
+│  ✅ 5 API keys + IP whitelist        │
 │  ✅ Advanced webhooks                │
-│  ✅ Usage analytics                  │
 │                                     │
 │  99.5% Uptime SLA                   │
 │                                     │
-│  [ Upgrade to Starter ]             │
+│  [ Scale Up - $999/mo ]             │
 └─────────────────────────────────────┘
 ```
 
-**Cost Per Verification:**
-- Included: $0.0049/verification (10,000 for $49)
-- Overage: $0.005/verification
+**Cost Per User:** $0.10/user/month (10,000 for $999)
 
 ---
 
-### Professional Tier
+### Scale ($4,999/month)
 
-**Best For:** Growing companies, high-volume apps
+**Best For:** Fintechs, large merchants, banks
 
 ```
 ┌─────────────────────────────────────┐
-│  PROFESSIONAL                       │
+│  SCALE                              │
 ├─────────────────────────────────────┤
-│  $199 / month                       │
+│  $4,999/month or $49,990/year       │
 │                                     │
-│  ✅ 100,000 verifications/month      │
-│  ✅ $0.002 per overage verification  │
-│  ✅ Unlimited sandbox testing        │
-│  ✅ Email + Slack support (8h)       │
-│  ✅ Unlimited projects               │
-│  ✅ Unlimited team members           │
-│  ✅ Premium webhooks                 │
-│  ✅ Advanced analytics               │
-│  ✅ Custom branding                  │
-│  ✅ Priority feature requests        │
+│  ✅ 100,000 enrolled users           │
+│  ✅ $0.04/user overage               │
+│  ✅ All Growth features              │
+│  ✅ SLA 99.9% uptime guarantee       │
+│  ✅ Blockchain audit trail           │
+│  ✅ Dedicated Account Manager        │
+│  ✅ Priority support (4h phone+email)│
+│  ✅ 10 API keys + advanced whitelist │
+│  ✅ White-label options              │
 │                                     │
-│  99.9% Uptime SLA                   │
-│                                     │
-│  [ Upgrade to Professional ]        │
+│  [ Enterprise Ready - $4,999/mo ]   │
 └─────────────────────────────────────┘
 ```
 
-**Cost Per Verification:**
-- Included: $0.00199/verification (100,000 for $199)
-- Overage: $0.002/verification
+**Cost Per User:** $0.05/user/month (100,000 for $4,999)
 
 ---
 
-### Enterprise Tier
+### Enterprise ($25,000+/month)
 
-**Best For:** Large enterprises, mission-critical apps
+**Best For:** Acquirers, tier-1 PSPs, telcos, governments
 
 ```
 ┌─────────────────────────────────────┐
 │  ENTERPRISE                         │
 ├─────────────────────────────────────┤
-│  Custom Pricing                     │
+│  From $25,000/month (custom)        │
 │                                     │
-│  ✅ Custom verification quota        │
-│  ✅ Volume discounts available       │
-│  ✅ Unlimited sandbox testing        │
-│  ✅ 24/7 phone + Slack (1h SLA)      │
-│  ✅ Dedicated account manager        │
-│  ✅ Custom contracts (annual/multi)  │
-│  ✅ On-premise deployment option     │
-│  ✅ Custom integrations              │
-│  ✅ White-label solution             │
-│  ✅ Compliance assistance (SOC2)     │
-│                                     │
-│  99.95% Uptime SLA + Credits        │
+│  ✅ UNLIMITED enrolled users         │
+│  ✅ All Scale features               │
+│  ✅ Full white-label (complete rebrand)│
+│  ✅ Dedicated infrastructure         │
+│  ✅ Custom factor development        │
+│  ✅ SLA 99.99% (four nines)          │
+│  ✅ Custom MSA (legal terms)         │
+│  ✅ 24/7 phone support               │
+│  ✅ Dedicated Customer Success Mgr   │
 │                                     │
 │  [ Contact Sales ]                  │
 └─────────────────────────────────────┘
 ```
 
-**Typical Enterprise Pricing:**
-- 1M verifications/month: ~$1,200/month ($0.0012 per verification)
-- 10M verifications/month: ~$8,000/month ($0.0008 per verification)
-
 ---
 
-### Pricing Comparison
+### Merchant Pricing Comparison
 
-| Feature | Free | Starter | Professional | Enterprise |
-|---------|------|---------|--------------|------------|
-| **Monthly Cost** | $0 | $49 | $199 | Custom |
-| **Verifications** | 1,000 | 10,000 | 100,000 | Custom |
-| **Overage Cost** | N/A | $0.005 | $0.002 | Custom |
-| **Projects** | 2 | 5 | Unlimited | Unlimited |
-| **Team Members** | 1 | 3 | Unlimited | Unlimited |
-| **Support Response** | 48h | 24h | 8h | 1h (24/7) |
-| **Uptime SLA** | None | 99.5% | 99.9% | 99.95% |
-| **Webhooks** | Basic | Advanced | Premium | Custom |
-| **Analytics** | Basic | Standard | Advanced | Custom |
-| **Branding** | NoTap | NoTap | Custom | White-label |
+| Feature | Sandbox | Startup | Growth | Scale | Enterprise |
+|---------|---------|---------|--------|-------|------------|
+| **Monthly Cost** | $0 | $299 | $999 | $4,999 | $25,000+ |
+| **Users Enrolled** | 500 | 1,000 | 10,000 | 100,000 | Unlimited |
+| **Overage/User** | N/A | $0.25 | $0.08 | $0.04 | Flat fee |
+| **API Keys** | 1 | 2 | 5 | 10 | Unlimited |
+| **Support** | Community | Email 48h | Chat 12h | Phone 4h | 24/7 |
+| **Uptime SLA** | None | None | 99.5% | 99.9% | 99.99% |
+| **White-label** | No | No | No | Partial | Full |
 
 ---
 
 ## Understanding Usage
 
-### What Counts as a Verification?
+### What Counts Toward Your Quota?
 
-**Counted (Billable):**
-- ✅ Successful verification (`/v1/verify` → 200 OK)
-- ✅ Failed verification (`/v1/verify` → 401 Unauthorized)
-- ✅ Step-up authentication
-- ✅ Factor testing (Management Portal)
+**Merchant Plans - Users Enrolled:**
+- ✅ Each unique user who completes enrollment counts as 1 user
+- ✅ Users remain counted until their enrollment expires or is deleted
+- ✅ Re-enrollments of the same user don't count twice
 
-**NOT Counted (Free):**
-- ❌ Enrollment (`/v1/enrollment`)
-- ❌ Health checks (`/v1/health`)
-- ❌ API key validation errors (401 Invalid API Key)
-- ❌ Sandbox verifications (test API keys)
-- ❌ Rate limit rejections (429 Rate Limited)
+**NOT Counted:**
+- ❌ Authentication attempts (unlimited per enrolled user)
+- ❌ Sandbox users (test mode)
+- ❌ Failed enrollments
+- ❌ API calls (health checks, status endpoints)
+
+**Key Difference:** You pay for **users enrolled**, not **authentications performed**.
 
 ### Viewing Your Usage
 
@@ -217,25 +318,25 @@ NoTap uses a **pay-as-you-grow** pricing model with generous free tiers and pred
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  Usage This Month (December 2025)                 │
+│  Usage This Month (January 2026)                  │
 ├────────────────────────────────────────────────────┤
-│  Plan: Professional ($199/month)                  │
-│  Billing Period: Dec 1 - Dec 31                   │
+│  Plan: Growth ($999/month)                        │
+│  Billing Period: Jan 1 - Jan 31                   │
 │                                                    │
-│  Verifications: 62,450 / 100,000                  │
-│  ████████████████░░░░░░░░░░░░ 62%                  │
+│  Users Enrolled: 6,250 / 10,000                   │
+│  ████████████████░░░░░░░░░░░░ 63%                  │
 │                                                    │
 │  Breakdown:                                        │
-│  • Successful: 60,890 (97.5%)                     │
-│  • Failed: 1,560 (2.5%)                           │
+│  • Active Users: 5,890 (94%)                      │
+│  • Inactive (no auth in 30d): 360 (6%)            │
 │                                                    │
-│  Daily Average: 2,015 verifications               │
-│  Projected End-of-Month: 62,465 (62%)             │
+│  Authentications This Month: 45,200               │
+│  (unlimited - no extra charge)                    │
 │                                                    │
 │  Current Charges:                                 │
-│  • Base Plan: $199.00                             │
-│  • Overage: $0.00 (0 overage verifications)       │
-│  • Total: $199.00                                 │
+│  • Base Plan: $999.00                             │
+│  • Overage: $0.00 (0 overage users)               │
+│  • Total: $999.00                                 │
 └────────────────────────────────────────────────────┘
 ```
 
@@ -297,19 +398,19 @@ Trend: +12% growth week-over-week
 
 **Example: Upgrade mid-month**
 
-You're on **Free** tier and upgrade to **Starter** on Dec 15:
+You're on **Sandbox** tier and upgrade to **Startup** on Jan 15:
 
 ```
-Dec 1 - Dec 14:  Free tier (14 days)
-Dec 15 - Dec 31: Starter tier (17 days)
+Jan 1 - Jan 14:  Sandbox tier (14 days)
+Jan 15 - Jan 31: Startup tier (17 days)
 
 Prorated Charge:
-  ($49 ÷ 31 days) × 17 days = $26.90
+  ($299 ÷ 31 days) × 17 days = $163.97
 
-Invoice on Jan 1:
-  • Prorated Starter (Dec 15-31): $26.90
-  • Full Starter (Jan 1-31): $49.00
-  • Total: $75.90
+Invoice on Feb 1:
+  • Prorated Startup (Jan 15-31): $163.97
+  • Full Startup (Feb 1-28): $299.00
+  • Total: $462.97
 ```
 
 ### Invoice Generation
@@ -318,28 +419,28 @@ Invoice on Jan 1:
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  Invoice #INV-2025-12-001                         │
+│  Invoice #INV-2026-01-001                         │
 ├────────────────────────────────────────────────────┤
-│  Billing Period: December 1-31, 2025              │
-│  Invoice Date: January 1, 2026                    │
-│  Due Date: January 8, 2026                        │
+│  Billing Period: January 1-31, 2026               │
+│  Invoice Date: February 1, 2026                   │
+│  Due Date: February 8, 2026                       │
 │                                                    │
 │  CHARGES                                           │
 │  ─────────────────────────────────────            │
-│  Professional Plan           $199.00              │
-│  100,000 verifications included                   │
+│  Growth Plan                  $999.00             │
+│  10,000 enrolled users included                   │
 │                                                    │
-│  Overage Charges              $5.60               │
-│  2,800 × $0.002/verification                      │
+│  Overage Charges              $40.00              │
+│  500 users × $0.08/user                           │
 │                                                    │
 │  ─────────────────────────────────────            │
-│  SUBTOTAL                    $204.60              │
-│  Tax (8.5% CA sales tax)      $17.39              │
+│  SUBTOTAL                   $1,039.00             │
+│  Tax (8.5% CA sales tax)      $88.32              │
 │  ─────────────────────────────────────            │
-│  TOTAL                       $221.99              │
+│  TOTAL                      $1,127.32             │
 │                                                    │
 │  Payment Method: Visa •••• 4242                   │
-│  Status: Paid (Jan 1, 2026 00:05 UTC)             │
+│  Status: Paid (Feb 1, 2026 00:05 UTC)             │
 │                                                    │
 │  [ Download PDF ]  [ View Details ]               │
 └────────────────────────────────────────────────────┘
@@ -610,35 +711,33 @@ const results = await notap.verifyBatch(users); // $0.001 × 1,000 = $1.00
 ┌─────────────────────────────────────┐
 │  Estimate Your Monthly Costs        │
 ├─────────────────────────────────────┤
-│  Expected Verifications:            │
-│  [50,000                       ]    │
+│  Expected Users to Enroll:          │
+│  [8,000                        ]    │
 │                                     │
-│  Success Rate:                      │
-│  [95%                          ]    │
-│                                     │
-│  Caching Strategy:                  │
-│  [5-minute session cache   ▼]       │
-│  (reduces verifications by ~60%)    │
+│  Average Auths per User/Month:      │
+│  [12                           ]    │
+│  (Unlimited - no extra charge)      │
 │                                     │
 │  ─────────────────────────────────  │
 │  ESTIMATE                           │
 │  ─────────────────────────────────  │
-│  Actual Verifications: 20,000       │
-│  (50,000 × 40% after caching)       │
+│  Users Enrolled: 8,000              │
+│  Total Authentications: 96,000      │
+│  (no extra charge - unlimited)      │
 │                                     │
-│  Recommended Plan: Starter          │
-│  • Base Cost: $49/month             │
-│  • Included: 10,000 verifications   │
-│  • Overage: 10,000 × $0.005 = $50   │
-│  • Total: $99/month                 │
+│  Recommended Plan: Growth           │
+│  • Base Cost: $999/month            │
+│  • Included: 10,000 users           │
+│  • Overage: $0 (within quota)       │
+│  • Total: $999/month                │
 │                                     │
-│  OR upgrade to Professional:        │
-│  • Base Cost: $199/month            │
-│  • Included: 100,000 verifications  │
-│  • Overage: $0                      │
-│  • Total: $199/month (save $900/yr) │
+│  OR if expecting growth to 15K:     │
+│  • Growth with overage:             │
+│    $999 + (5,000 × $0.08) = $1,399  │
+│  • Scale would be: $4,999           │
+│    (better if >12,500 users)        │
 │                                     │
-│  [ Upgrade to Professional ]        │
+│  [ Choose Growth Plan ]             │
 └─────────────────────────────────────┘
 ```
 
@@ -717,19 +816,19 @@ https://docs.notap.io/billing/optimization
 ┌─────────────────────────────────────┐
 │  Upgrade Your Plan                  │
 ├─────────────────────────────────────┤
-│  Current Plan: Starter ($49/month)  │
-│  Usage: 8,500 / 10,000 (85%)        │
+│  Current Plan: Startup ($299/month) │
+│  Usage: 850 / 1,000 users (85%)     │
 │                                     │
-│  Recommended Upgrade: Professional  │
+│  Recommended Upgrade: Growth        │
 │                                     │
-│  ✅ 10× more verifications           │
-│  ✅ Lower overage cost ($0.002 vs $0.005) │
-│  ✅ Unlimited projects               │
-│  ✅ Better support (8h vs 24h)       │
+│  ✅ 10× more users (10,000)          │
+│  ✅ Lower overage ($0.08 vs $0.25)   │
+│  ✅ Advanced fraud detection         │
+│  ✅ Better support (12h vs 48h)      │
 │                                     │
-│  New Monthly Cost: $199              │
-│  Prorated Charge Today: $105.60     │
-│  (17 days remaining × $6.21/day)    │
+│  New Monthly Cost: $999              │
+│  Prorated Charge Today: $548.03     │
+│  (17 days remaining × $32.24/day)   │
 │                                     │
 │  [ Upgrade Now ]                    │
 └─────────────────────────────────────┘
@@ -738,7 +837,7 @@ https://docs.notap.io/billing/optimization
 **Effect:**
 - ✅ Immediate access to new quotas
 - ✅ Prorated charge applied
-- ✅ Next invoice: full $199
+- ✅ Next invoice: full $999
 
 ---
 
@@ -750,23 +849,23 @@ https://docs.notap.io/billing/optimization
 ┌─────────────────────────────────────┐
 │  Downgrade Your Plan                │
 ├─────────────────────────────────────┤
-│  Current Plan: Professional         │
-│  Usage: 15,230 / 100,000 (15%)      │
+│  Current Plan: Growth               │
+│  Usage: 1,523 / 10,000 users (15%)  │
 │                                     │
-│  Downgrade to: Starter              │
+│  Downgrade to: Startup              │
 │                                     │
 │  ⚠️  WARNING: Potential Issues       │
-│  • Current usage (15,230) exceeds   │
-│    Starter quota (10,000)           │
+│  • Current users (1,523) exceeds    │
+│    Startup quota (1,000)            │
 │  • Overage charges will apply:      │
-│    5,230 × $0.005 = $26.15/month    │
-│  • Consider staying on Professional │
+│    523 × $0.25 = $130.75/month      │
+│  • Consider staying on Growth       │
 │                                     │
-│  New Monthly Cost: $49               │
-│  Credit Applied: $82.30             │
+│  New Monthly Cost: $299              │
+│  Credit Applied: $412.30            │
 │  (unused portion of current plan)   │
 │                                     │
-│  Effective Date: Jan 1, 2026        │
+│  Effective Date: Feb 1, 2026        │
 │  (applied at next billing cycle)    │
 │                                     │
 │  [ Confirm Downgrade ]  [ Cancel ]  │
@@ -896,7 +995,7 @@ date,project_id,verifications,success_rate
 
 #### ❌ "Credit Not Applied After Downgrade"
 
-**Scenario:** Downgraded from Professional to Starter, but invoice shows full $199
+**Scenario:** Downgraded from Growth to Startup, but invoice shows full $999
 
 **Explanation:**
 
@@ -905,13 +1004,13 @@ Downgrades apply at **next billing cycle**, not immediately.
 **Example Timeline:**
 
 ```
-Dec 15: Request downgrade Professional → Starter
-Dec 31: Last day of current billing cycle
-Jan 1:  Downgrade applied, invoice shows:
-        • Dec 1-31: Professional ($199)
-        • Credit: -$82.30 (unused days)
-        • Jan 1-31: Starter ($49)
-        • Total due: $165.70
+Jan 15: Request downgrade Growth → Startup
+Jan 31: Last day of current billing cycle
+Feb 1:  Downgrade applied, invoice shows:
+        • Jan 1-31: Growth ($999)
+        • Credit: -$412.30 (unused days)
+        • Feb 1-28: Startup ($299)
+        • Total due: $885.70
 ```
 
 **No action needed** - credit applied correctly
@@ -1011,7 +1110,7 @@ Jan 1:  Downgrade applied, invoice shows:
 
 **Q: What if I need more than Enterprise tier offers?**
 
-**A:** Contact partnership@notap.io for custom pricing (10M+ verifications/month).
+**A:** Contact partnership@notap.io for custom pricing (1M+ enrolled users, dedicated infrastructure, custom factors).
 
 ---
 
@@ -1052,6 +1151,7 @@ Jan 1:  Downgrade applied, invoice shows:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0 | 2026-01-08 | Complete rewrite for Pricing Model v2.0: user-based pricing, new tiers (Startup/Growth/Scale), consumer tiers (Free/Plus/Crypto) |
 | 2.0 | 2025-12-03 | Added cost optimization strategies, alert configuration, pause account feature |
 | 1.0 | 2025-11-19 | Initial release |
 

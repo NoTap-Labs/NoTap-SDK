@@ -63,12 +63,17 @@
 ### Is NoTap free?
 
 **A:** Yes! Free tier includes:
-- ✅ 1,000 verifications/month
+- ✅ **UNLIMITED authentications/month**
+- ✅ 6 basic factors (PIN, pattern, emoji, color, words, NFC)
+- ✅ 24h storage TTL
+- ✅ Community support (docs, forums)
 - ✅ Unlimited sandbox testing
-- ✅ Email support (48h response time)
-- ✅ 2 projects
 
-Paid plans start at $49/month for 10,000 verifications.
+**Premium tiers (optional):**
+- **NoTap Plus** ($9.99/year): All 15 factors, 72h TTL, crypto payments, priority support
+- **NoTap Crypto** ($29.99/year): ZK privacy mode, daily key rotation, blockchain audit
+
+**Merchant pricing** starts at $299/month for 1,000 enrolled users.
 
 See [Pricing](https://notap.io/pricing) for details.
 
@@ -522,20 +527,26 @@ These are **hashes**, not plaintext. Impossible to reverse.
 
 | Plan | Behavior |
 |------|----------|
-| **Free** | Hard limit (API returns 402 Payment Required) |
-| **Starter** | Overage charges: $0.005/verification |
-| **Professional** | Overage charges: $0.002/verification |
-| **Enterprise** | Custom |
+| **Consumer Free** | No quota - UNLIMITED authentications |
+| **Consumer Plus/Crypto** | No quota - UNLIMITED authentications |
+| **Merchant Startup** | Overage: $0.25/user/month beyond 1,000 users |
+| **Merchant Growth** | Overage: $0.08/user/month beyond 10,000 users |
+| **Merchant Scale** | Overage: $0.04/user/month beyond 100,000 users |
+| **Enterprise** | Custom (flat fee, no overage) |
 
 ---
 
 ### Can I pay annually for a discount?
 
-**A:** Yes! Annual plans get **2 months free** (16% discount).
+**A:** Yes! Annual plans get **17% discount** (roughly 2 months free).
 
-**Example:**
-- Monthly: $49 × 12 = $588/year
-- Annual: $49 × 10 = $490/year (save $98)
+**Consumer Example:**
+- NoTap Plus: $9.99/year (no monthly option)
+- NoTap Crypto: $29.99/year (no monthly option)
+
+**Merchant Example:**
+- Startup Monthly: $299 × 12 = $3,588/year
+- Startup Annual: $2,990/year (save $598)
 
 Contact [partnership@notap.io](mailto:partnership@notap.io) for annual invoicing.
 

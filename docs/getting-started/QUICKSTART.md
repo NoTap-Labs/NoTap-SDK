@@ -804,11 +804,16 @@ Fatal error: NoTapSDK instance is nil
 **Q: Is NoTap free?**
 
 **A:** Yes! Free tier includes:
-- 1,000 verifications/month
-- Unlimited sandbox testing
-- Email support
+- **UNLIMITED authentications/month**
+- 6 basic factors (PIN, pattern, emoji, color, words, NFC)
+- 24h storage TTL
+- Community support (docs, forums)
 
-Paid plans start at $49/month for 10,000 verifications.
+**Consumer premium tiers:**
+- NoTap Plus: $9.99/year (all 15 factors, priority support)
+- NoTap Crypto: $29.99/year (ZK privacy, blockchain audit)
+
+**Merchant plans** start at $299/month for 1,000 enrolled users.
 
 ---
 

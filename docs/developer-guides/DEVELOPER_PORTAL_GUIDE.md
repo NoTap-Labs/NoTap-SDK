@@ -740,14 +740,19 @@ async function callNoTapAPI(endpoint, data, retries = 3) {
 
 ## Billing & Usage
 
-### Pricing Tiers
+### Pricing Tiers (Merchant Plans)
 
-| Plan | Monthly Cost | Included Verifications | Overage Cost |
-|------|-------------|------------------------|--------------|
-| **Free** | $0 | 1,000 | N/A (hard limit) |
-| **Starter** | $49 | 10,000 | $0.005/verification |
-| **Professional** | $199 | 100,000 | $0.002/verification |
-| **Enterprise** | Custom | Custom | Custom |
+Merchants pay based on **users enrolled** (not authentication count).
+
+| Plan | Monthly Cost | Users Enrolled | Overage Cost |
+|------|-------------|----------------|--------------|
+| **Sandbox** | $0 | 500 | N/A (hard limit, test only) |
+| **Startup** | $299 | 1,000 | $0.25/user |
+| **Growth** | $999 | 10,000 | $0.08/user |
+| **Scale** | $4,999 | 100,000 | $0.04/user |
+| **Enterprise** | $25,000+ | Unlimited | Custom (flat fee) |
+
+**Annual discount:** 17% off (e.g., Startup: $2,990/year instead of $3,588)
 
 ### View Usage
 
@@ -755,16 +760,16 @@ async function callNoTapAPI(endpoint, data, retries = 3) {
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  Usage This Month (December 2025)                 │
+│  Usage This Month (January 2026)                  │
 ├────────────────────────────────────────────────────┤
-│  Verifications: 45,230 / 100,000                  │
+│  Users Enrolled: 4,523 / 10,000                   │
 │  ████████████░░░░░░░░░░░░░ 45%                     │
 │                                                    │
 │  Breakdown:                                        │
-│  • Successful: 43,891 (97%)                       │
-│  • Failed: 1,339 (3%)                             │
+│  • Active Users: 4,389 (97%)                      │
+│  • Inactive (30d): 134 (3%)                       │
 │                                                    │
-│  Projected End-of-Month: 62,000 (62% of quota)    │
+│  Authentications: 38,450 (unlimited, no charge)   │
 │  Overage Charges: $0.00                           │
 └────────────────────────────────────────────────────┘
 ```
@@ -1108,10 +1113,12 @@ NOTAP_WEBHOOK_SECRET=whsec_xyz789
 
 **Q: Is there a free tier?**
 
-**A:** Yes! Free tier includes:
-- 1,000 verifications/month
-- Unlimited sandbox testing
-- Email support
+**A:** Yes! Sandbox tier includes:
+- 500 enrolled users (test mode only)
+- Full API access
+- Community support
+
+For production: Startup tier starts at $299/month for 1,000 enrolled users.
 
 ---
 
