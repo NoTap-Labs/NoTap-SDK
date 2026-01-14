@@ -15,11 +15,10 @@
 
 ## 🔗 Links
 
-- 🌐 **Website:** [notap.xyz](https://notap.xyz)
-- 📚 **Documentation:** [docs.notap.xyz](https://docs.notap.xyz)
-- 💬 **Discord:** [Join Community](https://discord.gg/notap)
+- 🌐 **Website:** [notap.io](https://notap.io)
+- 📚 **Documentation:** [docs.notap.io](https://docs.notap.io)
 - 🐦 **Twitter:** [@NoTapAuth](https://twitter.com/NoTapAuth)
-- 📧 **Support:** support@notap.xyz
+- 📧 **Support:** support@notap.io
 
 ---
 
@@ -768,16 +767,14 @@ See our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 
 ### Get Help
 
-- 📧 **Email:** support@notap.xyz
-- 💬 **Discord:** [Join our community](https://discord.gg/notap)
-- 📖 **Documentation:** [docs.notap.xyz](https://docs.notap.xyz)
+- 📧 **Email:** support@notap.io
+- 📖 **Documentation:** [docs.notap.io](https://docs.notap.io)
 - 🐛 **Bug Reports:** [GitHub Issues](https://github.com/NoTap-Labs/NoTap-SDK/issues)
 
 ### Stay Updated
 
 - 🐦 **Twitter:** [@NoTapAuth](https://twitter.com/NoTapAuth)
-- 📝 **Blog:** [blog.notap.xyz](https://blog.notap.xyz)
-- 📬 **Newsletter:** [Subscribe](https://notap.xyz/newsletter)
+
 
 ---
 
@@ -803,6 +800,6 @@ For SDK licensing, contact: licensing@notap.xyz
 
 **Made with ❤️ by the NoTap Labs team**
 
-[Website](https://notap.xyz) • [Docs](https://docs.notap.xyz) • [Discord](https://discord.gg/notap) • [Twitter](https://twitter.com/NoTapAuth)
+[Website](https://notap.io) • [Docs](https://docs.notap.io) • [Twitter](https://twitter.com/NoTapAuth)
 
 </div>
