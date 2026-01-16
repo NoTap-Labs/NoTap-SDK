@@ -37,22 +37,46 @@ curl -X POST https://api.notap.io/v1/auth/developer/login \
 >
 > Database records are created by migration `018_seed_sandbox_test_accounts.sql`
 
+### Test API Keys
+
+For testing protected endpoints that require API key authentication:
+
+| Purpose | API Key | Header |
+|---------|---------|--------|
+| **Admin Endpoints** | `test-admin-api-key-00000000-0000-4000-a000-000000000000` | `X-Admin-Api-Key` |
+| **Demo Analytics** | `test-demo-analytics-key-00000000-0000-4000-a000-000000000000` | `x-api-key` |
+
+**Example - Demo Analytics:**
+```bash
+# Get analytics metrics (requires API key)
+curl -H "x-api-key: test-demo-analytics-key-00000000-0000-4000-a000-000000000000" \
+  "https://api.notap.io/v1/demo-analytics/metrics?startDate=2026-01-01&endDate=2026-01-16"
+
+# Or as query parameter
+curl "https://api.notap.io/v1/demo-analytics/funnel?apiKey=test-demo-analytics-key-00000000-0000-4000-a000-000000000000&startDate=2026-01-01&endDate=2026-01-16"
+```
+
+> **Note:** Demo analytics event tracking (POST endpoints) is public and doesn't require API keys.
+> Only read endpoints (GET /metrics, /funnel, /factors, /sessions) require authentication.
+
 ---
 
 ## Table of Contents
 
 1. [What is the Sandbox?](#what-is-the-sandbox)
 2. [Test JWT Tokens](#test-jwt-tokens)
-3. [Mock Blockchain Names](#mock-blockchain-names)
-4. [Mock Enrollments](#mock-enrollments)
-5. [Test Payment Cards](#test-payment-cards)
-6. [PSP API Keys](#psp-api-keys)
-7. [Wallet Testing](#wallet-testing)
-8. [Crypto Payments](#crypto-payments)
-9. [ZK Proof Testing](#zk-proof-testing)
-10. [Environment Configuration](#environment-configuration)
-11. [API Reference](#api-reference)
-12. [Troubleshooting](#troubleshooting)
+3. [Test API Keys](#test-api-keys-reference)
+4. [Mock Blockchain Names](#mock-blockchain-names)
+5. [Mock Enrollments](#mock-enrollments)
+6. [Test Payment Cards](#test-payment-cards)
+7. [Demo Analytics Testing](#demo-analytics-testing)
+8. [PSP API Keys](#psp-api-keys)
+9. [Wallet Testing](#wallet-testing)
+10. [Crypto Payments](#crypto-payments)
+11. [ZK Proof Testing](#zk-proof-testing)
+12. [Environment Configuration](#environment-configuration)
+13. [API Reference](#api-reference)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -360,6 +384,103 @@ curl https://api.notap.io/v1/sandbox/cards
 | 5555555555554444 | Success (Mastercard) |
 | 4000000000000002 | Declined |
 | 4000000000000119 | Insufficient funds |
+
+---
+
+## Demo Analytics Testing
+
+The demo analytics system tracks engagement and conversion funnels for the NoTap demo (`notap-demo-v7.0.html`).
+
+### Public Endpoints (No Authentication)
+
+Event tracking endpoints are public to allow the demo to track usage without API keys:
+
+```bash
+# Track single event
+curl -X POST https://api.notap.io/v1/demo-analytics/event \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    "eventType": "enrollment_start",
+    "eventData": {
+      "url": "https://example.com/demo",
+      "screenWidth": 1920
+    }
+  }'
+
+# Track batch events
+curl -X POST https://api.notap.io/v1/demo-analytics/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+        "eventType": "enrollment_start",
+        "eventData": {}
+      },
+      {
+        "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+        "eventType": "factor_selected",
+        "eventData": {"factorId": "PIN"}
+      }
+    ]
+  }'
+```
+
+### Protected Endpoints (Require API Key)
+
+Analytics read endpoints require the demo analytics API key:
+
+**Test API Key:** `test-demo-analytics-key-00000000-0000-4000-a000-000000000000`
+
+```bash
+# Get aggregated metrics
+curl -H "x-api-key: test-demo-analytics-key-00000000-0000-4000-a000-000000000000" \
+  "https://api.notap.io/v1/demo-analytics/metrics?startDate=2026-01-01&endDate=2026-01-16"
+
+# Get conversion funnel
+curl -H "x-api-key: test-demo-analytics-key-00000000-0000-4000-a000-000000000000" \
+  "https://api.notap.io/v1/demo-analytics/funnel?startDate=2026-01-01&endDate=2026-01-16"
+
+# Get factor analytics
+curl -H "x-api-key: test-demo-analytics-key-00000000-0000-4000-a000-000000000000" \
+  "https://api.notap.io/v1/demo-analytics/factors?startDate=2026-01-01&endDate=2026-01-16"
+
+# List sessions
+curl -H "x-api-key: test-demo-analytics-key-00000000-0000-4000-a000-000000000000" \
+  "https://api.notap.io/v1/demo-analytics/sessions?limit=10"
+
+# Get session details
+curl -H "x-api-key: test-demo-analytics-key-00000000-0000-4000-a000-000000000000" \
+  "https://api.notap.io/v1/demo-analytics/session/550e8400-e29b-41d4-a716-446655440000"
+```
+
+**Supported Event Types:**
+- `session_start`, `session_end`
+- `enrollment_start`, `enrollment_complete`, `enrollment_abandon`
+- `factor_selected`, `factor_skipped`
+- `mode_selected`, `gateway_selected`
+- `verification_initiated`, `verification_complete`, `verification_failed`
+- `challenge_started`, `challenge_completed`
+- `error`, `consent_given`, `theme_changed`, `quickstart_loaded`
+
+**Privacy:**
+- All data is anonymous (session UUIDs only)
+- No PII collected
+- 90-day automatic data retention (GDPR compliant)
+
+---
+
+## Test API Keys Reference
+
+### Available Test API Keys
+
+| Purpose | API Key | Header | Endpoints |
+|---------|---------|--------|-----------|
+| **Admin** | `test-admin-api-key-00000000-0000-4000-a000-000000000000` | `X-Admin-Api-Key` | Admin operations |
+| **Demo Analytics** | `test-demo-analytics-key-00000000-0000-4000-a000-000000000000` | `x-api-key` | GET /v1/demo-analytics/* |
+
+> **Get All Keys:** `GET /v1/sandbox/config` returns all sandbox API keys
 
 ---
 

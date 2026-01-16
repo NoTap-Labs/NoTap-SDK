@@ -1,8 +1,8 @@
 # Documentation Sync Report
 
-**Date:** 2026-01-12 03:43:18 UTC
+**Date:** 2026-01-16 18:25:36 UTC
 **Source:** NoTap-Labs/zero-pay-sdk
-**Commit:** 0ec94d5
+**Commit:** 08fd3c2
 
 ## Summary
 
