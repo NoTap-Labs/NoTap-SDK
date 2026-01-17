@@ -1,9 +1,10 @@
-# NoTap SDK - Portable, Device-Free Authentication
+# NoTap SDK - Passwordless, Device-Free Authentication
 
-**NoTap** is a revolutionary portable, device-free payment authentication platform powered by zero-knowledge proofs and multi-factor authentication.
+**NoTap** is a revolutionary passwordless, device-free payment authentication platform powered by zero-knowledge proofs and multi-factor authentication.
 
 ## 🌟 Why NoTap?
 
+- **🔐 Passwordless:** No passwords to remember or forget
 - **📱 Device-Free:** No phone? No problem! Authenticate on any terminal
 - **🛡️ Ultra-Secure:** Zero-knowledge proofs + multi-factor authentication
 - **⚡ Fast:** Sub-second authentication
@@ -14,10 +15,11 @@
 
 ## 🔗 Links
 
-- 🌐 **Website:** [notap.io](https://notap.io)
-- 📚 **Documentation:** [docs.notap.io](https://docs.notap.io)
+- 🌐 **Website:** [notap.xyz](https://notap.xyz)
+- 📚 **Documentation:** [docs.notap.xyz](https://docs.notap.xyz)
+- 💬 **Discord:** [Join Community](https://discord.gg/notap)
 - 🐦 **Twitter:** [@NoTapAuth](https://twitter.com/NoTapAuth)
-- 📧 **Support:** support@notap.io
+- 📧 **Support:** support@notap.xyz
 
 ---
 
