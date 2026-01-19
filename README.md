@@ -1,8 +1,3 @@
----
-metaLinks:
-  alternates:
-    - https://app.gitbook.com/s/2AwfWOGBWBxQmyvHedqW/
----
 
 # NoTap SDK - Portable, Device-Free Authentication
 
