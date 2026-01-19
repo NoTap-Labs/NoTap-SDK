@@ -239,10 +239,10 @@ implementation("com.zeropay:sdk:1.0.0")
 
 ## 📖 Additional Resources
 
-* [Getting Started Guide](../docs/getting-started.md)
+* [Getting Started Guide](/broken/pages/LUYNfGuv3hdPoTAeMBde)
 * [Integration Guide](/broken/pages/PbuP36zsQV2DenLcwsGH)
-* [API Reference](../docs/api-reference.md)
-* [FAQ](../docs/faq.md)
+* [API Reference](/broken/pages/PrgzRdv3vQrH9Xj0fuQi)
+* [FAQ](/broken/pages/MTADZa6kThl5gjN4CRjG)
 
 ***
 
