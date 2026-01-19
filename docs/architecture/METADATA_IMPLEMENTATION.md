@@ -1,10 +1,14 @@
+---
+hidden: true
+---
+
 # Metadata Infrastructure Implementation
 
 **Purpose**: Complete guide to metadata storage and retrieval for Voice, NFC, and Balance factors
 
 **Last Updated**: 2025-11-25
 
----
+***
 
 ## Executive Summary
 
@@ -13,33 +17,35 @@
 ### Quick Reference
 
 **Factors Requiring Metadata:**
-- **VoiceFactor**: timestamp + salt
-- **NfcFactor**: timestamp + nonce
-- **BalanceFactor**: timestamp
+
+* **VoiceFactor**: timestamp + salt
+* **NfcFactor**: timestamp + nonce
+* **BalanceFactor**: timestamp
 
 **Why**: These factors generate random values (timestamps, nonces, salts) during digest creation. The same values MUST be used during verification, otherwise digests will never match.
 
 **Implementation Status:**
-- ✅ Factor digest functions return result objects with metadata
-- ✅ EnrollmentManager infrastructure ready (fail-fast validation)
-- ✅ VerificationManager architecture documented
-- ⏳ UI canvas updates pending (return metadata to session)
-- ⏳ Backend storage/retrieval pending
 
----
+* ✅ Factor digest functions return result objects with metadata
+* ✅ EnrollmentManager infrastructure ready (fail-fast validation)
+* ✅ VerificationManager architecture documented
+* ⏳ UI canvas updates pending (return metadata to session)
+* ⏳ Backend storage/retrieval pending
+
+***
 
 ## Table of Contents
 
-1. [Problem Statement](#problem-statement)
-2. [Metadata Requirements by Factor](#metadata-requirements-by-factor)
-3. [EnrollmentManager Changes](#enrollmentmanager-changes)
-4. [VerificationManager Changes](#verificationmanager-changes)
-5. [Storage Layer Status](#storage-layer-status)
-6. [Migration Path](#migration-path)
-7. [Security Implications](#security-implications)
-8. [Code Examples](#code-examples)
+1. [Problem Statement](METADATA_IMPLEMENTATION.md#problem-statement)
+2. [Metadata Requirements by Factor](METADATA_IMPLEMENTATION.md#metadata-requirements-by-factor)
+3. [EnrollmentManager Changes](METADATA_IMPLEMENTATION.md#enrollmentmanager-changes)
+4. [VerificationManager Changes](METADATA_IMPLEMENTATION.md#verificationmanager-changes)
+5. [Storage Layer Status](METADATA_IMPLEMENTATION.md#storage-layer-status)
+6. [Migration Path](METADATA_IMPLEMENTATION.md#migration-path)
+7. [Security Implications](METADATA_IMPLEMENTATION.md#security-implications)
+8. [Code Examples](METADATA_IMPLEMENTATION.md#code-examples)
 
----
+***
 
 ## Problem Statement
 
@@ -79,27 +85,29 @@ val verifyDigest = digest("my secret phrase")  // Uses NEW salt 0xEF567890
 ### Why This Matters
 
 **Without metadata storage:**
-- Voice factor: 0% success rate (random salt + timestamp)
-- NFC factor: 0% success rate (random nonce + timestamp)
-- Balance factor: 0% success rate (timestamp)
-- User frustration: "I entered the correct phrase, why doesn't it work?!"
+
+* Voice factor: 0% success rate (random salt + timestamp)
+* NFC factor: 0% success rate (random nonce + timestamp)
+* Balance factor: 0% success rate (timestamp)
+* User frustration: "I entered the correct phrase, why doesn't it work?!"
 
 **With proper metadata:**
-- Voice factor: Normal success rate (same salt + timestamp used)
-- NFC factor: Normal success rate (same nonce + timestamp used)
-- Balance factor: Normal success rate (same timestamp used)
-- User experience: Works as expected ✅
 
----
+* Voice factor: Normal success rate (same salt + timestamp used)
+* NFC factor: Normal success rate (same nonce + timestamp used)
+* Balance factor: Normal success rate (same timestamp used)
+* User experience: Works as expected ✅
+
+***
 
 ## Metadata Requirements by Factor
 
-| Factor | Metadata Required | Fields | Purpose | Example |
-|--------|------------------|--------|---------|---------|
-| **VoiceFactor** | ✅ YES | `timestamp: Long`<br>`salt: ByteArray` | Prevents replay attacks, ensures digest consistency | `{"timestamp": "1699999999000", "salt": "ABCD1234..."}` |
-| **NfcFactor** | ✅ YES | `timestamp: Long`<br>`nonce: ByteArray` | Prevents replay attacks, ensures digest uniqueness | `{"timestamp": "1699999999000", "nonce": "EF567890..."}` |
-| **BalanceFactor** | ✅ YES | `timestamp: Long` | Ensures digest consistency across enrollment/verification | `{"timestamp": "1699999999000"}` |
-| **All Others** | ❌ NO | - | Standard digest-only verification | - |
+| Factor            | Metadata Required | Fields                                                               | Purpose                                                   | Example                                                  |
+| ----------------- | ----------------- | -------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------- |
+| **VoiceFactor**   | ✅ YES             | <p><code>timestamp: Long</code><br><code>salt: ByteArray</code></p>  | Prevents replay attacks, ensures digest consistency       | `{"timestamp": "1699999999000", "salt": "ABCD1234..."}`  |
+| **NfcFactor**     | ✅ YES             | <p><code>timestamp: Long</code><br><code>nonce: ByteArray</code></p> | Prevents replay attacks, ensures digest uniqueness        | `{"timestamp": "1699999999000", "nonce": "EF567890..."}` |
+| **BalanceFactor** | ✅ YES             | `timestamp: Long`                                                    | Ensures digest consistency across enrollment/verification | `{"timestamp": "1699999999000"}`                         |
+| **All Others**    | ❌ NO              | -                                                                    | Standard digest-only verification                         | -                                                        |
 
 ### Metadata Format
 
@@ -124,7 +132,7 @@ mapOf(
 )
 ```
 
----
+***
 
 ## EnrollmentManager Changes
 
@@ -283,6 +291,7 @@ private suspend fun tryApiEnrollment(
 ### Design Principle: FAIL FAST, NOT SILENT
 
 **❌ Bad Approach** (Silent failure):
+
 ```kotlin
 // Allow enrollment without metadata
 // User enrolls Voice factor successfully
@@ -291,6 +300,7 @@ private suspend fun tryApiEnrollment(
 ```
 
 **✅ Good Approach** (Fail fast):
+
 ```kotlin
 // Reject enrollment immediately if metadata missing
 // Clear error: "Voice factor requires metadata (timestamp, salt)"
@@ -300,7 +310,7 @@ private suspend fun tryApiEnrollment(
 
 **Rationale**: Prevents users from enrolling factors that will never work (0% success rate). Better to fail during development than in production.
 
----
+***
 
 ## VerificationManager Changes
 
@@ -372,15 +382,15 @@ private fun verifyWithLocalCache(
 }
 ```
 
----
+***
 
 ## Storage Layer Status
 
-| Storage | Metadata Support | Status | Notes |
-|---------|-----------------|---------|-------|
-| **Backend API** | ✅ Supported | ✅ Complete | Primary storage, full metadata via FactorDigest.metadata field |
-| **KeyStore (Android)** | ❌ Not supported | ⏳ Pending | Needs API update to store metadata alongside digest |
-| **Redis Cache** | ❌ Not supported | ⏳ Pending | Fallback only, Voice/NFC/Balance won't work offline |
+| Storage                | Metadata Support | Status     | Notes                                                          |
+| ---------------------- | ---------------- | ---------- | -------------------------------------------------------------- |
+| **Backend API**        | ✅ Supported      | ✅ Complete | Primary storage, full metadata via FactorDigest.metadata field |
+| **KeyStore (Android)** | ❌ Not supported  | ⏳ Pending  | Needs API update to store metadata alongside digest            |
+| **Redis Cache**        | ❌ Not supported  | ⏳ Pending  | Fallback only, Voice/NFC/Balance won't work offline            |
 
 ### Backend API
 
@@ -441,23 +451,24 @@ const result = await VoiceFactor.verify(
 );
 ```
 
----
+***
 
 ## Migration Path
 
 ### Phase 1: Infrastructure (✅ Complete - 2025-11-05)
 
-- ✅ Updated EnrollmentManager to capture metadata
-- ✅ Updated VerificationManager to handle metadata
-- ✅ Updated API models to include metadata field
-- ✅ Documented architecture and requirements
-- ✅ Added fail-fast validation
+* ✅ Updated EnrollmentManager to capture metadata
+* ✅ Updated VerificationManager to handle metadata
+* ✅ Updated API models to include metadata field
+* ✅ Documented architecture and requirements
+* ✅ Added fail-fast validation
 
 **Files Modified**:
-- `enrollment/src/androidMain/kotlin/com/zeropay/enrollment/EnrollmentManager.kt` (~150 LOC)
-- `merchant/src/commonMain/kotlin/com/zeropay/merchant/verification/VerificationManager.kt` (~50 LOC)
 
----
+* `enrollment/src/androidMain/kotlin/com/zeropay/enrollment/EnrollmentManager.kt` (\~150 LOC)
+* `merchant/src/commonMain/kotlin/com/zeropay/merchant/verification/VerificationManager.kt` (\~50 LOC)
+
+***
 
 ### Phase 2: UI Canvas Updates (⏳ Pending)
 
@@ -466,6 +477,7 @@ const result = await VoiceFactor.verify(
 **Files to Update**:
 
 #### VoiceCanvas (enrollment)
+
 ```kotlin
 // enrollment/src/androidMain/kotlin/com/zeropay/enrollment/ui/factors/VoiceCanvas.kt
 
@@ -480,6 +492,7 @@ onComplete()
 ```
 
 #### NfcCanvas (enrollment)
+
 ```kotlin
 // enrollment/src/androidMain/kotlin/com/zeropay/enrollment/ui/factors/NfcCanvas.kt
 
@@ -491,6 +504,7 @@ onComplete()
 ```
 
 #### BalanceCanvas (enrollment)
+
 ```kotlin
 // enrollment/src/androidMain/kotlin/com/zeropay/enrollment/ui/factors/BalanceCanvas.kt
 
@@ -516,7 +530,7 @@ data class EnrollmentSession(
 )
 ```
 
----
+***
 
 ### Phase 3: Backend Integration (⏳ Pending)
 
@@ -611,7 +625,7 @@ router.post('/v1/verification/:uuid', async (req, res) => {
 });
 ```
 
----
+***
 
 ### Phase 4: Local Storage (⏳ Optional)
 
@@ -671,24 +685,26 @@ async function getCachedEnrollment(uuid) {
 }
 ```
 
----
+***
 
 ## Security Implications
 
 ### Critical Requirements
 
 **WITHOUT proper metadata storage and retrieval:**
-- ❌ Voice factor: 0% verification success rate
-- ❌ NFC factor: 0% verification success rate
-- ❌ Balance factor: 0% verification success rate
-- ❌ Users frustrated, system unusable
+
+* ❌ Voice factor: 0% verification success rate
+* ❌ NFC factor: 0% verification success rate
+* ❌ Balance factor: 0% verification success rate
+* ❌ Users frustrated, system unusable
 
 **WITH proper metadata handling:**
-- ✅ Metadata captured during enrollment
-- ✅ Metadata stored via API backend
-- ✅ Metadata passed to verify() functions
-- ✅ Constant-time verification maintained (no timing leaks)
-- ✅ Replay protection preserved (timestamp validation)
+
+* ✅ Metadata captured during enrollment
+* ✅ Metadata stored via API backend
+* ✅ Metadata passed to verify() functions
+* ✅ Constant-time verification maintained (no timing leaks)
+* ✅ Replay protection preserved (timestamp validation)
 
 ### Timestamp-Based Replay Protection
 
@@ -716,11 +732,12 @@ fun verifyVoice(
 ```
 
 **Security Properties**:
-- Old digests (>24h) automatically rejected
-- Attacker cannot replay old authentication attempts
-- Even if digest leaked, it expires within 24 hours
 
----
+* Old digests (>24h) automatically rejected
+* Attacker cannot replay old authentication attempts
+* Even if digest leaked, it expires within 24 hours
+
+***
 
 ## Code Examples
 
@@ -788,40 +805,38 @@ val verified = constantTimeEquals(recomputedDigest, storedDigest)
 // { "success": true, "results": [{"factor": "VOICE", "verified": true}] }
 ```
 
----
+***
 
 ## Testing
 
 ### Unit Tests Required
 
 1. **EnrollmentManager Tests**
-   - ✅ Enrollment succeeds with metadata for Voice/NFC/Balance
-   - ✅ Enrollment fails without metadata for Voice (fail-fast)
-   - ✅ Enrollment fails without metadata for NFC (fail-fast)
-   - ✅ Enrollment fails without metadata for Balance (fail-fast)
-   - ✅ Other factors succeed without metadata
-
+   * ✅ Enrollment succeeds with metadata for Voice/NFC/Balance
+   * ✅ Enrollment fails without metadata for Voice (fail-fast)
+   * ✅ Enrollment fails without metadata for NFC (fail-fast)
+   * ✅ Enrollment fails without metadata for Balance (fail-fast)
+   * ✅ Other factors succeed without metadata
 2. **VerificationManager Tests**
-   - ✅ API verification succeeds with proper metadata
-   - ✅ Local cache warns about Voice/NFC/Balance failures (expected)
-
+   * ✅ API verification succeeds with proper metadata
+   * ✅ Local cache warns about Voice/NFC/Balance failures (expected)
 3. **Backend Integration Tests**
-   - ⏳ Enrollment stores metadata correctly
-   - ⏳ Verification retrieves metadata correctly
-   - ⏳ Voice verification works with stored metadata
-   - ⏳ NFC verification works with stored metadata
-   - ⏳ Balance verification works with stored metadata
-   - ⏳ Expired timestamps (>24h) rejected
+   * ⏳ Enrollment stores metadata correctly
+   * ⏳ Verification retrieves metadata correctly
+   * ⏳ Voice verification works with stored metadata
+   * ⏳ NFC verification works with stored metadata
+   * ⏳ Balance verification works with stored metadata
+   * ⏳ Expired timestamps (>24h) rejected
 
----
+***
 
 ## Related Documentation
 
-- **Security Audit Results**: See `SECURITY_AUDIT.md`
-- **Factor Processors**: See `sdk/src/commonMain/kotlin/com/zeropay/sdk/factors/processors/`
-- **API Models**: See `sdk/src/commonMain/kotlin/com/zeropay/sdk/models/api/ApiModels.kt`
-- **Backend Routes**: See `backend/routes/enrollmentRouter.js`, `backend/routes/verificationRouter.js`
+* **Security Audit Results**: See `SECURITY_AUDIT.md`
+* **Factor Processors**: See `sdk/src/commonMain/kotlin/com/zeropay/sdk/factors/processors/`
+* **API Models**: See `sdk/src/commonMain/kotlin/com/zeropay/sdk/models/api/ApiModels.kt`
+* **Backend Routes**: See `backend/routes/enrollmentRouter.js`, `backend/routes/verificationRouter.js`
 
----
+***
 
 **End of Metadata Implementation Guide**

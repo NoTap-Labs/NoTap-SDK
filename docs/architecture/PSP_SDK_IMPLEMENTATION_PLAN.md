@@ -1,16 +1,18 @@
+---
+hidden: true
+---
+
 # NoTap PSP SDK - Implementation Plan
 
-**Version:** 1.0.0
-**Date:** 2025-11-21
-**Status:** Ready for Development
+**Version:** 1.0.0 **Date:** 2025-11-21 **Status:** Ready for Development
 
----
+***
 
 ## 📋 Overview
 
 This document outlines the implementation plan for building the **NoTap PSP Integration SDK** - a production-ready SDK that enables Payment Service Providers to integrate NoTap authentication into their checkout flows.
 
----
+***
 
 ## 🎯 Goals
 
@@ -20,23 +22,23 @@ This document outlines the implementation plan for building the **NoTap PSP Inte
 4. **Platform Coverage** - Android, iOS, Web, REST API
 5. **White-Label Ready** - Customizable UI and branding
 
----
+***
 
 ## 📦 Deliverables
 
-| Deliverable | Platform | Status |
-|------------|----------|--------|
-| **NoTapPSP SDK** | Android (Kotlin) | ⏳ To Build |
-| **NoTapPSP SDK** | iOS (Swift) | ⏳ To Build |
-| **NoTapPSP SDK** | Web (JavaScript) | ⏳ To Build |
-| **Intent Integration** | Android | ⏳ To Build |
-| **Deep Link Handler** | Mobile & Web | ⏳ To Build |
-| **REST API Client** | Node.js/Python/Java | ⏳ To Build |
-| **Backend Endpoints** | Node.js | ⏳ To Build |
-| **Documentation** | Markdown | ✅ Complete |
-| **Example Apps** | All platforms | ⏳ To Build |
+| Deliverable            | Platform            | Status     |
+| ---------------------- | ------------------- | ---------- |
+| **NoTapPSP SDK**       | Android (Kotlin)    | ⏳ To Build |
+| **NoTapPSP SDK**       | iOS (Swift)         | ⏳ To Build |
+| **NoTapPSP SDK**       | Web (JavaScript)    | ⏳ To Build |
+| **Intent Integration** | Android             | ⏳ To Build |
+| **Deep Link Handler**  | Mobile & Web        | ⏳ To Build |
+| **REST API Client**    | Node.js/Python/Java | ⏳ To Build |
+| **Backend Endpoints**  | Node.js             | ⏳ To Build |
+| **Documentation**      | Markdown            | ✅ Complete |
+| **Example Apps**       | All platforms       | ⏳ To Build |
 
----
+***
 
 ## 🏗️ Module Structure
 
@@ -78,7 +80,7 @@ zeropay-android/
     └── square-example/              # Square integration
 ```
 
----
+***
 
 ## 🔨 Implementation Phases
 
@@ -87,6 +89,7 @@ zeropay-android/
 **Goal:** Build foundation for all integration patterns
 
 **Tasks:**
+
 1. Create `psp-sdk` module (KMP)
 2. Implement `NoTapPSP` main class
 3. Implement `PSPConfig` configuration
@@ -96,6 +99,7 @@ zeropay-android/
 7. Write unit tests (>80% coverage)
 
 **Files to Create:**
+
 ```
 psp-sdk/src/commonMain/kotlin/com/zeropay/psp/
 ├── NoTapPSP.kt                   (~300 LOC)
@@ -107,15 +111,16 @@ psp-sdk/src/commonMain/kotlin/com/zeropay/psp/
     └── PSPModels.kt              (~200 LOC)
 ```
 
-**Total Estimated:** ~1,350 LOC + tests (~1,000 LOC)
+**Total Estimated:** \~1,350 LOC + tests (\~1,000 LOC)
 
----
+***
 
 ### Phase 2: Android SDK (Week 2-3)
 
 **Goal:** Android SDK with all 4 integration patterns
 
 **Tasks:**
+
 1. Implement Android-specific `NoTapPSP`
 2. Build Intent-based integration
 3. Build Deep Link handler
@@ -124,6 +129,7 @@ psp-sdk/src/commonMain/kotlin/com/zeropay/psp/
 6. Write Android integration tests
 
 **Files to Create:**
+
 ```
 psp-sdk/src/androidMain/kotlin/com/zeropay/psp/
 ├── NoTapPSP.android.kt           (~250 LOC)
@@ -137,15 +143,16 @@ psp-sdk/src/androidMain/kotlin/com/zeropay/psp/
         └── ProgressIndicator.kt   (~100 LOC)
 ```
 
-**Total Estimated:** ~1,600 LOC + tests (~1,200 LOC)
+**Total Estimated:** \~1,600 LOC + tests (\~1,200 LOC)
 
----
+***
 
 ### Phase 3: Backend Endpoints (Week 3-4)
 
 **Goal:** PSP-specific REST API endpoints
 
 **Tasks:**
+
 1. Create `/v1/psp/session/create` endpoint
 2. Create `/v1/psp/session/submit` endpoint
 3. Create `/v1/psp/session/:id/status` endpoint
@@ -154,6 +161,7 @@ psp-sdk/src/androidMain/kotlin/com/zeropay/psp/
 6. Write API integration tests
 
 **Files to Create:**
+
 ```
 backend/routes/
 └── pspRouter.js                  (~600 LOC)
@@ -167,15 +175,16 @@ backend/services/
 └── PSPWebhookDelivery.js        (~300 LOC)
 ```
 
-**Total Estimated:** ~1,650 LOC + tests (~1,000 LOC)
+**Total Estimated:** \~1,650 LOC + tests (\~1,000 LOC)
 
----
+***
 
 ### Phase 4: Web SDK (Week 4-5)
 
 **Goal:** JavaScript SDK for web integrations
 
 **Tasks:**
+
 1. Implement JavaScript `NoTapPSP` class
 2. Build factor canvas rendering
 3. Create session polling mechanism
@@ -184,6 +193,7 @@ backend/services/
 6. Create example integration
 
 **Files to Create:**
+
 ```
 psp-sdk/src/jsMain/kotlin/com/zeropay/psp/
 ├── NoTapPSP.js                   (~400 LOC)
@@ -192,15 +202,16 @@ psp-sdk/src/jsMain/kotlin/com/zeropay/psp/
 └── DeepLinkHandler.js           (~200 LOC)
 ```
 
-**Total Estimated:** ~1,350 LOC + tests (~800 LOC)
+**Total Estimated:** \~1,350 LOC + tests (\~800 LOC)
 
----
+***
 
 ### Phase 5: Example Integrations (Week 5-6)
 
 **Goal:** Working examples for top PSPs
 
 **Tasks:**
+
 1. Build Mercado Pago Point example
 2. Build Stripe Terminal example
 3. Build Square Reader example
@@ -208,6 +219,7 @@ psp-sdk/src/jsMain/kotlin/com/zeropay/psp/
 5. Record demo videos
 
 **Files to Create:**
+
 ```
 examples/
 ├── mercadopago-example/
@@ -226,15 +238,16 @@ examples/
     └── screenshots/
 ```
 
-**Total Estimated:** ~1,500 LOC + documentation
+**Total Estimated:** \~1,500 LOC + documentation
 
----
+***
 
 ### Phase 6: iOS SDK (Week 6-8)
 
 **Goal:** iOS SDK matching Android feature parity
 
 **Tasks:**
+
 1. Implement Swift `NoTapPSP` class
 2. Build SwiftUI factor canvases
 3. Create Deep Link handler
@@ -242,6 +255,7 @@ examples/
 5. Write iOS integration tests
 
 **Files to Create:**
+
 ```
 psp-sdk/src/iosMain/swift/
 ├── NoTapPSP.swift               (~350 LOC)
@@ -250,15 +264,15 @@ psp-sdk/src/iosMain/swift/
 └── DeepLinkHandler.swift        (~200 LOC)
 ```
 
-**Total Estimated:** ~1,150 LOC + tests (~800 LOC)
+**Total Estimated:** \~1,150 LOC + tests (\~800 LOC)
 
----
+***
 
 ## 📐 Architecture Details
 
 ### NoTapPSP Class (Core)
 
-```kotlin
+````kotlin
 // File: psp-sdk/src/commonMain/kotlin/com/zeropay/psp/NoTapPSP.kt
 
 package com.zeropay.psp
@@ -589,13 +603,13 @@ data class FactorSubmission(
         return result
     }
 }
-```
+````
 
----
+***
 
 ### Intent Integration (Android)
 
-```kotlin
+````kotlin
 // File: psp-sdk/src/androidMain/kotlin/com/zeropay/psp/IntentIntegration.kt
 
 package com.zeropay.psp
@@ -855,13 +869,13 @@ sealed class IntentResult {
  * Exception thrown when NoTap app is not installed
  */
 class NoTapNotInstalledException(message: String) : Exception(message)
-```
+````
 
----
+***
 
 ### Deep Link Handler
 
-```kotlin
+````kotlin
 // File: psp-sdk/src/androidMain/kotlin/com/zeropay/psp/DeepLinkHandler.kt
 
 package com.zeropay.psp
@@ -1102,32 +1116,32 @@ sealed class DeepLinkResult {
         val message: String
     ) : DeepLinkResult()
 }
-```
+````
 
----
+***
 
 ## 📊 Success Metrics
 
 ### Integration Metrics
 
-- **Integration Time** - Target: < 3 days for 80% of PSPs
-- **Developer Satisfaction** - Target: > 4.5/5 rating
-- **Certification Rate** - Target: > 90% pass rate
+* **Integration Time** - Target: < 3 days for 80% of PSPs
+* **Developer Satisfaction** - Target: > 4.5/5 rating
+* **Certification Rate** - Target: > 90% pass rate
 
 ### Performance Metrics
 
-- **Verification Time** - Target: < 15 seconds (p95)
-- **Success Rate** - Target: > 95%
-- **Error Rate** - Target: < 0.5%
-- **Session Timeout Rate** - Target: < 2%
+* **Verification Time** - Target: < 15 seconds (p95)
+* **Success Rate** - Target: > 95%
+* **Error Rate** - Target: < 0.5%
+* **Session Timeout Rate** - Target: < 2%
 
 ### Business Metrics
 
-- **PSP Adoption** - Target: 10 PSPs in Year 1
-- **Transaction Volume** - Target: 1M transactions/month by Q4
-- **Revenue per Transaction** - Target: $0.25 average
+* **PSP Adoption** - Target: 10 PSPs in Year 1
+* **Transaction Volume** - Target: 1M transactions/month by Q4
+* **Revenue per Transaction** - Target: $0.25 average
 
----
+***
 
 ## 🚀 Next Steps
 
@@ -1141,20 +1155,20 @@ sealed class DeepLinkResult {
 8. **Beta testing with select PSPs** (Week 8-10)
 9. **Production launch** (Week 12)
 
----
+***
 
 ## 📞 Questions?
 
 Contact: support@notap.io
 
----
+***
 
 **Version History:**
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2025-11-21 | Initial implementation plan |
+| Version | Date       | Changes                     |
+| ------- | ---------- | --------------------------- |
+| 1.0.0   | 2025-11-21 | Initial implementation plan |
 
----
+***
 
 © 2025 NoTap. All rights reserved.

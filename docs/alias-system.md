@@ -1,47 +1,51 @@
+---
+hidden: true
+---
+
 # Alias System Documentation
 
 ## 📋 Table of Contents
 
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [How Aliases Work](#how-aliases-work)
-4. [Use Cases](#use-cases)
-5. [Implementation Details](#implementation-details)
-6. [Scaling & Configuration](#scaling--configuration)
-7. [Multi-Language Support](#multi-language-support)
-8. [Security](#security)
-9. [API Reference](#api-reference)
-10. [Admin Management](#admin-management)
-11. [Troubleshooting](#troubleshooting)
+1. [Overview](alias-system.md#overview)
+2. [Architecture](alias-system.md#architecture)
+3. [How Aliases Work](alias-system.md#how-aliases-work)
+4. [Use Cases](alias-system.md#use-cases)
+5. [Implementation Details](alias-system.md#implementation-details)
+6. [Scaling & Configuration](alias-system.md#scaling--configuration)
+7. [Multi-Language Support](alias-system.md#multi-language-support)
+8. [Security](alias-system.md#security)
+9. [API Reference](alias-system.md#api-reference)
+10. [Admin Management](alias-system.md#admin-management)
+11. [Troubleshooting](alias-system.md#troubleshooting)
 
----
+***
 
 ## Overview
 
 NoTap supports **three ways to identify users**:
 
-| Identifier Type | Format | Example | Status |
-|----------------|--------|---------|--------|
-| **UUID** | RFC 4122 v4 | `a1b2c3d4-5678-90ab-cdef-1234567890ab` | ✅ Primary |
-| **Alias** | word-number | `tiger-4829` | ✅ Implemented |
-| **SNS Name** | Solana Name Service | `alice.notap.sol` | ✅ Implemented |
+| Identifier Type | Format              | Example                                | Status        |
+| --------------- | ------------------- | -------------------------------------- | ------------- |
+| **UUID**        | RFC 4122 v4         | `a1b2c3d4-5678-90ab-cdef-1234567890ab` | ✅ Primary     |
+| **Alias**       | word-number         | `tiger-4829`                           | ✅ Implemented |
+| **SNS Name**    | Solana Name Service | `alice.notap.sol`                      | ✅ Implemented |
 
 All three identifiers resolve to the same user enrollment and can be used interchangeably at POS terminals.
 
 ### Why Aliases?
 
-**Problem**: UUIDs are hard to remember and type
-**Solution**: Memorable aliases like `tiger-4829`
+**Problem**: UUIDs are hard to remember and type **Solution**: Memorable aliases like `tiger-4829`
 
 **Benefits**:
-- ✅ **Memorable**: Real English words (tiger, ocean, pixel)
-- ✅ **Short**: 9-13 characters (vs 36 for UUID)
-- ✅ **Easy to speak**: "tiger dash four eight two nine"
-- ✅ **Unique**: 10 million+ combinations per language
-- ✅ **Deterministic**: Same UUID always generates same alias
-- ✅ **Multi-language**: Support for English, Spanish, Portuguese, French, etc.
 
----
+* ✅ **Memorable**: Real English words (tiger, ocean, pixel)
+* ✅ **Short**: 9-13 characters (vs 36 for UUID)
+* ✅ **Easy to speak**: "tiger dash four eight two nine"
+* ✅ **Unique**: 10 million+ combinations per language
+* ✅ **Deterministic**: Same UUID always generates same alias
+* ✅ **Multi-language**: Support for English, Spanish, Portuguese, French, etc.
+
+***
 
 ## Architecture
 
@@ -106,7 +110,7 @@ VERIFICATION FLOW (POS):
    └─ Return success/failure
 ```
 
----
+***
 
 ## How Aliases Work
 
@@ -137,26 +141,26 @@ const alias = `${word}-${number}`  // "tiger-4829"
 
 ### Properties
 
-| Property | Description |
-|----------|-------------|
-| **Deterministic** | Same UUID + language → same alias every time |
-| **Collision-resistant** | SHA-256 ensures unique mappings |
-| **One-way** | Cannot reverse alias to UUID (without database) |
-| **Scalable** | Add more words or increase digit count |
-| **Language-specific** | Different languages use different word dictionaries |
+| Property                | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| **Deterministic**       | Same UUID + language → same alias every time        |
+| **Collision-resistant** | SHA-256 ensures unique mappings                     |
+| **One-way**             | Cannot reverse alias to UUID (without database)     |
+| **Scalable**            | Add more words or increase digit count              |
+| **Language-specific**   | Different languages use different word dictionaries |
 
 ### Example Mappings
 
-| UUID | Language | Alias |
-|------|----------|-------|
-| `a1b2c3d4-5678-...` | English | `tiger-4829` |
-| `a1b2c3d4-5678-...` | Spanish | `tigre-4829` |
+| UUID                | Language   | Alias        |
+| ------------------- | ---------- | ------------ |
+| `a1b2c3d4-5678-...` | English    | `tiger-4829` |
+| `a1b2c3d4-5678-...` | Spanish    | `tigre-4829` |
 | `a1b2c3d4-5678-...` | Portuguese | `tigre-4829` |
-| `b2c3d4e5-6789-...` | English | `ocean-7156` |
+| `b2c3d4e5-6789-...` | English    | `ocean-7156` |
 
 Note: Same UUID generates **different words** but **same number** across languages.
 
----
+***
 
 ## Use Cases
 
@@ -209,7 +213,7 @@ Support: *looks up tiger-4829*
 System: ✅ Found account, proceeding with recovery
 ```
 
----
+***
 
 ## Implementation Details
 
@@ -251,22 +255,25 @@ CREATE INDEX idx_wrapped_keys_alias ON wrapped_keys(user_alias);
 **File**: `backend/services/aliasGenerator.js`
 
 Key functions:
-- `generateAlias(uuid, language, region)` - Generate alias from UUID
-- `generateAliasWithDetection(uuid, context)` - Auto-detect language
-- `isValidAlias(alias)` - Validate alias format
-- `getConfig()` - Get current configuration (cached)
-- `getWords(language, region)` - Get word dictionary (cached)
-- `clearCache()` - Force reload from database
+
+* `generateAlias(uuid, language, region)` - Generate alias from UUID
+* `generateAliasWithDetection(uuid, context)` - Auto-detect language
+* `isValidAlias(alias)` - Validate alias format
+* `getConfig()` - Get current configuration (cached)
+* `getWords(language, region)` - Get word dictionary (cached)
+* `clearCache()` - Force reload from database
 
 **Caching**:
-- Configuration cached for 5 minutes
-- Words cached for 5 minutes per language
-- Automatic refresh on expiry
-- Manual clear via admin API
+
+* Configuration cached for 5 minutes
+* Words cached for 5 minutes per language
+* Automatic refresh on expiry
+* Manual clear via admin API
 
 ### Integration Points
 
 **Enrollment** (`backend/routes/enrollmentRouter.js`):
+
 ```javascript
 // Generate alias
 const alias = await generateAliasWithDetection(uuid, {
@@ -294,6 +301,7 @@ res.json({
 ```
 
 **Verification** (`backend/routes/verificationRouter.js`):
+
 ```javascript
 async function resolveUserIdentifier(identifier) {
     // Try alias format
@@ -311,29 +319,31 @@ async function resolveUserIdentifier(identifier) {
 }
 ```
 
----
+***
 
 ## Scaling & Configuration
 
 ### Current Capacity
 
 **Default Configuration** (English, 4 digits):
-- **Words**: 1,000 (English dictionary)
-- **Digits**: 4 (0000-9999)
-- **Total combinations**: 1,000 × 10,000 = **10 million**
+
+* **Words**: 1,000 (English dictionary)
+* **Digits**: 4 (0000-9999)
+* **Total combinations**: 1,000 × 10,000 = **10 million**
 
 ### Scaling Options
 
 #### Option 1: Add More Words
 
 | Word Count | Digit Count | Total Combinations |
-|------------|-------------|-------------------|
-| 1,000 | 4 | 10 million |
-| 5,000 | 4 | 50 million |
-| 10,000 | 4 | 100 million |
-| 50,000 | 4 | 500 million |
+| ---------- | ----------- | ------------------ |
+| 1,000      | 4           | 10 million         |
+| 5,000      | 4           | 50 million         |
+| 10,000     | 4           | 100 million        |
+| 50,000     | 4           | 500 million        |
 
 **How to add words**:
+
 ```sql
 INSERT INTO alias_words (word, language, category) VALUES
     ('newword1', 'en', 'tech'),
@@ -346,18 +356,20 @@ Generator automatically uses new words (no code changes needed).
 #### Option 2: Increase Digit Count
 
 | Word Count | Digit Count | Total Combinations |
-|------------|-------------|-------------------|
-| 1,000 | 3 | 1 million |
-| 1,000 | 4 | 10 million |
-| 1,000 | 5 | 100 million |
-| 1,000 | 6 | 1 billion |
+| ---------- | ----------- | ------------------ |
+| 1,000      | 3           | 1 million          |
+| 1,000      | 4           | 10 million         |
+| 1,000      | 5           | 100 million        |
+| 1,000      | 6           | 1 billion          |
 
 **How to increase digits**:
+
 ```sql
 UPDATE alias_config SET digit_count = 5 WHERE id = 1;
 ```
 
 **Trade-offs**:
+
 ```
 tiger-4829      (10 chars) ← RECOMMENDED
 tiger-48291     (11 chars) ← Still okay
@@ -375,11 +387,13 @@ This is **far more than needed** for global scale.
 ### Configuration API
 
 **Get configuration**:
+
 ```bash
 GET /v1/admin/alias/config
 ```
 
 **Update configuration**:
+
 ```bash
 PUT /v1/admin/alias/config
 {
@@ -390,30 +404,32 @@ PUT /v1/admin/alias/config
 ```
 
 **Clear cache** (after config changes):
+
 ```bash
 POST /v1/admin/alias/cache/clear
 ```
 
----
+***
 
 ## Multi-Language Support
 
 ### Supported Languages
 
-| Language | Code | Words | Status |
-|----------|------|-------|--------|
-| **English** | en | 1,000 | ✅ Seeded |
-| **Spanish** | es | - | ⏳ Ready to seed |
-| **Portuguese** | pt | - | ⏳ Ready to seed |
-| **French** | fr | - | ⏳ Ready to seed |
-| **German** | de | - | ⏳ Ready to seed |
-| **Italian** | it | - | ⏳ Ready to seed |
-| **Japanese** | ja | - | ⏳ Ready to seed |
-| **Mandarin** | zh | - | ⏳ Ready to seed |
+| Language       | Code | Words | Status          |
+| -------------- | ---- | ----- | --------------- |
+| **English**    | en   | 1,000 | ✅ Seeded        |
+| **Spanish**    | es   | -     | ⏳ Ready to seed |
+| **Portuguese** | pt   | -     | ⏳ Ready to seed |
+| **French**     | fr   | -     | ⏳ Ready to seed |
+| **German**     | de   | -     | ⏳ Ready to seed |
+| **Italian**    | it   | -     | ⏳ Ready to seed |
+| **Japanese**   | ja   | -     | ⏳ Ready to seed |
+| **Mandarin**   | zh   | -     | ⏳ Ready to seed |
 
 ### Adding a New Language
 
 **Step 1: Seed words**
+
 ```sql
 INSERT INTO alias_words (word, language, category) VALUES
     -- Animals
@@ -429,11 +445,13 @@ INSERT INTO alias_words (word, language, category) VALUES
 ```
 
 **Step 2: Set as default** (optional)
+
 ```sql
 UPDATE alias_config SET default_language = 'es' WHERE id = 1;
 ```
 
 **Step 3: Clear cache**
+
 ```bash
 POST /v1/admin/alias/cache/clear
 ```
@@ -441,6 +459,7 @@ POST /v1/admin/alias/cache/clear
 ### Language Detection
 
 **Option A: User specifies** (recommended):
+
 ```json
 POST /v1/enrollment/store
 {
@@ -452,12 +471,14 @@ POST /v1/enrollment/store
 ```
 
 **Option B: Auto-detect from IP** (future feature):
+
 ```javascript
 const detected = await detectLanguageFromIP(req.ip);
 // Returns: { language: 'es', region: 'MX' }
 ```
 
 **Option C: Fallback to default**:
+
 ```javascript
 const language = req.body.language || config.default_language;
 ```
@@ -466,16 +487,17 @@ const language = req.body.language || config.default_language;
 
 Some languages have regional differences:
 
-| Language | Region | Example Words |
-|----------|--------|---------------|
-| English | US | truck, awesome, elevator |
-| English | GB | lorry, brilliant, lift |
-| Spanish | MX | coche, camion |
-| Spanish | ES | carro, camión |
-| Portuguese | BR | ônibus, trem |
-| Portuguese | PT | autocarro, comboio |
+| Language   | Region | Example Words            |
+| ---------- | ------ | ------------------------ |
+| English    | US     | truck, awesome, elevator |
+| English    | GB     | lorry, brilliant, lift   |
+| Spanish    | MX     | coche, camion            |
+| Spanish    | ES     | carro, camión            |
+| Portuguese | BR     | ônibus, trem             |
+| Portuguese | PT     | autocarro, comboio       |
 
 **Usage**:
+
 ```json
 {
     "language": "en",
@@ -483,25 +505,26 @@ Some languages have regional differences:
 }
 ```
 
----
+***
 
 ## Security
 
 ### What is Protected?
 
-| Data | Hashed? | Encrypted? | Stored As | Searchable? |
-|------|---------|-----------|-----------|-------------|
-| **UUID** | ❌ | ❌ | Plain text | ✅ |
-| **Alias** | ❌ | ❌ | Plain text | ✅ |
-| **SNS Name** | ❌ | ❌ | Plain text | ✅ |
-| **Factor Digests** | ✅ SHA-256 | ✅ Double encryption | Encrypted | ❌ |
-| **Wrapped Key** | N/A | ✅ KMS | Encrypted | ❌ |
+| Data               | Hashed?   | Encrypted?          | Stored As  | Searchable? |
+| ------------------ | --------- | ------------------- | ---------- | ----------- |
+| **UUID**           | ❌         | ❌                   | Plain text | ✅           |
+| **Alias**          | ❌         | ❌                   | Plain text | ✅           |
+| **SNS Name**       | ❌         | ❌                   | Plain text | ✅           |
+| **Factor Digests** | ✅ SHA-256 | ✅ Double encryption | Encrypted  | ❌           |
+| **Wrapped Key**    | N/A       | ✅ KMS               | Encrypted  | ❌           |
 
 ### Why Aliases Are Not Hashed
 
 **Aliases are PUBLIC IDENTIFIERS, not secrets.**
 
 Analogy:
+
 ```
 Banking System:
 ├─ Account Number (12345678) = Public identifier → UUID
@@ -515,24 +538,22 @@ You can identify the account with any of the first three, but you need the PIN t
 ### Security Properties
 
 1. **Deterministic Generation**:
-   - SHA-256 ensures same UUID → same alias
-   - One-way function: cannot reverse alias to UUID without database
-
+   * SHA-256 ensures same UUID → same alias
+   * One-way function: cannot reverse alias to UUID without database
 2. **Database Lookup Required**:
-   - Even knowing alias format, attacker cannot generate valid aliases
-   - Must query database to resolve alias → UUID
-
+   * Even knowing alias format, attacker cannot generate valid aliases
+   * Must query database to resolve alias → UUID
 3. **Rate Limiting**:
-   - Verification endpoints rate-limited
-   - Prevents brute-force enumeration of aliases
-
+   * Verification endpoints rate-limited
+   * Prevents brute-force enumeration of aliases
 4. **Factor Verification Required**:
-   - Knowing alias doesn't grant access
-   - Must provide correct factors (PIN, biometrics, etc.)
+   * Knowing alias doesn't grant access
+   * Must provide correct factors (PIN, biometrics, etc.)
 
 ### Collision Resistance
 
 **Probability of collision**:
+
 ```
 P(collision) = 1 - e^(-n²/(2m))
 
@@ -550,13 +571,14 @@ Solution: Scale to 10,000 words × 10,000 numbers = 100M combinations
 ```
 
 **Database constraint prevents actual collisions**:
+
 ```sql
 ALTER TABLE wrapped_keys ADD CONSTRAINT unique_user_alias UNIQUE (user_alias);
 ```
 
 If collision occurs during generation (extremely rare), enrollment fails gracefully.
 
----
+***
 
 ## API Reference
 
@@ -630,18 +652,20 @@ Response:
 }
 ```
 
----
+***
 
 ## Admin Management
 
 ### Word Management
 
 **List words**:
+
 ```bash
 GET /v1/admin/alias/words?language=en&category=animals&limit=100
 ```
 
 **Add word**:
+
 ```bash
 POST /v1/admin/alias/words
 {
@@ -652,6 +676,7 @@ POST /v1/admin/alias/words
 ```
 
 **Update word** (activate/deactivate):
+
 ```bash
 PUT /v1/admin/alias/words/123
 {
@@ -661,6 +686,7 @@ PUT /v1/admin/alias/words/123
 ```
 
 **Delete word**:
+
 ```bash
 DELETE /v1/admin/alias/words/123
 ```
@@ -668,6 +694,7 @@ DELETE /v1/admin/alias/words/123
 ### Statistics
 
 **Get alias statistics**:
+
 ```bash
 GET /v1/admin/alias/stats
 
@@ -697,7 +724,7 @@ Response:
 }
 ```
 
----
+***
 
 ## Troubleshooting
 
@@ -706,11 +733,13 @@ Response:
 **Symptom**: Enrollment succeeds but `alias` is null
 
 **Causes**:
+
 1. No active words for language
 2. Database connection issue
 3. Invalid UUID format
 
 **Solution**:
+
 ```bash
 # Check word count
 SELECT COUNT(*) FROM alias_words WHERE language = 'en' AND active = TRUE;
@@ -726,11 +755,13 @@ psql -U zeropay_backend -d zeropay < backend/database/migrations/007_add_alias_s
 **Symptom**: User enters alias at POS, verification fails with "User not found"
 
 **Causes**:
+
 1. Alias not in database (enrollment didn't store it)
 2. Case sensitivity issue
 3. Database index missing
 
 **Solution**:
+
 ```bash
 # Check if alias exists
 SELECT user_uuid, user_alias FROM wrapped_keys WHERE user_alias = 'tiger-4829';
@@ -751,6 +782,7 @@ CREATE INDEX idx_wrapped_keys_alias ON wrapped_keys(user_alias);
 **Cause**: SHA-256 collision (extremely rare but possible)
 
 **Solution**: This is automatically handled by retry logic. If persistent:
+
 ```sql
 # Check for duplicate
 SELECT user_uuid, user_alias FROM wrapped_keys WHERE user_alias = 'tiger-4829';
@@ -766,6 +798,7 @@ UPDATE alias_config SET digit_count = 5 WHERE id = 1;
 **Cause**: Incorrect language detection or wrong default
 
 **Solution**:
+
 ```sql
 # Check default language
 SELECT default_language FROM alias_config WHERE id = 1;
@@ -774,19 +807,21 @@ SELECT default_language FROM alias_config WHERE id = 1;
 UPDATE alias_config SET default_language = 'en' WHERE id = 1;
 ```
 
----
+***
 
 ## Migration Guide
 
 ### From No Aliases to Aliases
 
 **Step 1: Run migration**
+
 ```bash
 cd backend/database/migrations
 psql -U zeropay_backend -d zeropay < 007_add_alias_system.sql
 ```
 
 **Step 2: Verify**
+
 ```sql
 SELECT COUNT(*) FROM alias_words WHERE language = 'en';
 -- Should return ~1000
@@ -796,6 +831,7 @@ SELECT * FROM alias_config WHERE id = 1;
 ```
 
 **Step 3: Backfill existing users** (optional)
+
 ```javascript
 // backend/scripts/backfill-aliases.js
 const { pool } = require('../database/database');
@@ -826,6 +862,7 @@ backfillAliases();
 **Step 4: Update clients**
 
 Android SDK:
+
 ```kotlin
 // After enrollment, display alias to user
 if (response.alias != null) {
@@ -835,13 +872,14 @@ if (response.alias != null) {
 }
 ```
 
----
+***
 
 ## Performance
 
 ### Benchmarks
 
 **Alias Generation** (1000 iterations):
+
 ```
 Average: 2.3ms
 Median: 2.1ms
@@ -850,6 +888,7 @@ P99: 5.2ms
 ```
 
 **Alias Resolution** (1000 iterations):
+
 ```
 Average: 1.8ms (with database query)
 Median: 1.6ms
@@ -858,6 +897,7 @@ P99: 4.7ms
 ```
 
 **Cache Performance**:
+
 ```
 Cold cache (first request): 15ms (loads from database)
 Warm cache (subsequent): 0.5ms (in-memory)
@@ -867,63 +907,66 @@ Cache TTL: 5 minutes
 ### Optimization Tips
 
 1. **Preload cache at startup**:
+
 ```javascript
 const { preloadCache } = require('./services/aliasGenerator');
 await preloadCache(['en', 'es', 'pt']);  // Preload common languages
 ```
 
 2. **Use database connection pooling** (already configured)
-
 3. **Monitor cache hit rate**:
+
 ```bash
 GET /v1/admin/alias/stats
 ```
 
----
+***
 
 ## Future Enhancements
 
 ### Planned Features
 
-1. **User-customizable aliases**:
-   ```
-   User: "Can I change my alias to 'dragon-1234'?"
-   System: *checks availability* → "Available! Alias updated."
-   ```
+1.  **User-customizable aliases**:
 
-2. **QR codes for aliases**:
-   ```
-   Show QR code encoding "tiger-4829" → Faster POS entry
-   ```
+    ```
+    User: "Can I change my alias to 'dragon-1234'?"
+    System: *checks availability* → "Available! Alias updated."
+    ```
+2.  **QR codes for aliases**:
 
-3. **Emoji aliases** (fun mode):
-   ```
-   tiger-4829 → 🐯-4829
-   ocean-7156 → 🌊-7156
-   ```
+    ```
+    Show QR code encoding "tiger-4829" → Faster POS entry
+    ```
+3.  **Emoji aliases** (fun mode):
 
-4. **Vanity aliases** (premium feature):
-   ```
-   User pays $5/year for custom alias: "john-2025"
-   ```
+    ```
+    tiger-4829 → 🐯-4829
+    ocean-7156 → 🌊-7156
+    ```
+4.  **Vanity aliases** (premium feature):
 
-5. **Alias expiration & renewal**:
-   ```
-   Alias expires after 1 year → Prompt for renewal
-   ```
+    ```
+    User pays $5/year for custom alias: "john-2025"
+    ```
+5.  **Alias expiration & renewal**:
 
----
+    ```
+    Alias expires after 1 year → Prompt for renewal
+    ```
+
+***
 
 ## Conclusion
 
 The alias system provides a **memorable, user-friendly alternative to UUIDs** while maintaining:
-- ✅ **Security**: Aliases are public identifiers, factors remain protected
-- ✅ **Scalability**: Add words or digits to grow capacity
-- ✅ **Flexibility**: Multi-language support for global deployment
-- ✅ **Simplicity**: Deterministic generation, easy to resolve
+
+* ✅ **Security**: Aliases are public identifiers, factors remain protected
+* ✅ **Scalability**: Add words or digits to grow capacity
+* ✅ **Flexibility**: Multi-language support for global deployment
+* ✅ **Simplicity**: Deterministic generation, easy to resolve
 
 **Result**: Users can authenticate at POS terminals using friendly IDs like `tiger-4829` instead of long UUIDs! 🎯
 
----
+***
 
-**Questions?** See [Troubleshooting](#troubleshooting) or contact support.
+**Questions?** See [Troubleshooting](alias-system.md#troubleshooting) or contact support.

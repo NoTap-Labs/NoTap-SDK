@@ -1,22 +1,25 @@
+---
+hidden: true
+---
+
 # Test Safeguard Strategy - Ensuring Tests Evolve With Codebase
 
-**Date:** 2025-12-24
-**Purpose:** Prevent test/code divergence through automated safeguards
-**Status:** Mandatory Implementation
+**Date:** 2025-12-24 **Purpose:** Prevent test/code divergence through automated safeguards **Status:** Mandatory Implementation
 
----
+***
 
 ## 🚨 The Problem
 
 **Observed Pattern:**
-- Production code changes (new parameters, validation rules, security fixes)
-- Tests don't get updated
-- CI/CD fails weeks/months later
-- Hours wasted debugging obvious mismatches
+
+* Production code changes (new parameters, validation rules, security fixes)
+* Tests don't get updated
+* CI/CD fails weeks/months later
+* Hours wasted debugging obvious mismatches
 
 **Root Cause:** No automated mechanism to detect when tests need updates
 
----
+***
 
 ## 🛡️ Multi-Layer Safeguard Strategy
 
@@ -95,13 +98,14 @@ exit 0
 ```
 
 **Installation:**
+
 ```bash
 # One-time setup
 cp documentation/07-testing/pre-commit-hook.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
----
+***
 
 ### Layer 2: CI/CD Test Compilation Check (Build-Time Detection)
 
@@ -162,11 +166,12 @@ jobs:
           exit 1
 ```
 
----
+***
 
 ### Layer 3: Test Coverage Enforcement (PR Requirement)
 
 **GitHub Branch Protection Rule:**
+
 ```yaml
 # .github/workflows/coverage-check.yml
 name: Test Coverage Check
@@ -205,7 +210,7 @@ jobs:
           echo "✅ Coverage checks passed"
 ```
 
----
+***
 
 ### Layer 4: Automated Test Review Comments (PR Automation)
 
@@ -279,13 +284,13 @@ jobs:
             }
 ```
 
----
+***
 
 ### Layer 5: Test Signature Validation (Runtime Detection)
 
 **Test Helper:** `test-utils/signature-validator.js`
 
-```javascript
+````javascript
 /**
  * Validates that test mocks match production signatures
  *
@@ -332,9 +337,9 @@ function validateSignature(ProductionClass, testParams) {
 }
 
 module.exports = { validateSignature };
-```
+````
 
----
+***
 
 ### Layer 6: Documentation Links in Code (Developer Reminder)
 
@@ -364,7 +369,7 @@ data class PSPConfig(
 )
 ```
 
----
+***
 
 ### Layer 7: Periodic Test Audit (Monthly Maintenance)
 
@@ -429,57 +434,64 @@ jobs:
             });
 ```
 
----
+***
 
 ## 📋 Implementation Checklist
 
 ### Immediate (Next Commit):
-- [ ] Create TEST_CREATION_PATTERNS.md
-- [ ] Create TEST_SAFEGUARD_STRATEGY.md (this file)
-- [ ] Add pre-commit hook template
-- [ ] Update CLAUDE.md with safeguard references
+
+* [ ] Create TEST\_CREATION\_PATTERNS.md
+* [ ] Create TEST\_SAFEGUARD\_STRATEGY.md (this file)
+* [ ] Add pre-commit hook template
+* [ ] Update CLAUDE.md with safeguard references
 
 ### Short Term (This Week):
-- [ ] Implement test compilation check in CI/CD
-- [ ] Add test review bot to GitHub Actions
-- [ ] Create signature validation test utility
-- [ ] Add documentation links to top 10 most-changed classes
+
+* [ ] Implement test compilation check in CI/CD
+* [ ] Add test review bot to GitHub Actions
+* [ ] Create signature validation test utility
+* [ ] Add documentation links to top 10 most-changed classes
 
 ### Medium Term (This Month):
-- [ ] Enable branch protection requiring test compilation
-- [ ] Implement coverage enforcement
-- [ ] Set up monthly test audit
-- [ ] Train team on new safeguard processes
+
+* [ ] Enable branch protection requiring test compilation
+* [ ] Implement coverage enforcement
+* [ ] Set up monthly test audit
+* [ ] Train team on new safeguard processes
 
 ### Long Term (Ongoing):
-- [ ] Monitor safeguard effectiveness
-- [ ] Adjust thresholds based on team feedback
-- [ ] Add more automated checks as patterns emerge
-- [ ] Document lessons learned
 
----
+* [ ] Monitor safeguard effectiveness
+* [ ] Adjust thresholds based on team feedback
+* [ ] Add more automated checks as patterns emerge
+* [ ] Document lessons learned
+
+***
 
 ## 🎯 Success Metrics
 
 ### Before Safeguards (Current State):
-- ❌ 23 merchant test failures (missing parameters)
-- ❌ 6 PSP-SDK test failures (outdated timestamps, signatures)
-- ❌ 7 PSP-SDK-Web test failures (navigation mocking, API key validation)
-- ❌ Tests lag behind code by weeks/months
-- ❌ Hours wasted debugging obvious mismatches
+
+* ❌ 23 merchant test failures (missing parameters)
+* ❌ 6 PSP-SDK test failures (outdated timestamps, signatures)
+* ❌ 7 PSP-SDK-Web test failures (navigation mocking, API key validation)
+* ❌ Tests lag behind code by weeks/months
+* ❌ Hours wasted debugging obvious mismatches
 
 ### After Safeguards (Target State):
-- ✅ 100% test compilation rate
-- ✅ Tests updated in same commit as code changes
-- ✅ Automated detection of test/code mismatches
-- ✅ Zero "forgotten test update" incidents
-- ✅ <5 minutes to detect test issues (vs hours/days)
 
----
+* ✅ 100% test compilation rate
+* ✅ Tests updated in same commit as code changes
+* ✅ Automated detection of test/code mismatches
+* ✅ Zero "forgotten test update" incidents
+* ✅ <5 minutes to detect test issues (vs hours/days)
+
+***
 
 ## 🔧 Quick Reference
 
 **For Developers:**
+
 ```bash
 # Before committing code changes:
 1. Run tests: npm test / ./gradlew test
@@ -491,6 +503,7 @@ jobs:
 ```
 
 **For Reviewers:**
+
 ```markdown
 # PR Review Checklist:
 - [ ] Production code changes?
@@ -502,34 +515,33 @@ jobs:
   - [ ] Are signatures up to date?
 ```
 
----
+***
 
 ## 📊 Safeguard Layer Summary
 
-| Layer | Detection Time | Automation Level | Effectiveness |
-|-------|----------------|------------------|---------------|
-| 1. Pre-commit Hook | Immediate | Semi-automated | High (prevents commits) |
-| 2. CI/CD Compilation | Build-time | Fully automated | High (blocks PRs) |
-| 3. Coverage Enforcement | PR-time | Fully automated | Medium (ensures coverage) |
-| 4. Test Review Bot | PR-time | Fully automated | Medium (reminders) |
-| 5. Signature Validation | Test runtime | Manual (opt-in) | Medium (catches mismatches) |
-| 6. Code Documentation | Development | Manual | Low (awareness) |
-| 7. Monthly Audit | Scheduled | Fully automated | Low (cleanup) |
+| Layer                   | Detection Time | Automation Level | Effectiveness               |
+| ----------------------- | -------------- | ---------------- | --------------------------- |
+| 1. Pre-commit Hook      | Immediate      | Semi-automated   | High (prevents commits)     |
+| 2. CI/CD Compilation    | Build-time     | Fully automated  | High (blocks PRs)           |
+| 3. Coverage Enforcement | PR-time        | Fully automated  | Medium (ensures coverage)   |
+| 4. Test Review Bot      | PR-time        | Fully automated  | Medium (reminders)          |
+| 5. Signature Validation | Test runtime   | Manual (opt-in)  | Medium (catches mismatches) |
+| 6. Code Documentation   | Development    | Manual           | Low (awareness)             |
+| 7. Monthly Audit        | Scheduled      | Fully automated  | Low (cleanup)               |
 
----
+***
 
 ## 💡 Key Insight
 
 **The best safeguard is culture:**
-- Train developers to update tests with code
-- Make test updates part of definition of done
-- Celebrate good test coverage in code reviews
-- Make failing tests visible and urgent
+
+* Train developers to update tests with code
+* Make test updates part of definition of done
+* Celebrate good test coverage in code reviews
+* Make failing tests visible and urgent
 
 **But automation catches what culture misses.**
 
----
+***
 
-**Last Updated:** 2025-12-24
-**Status:** Implementation In Progress
-**Owner:** Development Team
+**Last Updated:** 2025-12-24 **Status:** Implementation In Progress **Owner:** Development Team

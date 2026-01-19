@@ -1,27 +1,32 @@
+---
+hidden: true
+---
+
 # Railway Deployment Configuration
 
 **CRITICAL:** This document explains the Railway deployment configuration to prevent recurring deployment failures.
 
 **Last Updated:** 2025-12-28
 
----
+***
 
 ## 🌐 Production API URL
 
 > ⚠️ **CRITICAL:** Always use the correct API URL!
 
-| Environment | URL | Notes |
-|-------------|-----|-------|
-| **Production** | `https://api.notap.io` | ✅ USE THIS |
-| ~~Railway Internal~~ | ~~`*.railway.app`~~ | ❌ DO NOT USE |
+| Environment          | URL                    | Notes        |
+| -------------------- | ---------------------- | ------------ |
+| **Production**       | `https://api.notap.io` | ✅ USE THIS   |
+| ~~Railway Internal~~ | ~~`*.railway.app`~~    | ❌ DO NOT USE |
 
 **Example API Call:**
+
 ```bash
 curl https://api.notap.io/health
 curl https://api.notap.io/v1/auth/developer/register -X POST -H "Content-Type: application/json" -d '{...}'
 ```
 
----
+***
 
 ## ⚠️ Common Deployment Issues
 
@@ -35,7 +40,7 @@ curl https://api.notap.io/v1/auth/developer/register -X POST -H "Content-Type: a
 
 **Prevention:** NEVER delete or modify `railway.json` without checking this documentation
 
----
+***
 
 ## 📋 Required Configuration Files
 
@@ -74,17 +79,17 @@ curl https://api.notap.io/v1/auth/developer/register -X POST -H "Content-Type: a
 
 **Key Fields Explained:**
 
-| Field | Value | Purpose |
-|-------|-------|---------|
-| `rootDirectory` | `"backend"` | **CRITICAL** - Tells Railway where the Node.js app is located |
-| `builder` | `"DOCKERFILE"` | Use Docker for builds |
-| `dockerfilePath` | `"backend/Dockerfile"` | Path to Dockerfile from project root |
-| `buildCommand` | `"npm install && node scripts/setupDatabase.js"` | Install deps + setup DB |
-| `startCommand` | `"npm start"` | Command to start server (runs from backend/) |
-| `restartPolicyType` | `"ON_FAILURE"` | Auto-restart on crashes |
-| `restartPolicyMaxRetries` | `10` | Max restart attempts |
+| Field                     | Value                                            | Purpose                                                       |
+| ------------------------- | ------------------------------------------------ | ------------------------------------------------------------- |
+| `rootDirectory`           | `"backend"`                                      | **CRITICAL** - Tells Railway where the Node.js app is located |
+| `builder`                 | `"DOCKERFILE"`                                   | Use Docker for builds                                         |
+| `dockerfilePath`          | `"backend/Dockerfile"`                           | Path to Dockerfile from project root                          |
+| `buildCommand`            | `"npm install && node scripts/setupDatabase.js"` | Install deps + setup DB                                       |
+| `startCommand`            | `"npm start"`                                    | Command to start server (runs from backend/)                  |
+| `restartPolicyType`       | `"ON_FAILURE"`                                   | Auto-restart on crashes                                       |
+| `restartPolicyMaxRetries` | `10`                                             | Max restart attempts                                          |
 
----
+***
 
 ### 2. `backend/Dockerfile`
 
@@ -111,7 +116,7 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
----
+***
 
 ### 3. `backend/package.json`
 
@@ -127,7 +132,7 @@ CMD ["npm", "start"]
 }
 ```
 
----
+***
 
 ## 🚀 Deployment Process
 
@@ -163,7 +168,7 @@ npx railway logs
 railway redeploy
 ```
 
----
+***
 
 ## 🔍 Troubleshooting Deployments
 
@@ -182,14 +187,14 @@ railway logs
 
 ### Common Errors and Fixes
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| "Can't find root directory" | Missing/incorrect `rootDirectory` in railway.json | Add `"rootDirectory": "backend"` |
-| "Dockerfile not found" | Wrong `dockerfilePath` | Ensure `"dockerfilePath": "backend/Dockerfile"` |
-| "npm: command not found" | Wrong base image | Use `node:20-alpine` in Dockerfile |
-| "Module not found" | Dependencies not installed | Check `buildCommand` includes `npm install` |
-| SyntaxError on startup | Code syntax error | Fix error and redeploy |
-| Port binding error | Wrong PORT env var | Railway auto-sets PORT, use `process.env.PORT` |
+| Error                       | Cause                                             | Fix                                             |
+| --------------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| "Can't find root directory" | Missing/incorrect `rootDirectory` in railway.json | Add `"rootDirectory": "backend"`                |
+| "Dockerfile not found"      | Wrong `dockerfilePath`                            | Ensure `"dockerfilePath": "backend/Dockerfile"` |
+| "npm: command not found"    | Wrong base image                                  | Use `node:20-alpine` in Dockerfile              |
+| "Module not found"          | Dependencies not installed                        | Check `buildCommand` includes `npm install`     |
+| SyntaxError on startup      | Code syntax error                                 | Fix error and redeploy                          |
+| Port binding error          | Wrong PORT env var                                | Railway auto-sets PORT, use `process.env.PORT`  |
 
 ### Emergency Rollback
 
@@ -201,7 +206,7 @@ railway deployments
 railway rollback <deployment-id>
 ```
 
----
+***
 
 ## 🔐 Environment Variables
 
@@ -255,7 +260,7 @@ railway variables set JWT_SECRET=your_secret_here
 # Project → Environment → Variables
 ```
 
----
+***
 
 ## 📊 Monitoring Deployment
 
@@ -284,13 +289,14 @@ railway logs | tail -100
 railway logs | grep "ERROR\|❌"
 ```
 
----
+***
 
 ## 🔄 CI/CD Pipeline
 
 **Current Setup:** Push to master → Railway auto-deploys
 
 **Build Steps:**
+
 1. Railway detects push to master
 2. Reads `railway.json` configuration
 3. Changes to `backend/` directory (rootDirectory)
@@ -299,33 +305,33 @@ railway logs | grep "ERROR\|❌"
 6. Starts container with `startCommand`: `npm start`
 7. Health checks on port specified by `PORT` env var
 
-**Build Time:** ~2-3 minutes  
+**Build Time:** \~2-3 minutes\
 **Zero-Downtime:** Yes (new container starts before old one stops)
 
----
+***
 
 ## 📝 Deployment Checklist
 
 Before deploying:
 
-- [ ] Code compiles and tests pass locally
-- [ ] `railway.json` has `rootDirectory: "backend"`
-- [ ] Environment variables are set in Railway
-- [ ] Database migrations are ready (if needed)
-- [ ] No hardcoded secrets in code
-- [ ] `.env.example` is updated
-- [ ] API documentation is updated
-- [ ] Endpoint count is updated in `API_ENDPOINTS_INVENTORY.md`
+* [ ] Code compiles and tests pass locally
+* [ ] `railway.json` has `rootDirectory: "backend"`
+* [ ] Environment variables are set in Railway
+* [ ] Database migrations are ready (if needed)
+* [ ] No hardcoded secrets in code
+* [ ] `.env.example` is updated
+* [ ] API documentation is updated
+* [ ] Endpoint count is updated in `API_ENDPOINTS_INVENTORY.md`
 
 After deploying:
 
-- [ ] Check Railway logs for errors
-- [ ] Test critical endpoints
-- [ ] Run database migrations (if needed)
-- [ ] Monitor for crashes/restarts
-- [ ] Update deployment status documentation
+* [ ] Check Railway logs for errors
+* [ ] Test critical endpoints
+* [ ] Run database migrations (if needed)
+* [ ] Monitor for crashes/restarts
+* [ ] Update deployment status documentation
 
----
+***
 
 ## 🛠️ Maintenance
 
@@ -365,15 +371,15 @@ git commit -m "Scale to 2 replicas"
 git push origin master
 ```
 
----
+***
 
 ## 📚 Related Documentation
 
-- [API Endpoints Inventory](./API_ENDPOINTS_INVENTORY.md) - Complete endpoint catalog
-- [User Authentication API](./USER_AUTHENTICATION_API.md) - Auth endpoints documentation
-- [Deployment Status](./DEPLOYMENT_STATUS.md) - Current deployment info
+* [API Endpoints Inventory](API_ENDPOINTS_INVENTORY.md) - Complete endpoint catalog
+* [User Authentication API](USER_AUTHENTICATION_API.md) - Auth endpoints documentation
+* [Deployment Status](DEPLOYMENT_STATUS.md) - Current deployment info
 
----
+***
 
 ## 🚨 Critical Reminders
 
@@ -383,7 +389,7 @@ git push origin master
 4. **ALWAYS run migrations after schema changes**
 5. **ALWAYS update documentation when adding endpoints**
 
----
+***
 
-**Last Updated:** 2025-12-27  
+**Last Updated:** 2025-12-27\
 **Next Review:** When deployment process changes

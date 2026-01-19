@@ -1,31 +1,33 @@
+---
+hidden: true
+---
+
 # Admin Audit API Documentation
 
-**Version:** 1.0.0
-**Last Updated:** 2025-11-17
-**Base URL:** `https://api.notap.io/api/admin/audit`
+**Version:** 1.0.0 **Last Updated:** 2025-11-17 **Base URL:** `https://api.notap.io/api/admin/audit`
 
----
+***
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Authentication](#authentication)
-- [Rate Limiting](#rate-limiting)
-- [API Endpoints](#api-endpoints)
-  - [Query Logs](#query-logs)
-  - [User Timeline](#user-timeline)
-  - [IP Address History](#ip-address-history)
-  - [Security Events](#security-events)
-  - [Compliance Reports](#compliance-reports)
-  - [Export Logs](#export-logs)
-  - [Statistics](#statistics)
-- [Event Types](#event-types)
-- [Severity Levels](#severity-levels)
-- [Data Models](#data-models)
-- [Error Handling](#error-handling)
-- [Best Practices](#best-practices)
+* [Overview](ADMIN_AUDIT_API.md#overview)
+* [Authentication](ADMIN_AUDIT_API.md#authentication)
+* [Rate Limiting](ADMIN_AUDIT_API.md#rate-limiting)
+* [API Endpoints](ADMIN_AUDIT_API.md#api-endpoints)
+  * [Query Logs](ADMIN_AUDIT_API.md#query-logs)
+  * [User Timeline](ADMIN_AUDIT_API.md#user-timeline)
+  * [IP Address History](ADMIN_AUDIT_API.md#ip-address-history)
+  * [Security Events](ADMIN_AUDIT_API.md#security-events)
+  * [Compliance Reports](ADMIN_AUDIT_API.md#compliance-reports)
+  * [Export Logs](ADMIN_AUDIT_API.md#export-logs)
+  * [Statistics](ADMIN_AUDIT_API.md#statistics)
+* [Event Types](ADMIN_AUDIT_API.md#event-types)
+* [Severity Levels](ADMIN_AUDIT_API.md#severity-levels)
+* [Data Models](ADMIN_AUDIT_API.md#data-models)
+* [Error Handling](ADMIN_AUDIT_API.md#error-handling)
+* [Best Practices](ADMIN_AUDIT_API.md#best-practices)
 
----
+***
 
 ## Overview
 
@@ -33,14 +35,14 @@ The NoTap Admin Audit API provides comprehensive audit logging, compliance repor
 
 ### Key Features
 
-- ✅ **Immutable Audit Logs** - All events permanently logged (PostgreSQL)
-- ✅ **Comprehensive Event Types** - 30+ event types across all system areas
-- ✅ **Severity Classification** - 5-tier severity system (info, low, medium, high, critical)
-- ✅ **Advanced Filtering** - Query by event type, user, IP, date range, severity
-- ✅ **GDPR Compliance** - GDPR compliance reports with data access tracking
-- ✅ **PSD3 SCA Compliance** - PSD3 Strong Customer Authentication audit reports
-- ✅ **Export Capabilities** - CSV/JSON export for external analysis
-- ✅ **Real-Time Statistics** - Event distribution, severity trends, top events
+* ✅ **Immutable Audit Logs** - All events permanently logged (PostgreSQL)
+* ✅ **Comprehensive Event Types** - 30+ event types across all system areas
+* ✅ **Severity Classification** - 5-tier severity system (info, low, medium, high, critical)
+* ✅ **Advanced Filtering** - Query by event type, user, IP, date range, severity
+* ✅ **GDPR Compliance** - GDPR compliance reports with data access tracking
+* ✅ **PSD3 SCA Compliance** - PSD3 Strong Customer Authentication audit reports
+* ✅ **Export Capabilities** - CSV/JSON export for external analysis
+* ✅ **Real-Time Statistics** - Event distribution, severity trends, top events
 
 ### Use Cases
 
@@ -50,7 +52,7 @@ The NoTap Admin Audit API provides comprehensive audit logging, compliance repor
 4. **Audit Trail** - Complete audit trail for all administrative actions
 5. **Threat Intelligence** - Identify attack patterns, brute force attempts, geographic anomalies
 
----
+***
 
 ## Authentication
 
@@ -83,23 +85,24 @@ ADMIN_API_KEY=your_secure_admin_key_here
 ```
 
 **Security Notes:**
-- Admin API keys grant full read access to all audit logs
-- Rotate keys regularly (recommended: every 90 days)
-- Never commit keys to version control
-- Use separate keys for production and staging environments
-- Log all admin API key usage for accountability
 
----
+* Admin API keys grant full read access to all audit logs
+* Rotate keys regularly (recommended: every 90 days)
+* Never commit keys to version control
+* Use separate keys for production and staging environments
+* Log all admin API key usage for accountability
+
+***
 
 ## Rate Limiting
 
 ### Rate Limiter Tiers
 
-| Limiter | Limit | Window | Endpoints |
-|---------|-------|--------|-----------|
+| Limiter            | Limit   | Window | Endpoints                                                 |
+| ------------------ | ------- | ------ | --------------------------------------------------------- |
 | **Standard Audit** | 100 req | 15 min | Log queries, timeline, stats, security events, IP queries |
-| **Export Audit** | 10 req | 15 min | CSV/JSON export (resource-intensive) |
-| **Compliance** | 20 req | 15 min | GDPR/PSD3 compliance reports |
+| **Export Audit**   | 10 req  | 15 min | CSV/JSON export (resource-intensive)                      |
+| **Compliance**     | 20 req  | 15 min | GDPR/PSD3 compliance reports                              |
 
 ### Rate Limit Headers
 
@@ -127,11 +130,12 @@ Content-Type: application/json
 ### Whitelisted IPs
 
 The following IPs are **exempt** from rate limiting:
-- `127.0.0.1` (localhost)
-- `::1` (IPv6 localhost)
-- Additional IPs configurable via environment
 
----
+* `127.0.0.1` (localhost)
+* `::1` (IPv6 localhost)
+* Additional IPs configurable via environment
+
+***
 
 ## API Endpoints
 
@@ -151,18 +155,18 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **Query Parameters**
 
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `event_type` | string | Filter by event type | `FAILED_LOGIN_ATTEMPT` |
-| `uuid` | string | Filter by user UUID | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` |
-| `ip_address` | string | Filter by IP address | `203.0.113.42` |
-| `start_date` | ISO 8601 | Start of date range | `2025-11-01T00:00:00Z` |
-| `end_date` | ISO 8601 | End of date range | `2025-11-17T23:59:59Z` |
-| `severity` | string | Filter by severity | `high`, `critical` |
-| `limit` | integer | Results per page (max 1000) | `100` |
-| `offset` | integer | Pagination offset | `0` |
-| `sort` | string | Sort field | `created_at`, `event_type`, `severity` |
-| `order` | string | Sort order | `asc`, `desc` |
+| Parameter    | Type     | Description                 | Example                                |
+| ------------ | -------- | --------------------------- | -------------------------------------- |
+| `event_type` | string   | Filter by event type        | `FAILED_LOGIN_ATTEMPT`                 |
+| `uuid`       | string   | Filter by user UUID         | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` |
+| `ip_address` | string   | Filter by IP address        | `203.0.113.42`                         |
+| `start_date` | ISO 8601 | Start of date range         | `2025-11-01T00:00:00Z`                 |
+| `end_date`   | ISO 8601 | End of date range           | `2025-11-17T23:59:59Z`                 |
+| `severity`   | string   | Filter by severity          | `high`, `critical`                     |
+| `limit`      | integer  | Results per page (max 1000) | `100`                                  |
+| `offset`     | integer  | Pagination offset           | `0`                                    |
+| `sort`       | string   | Sort field                  | `created_at`, `event_type`, `severity` |
+| `order`      | string   | Sort order                  | `asc`, `desc`                          |
 
 **Response**
 
@@ -193,13 +197,14 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 ```
 
 **Validation:**
-- `start_date` must be before `end_date`
-- `limit` cannot exceed 1000
-- Invalid `event_type` or `severity` returns 400 error
+
+* `start_date` must be before `end_date`
+* `limit` cannot exceed 1000
+* Invalid `event_type` or `severity` returns 400 error
 
 **Rate Limit:** Standard Audit Limiter (100 req/15min)
 
----
+***
 
 ### User Timeline
 
@@ -217,15 +222,15 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **URL Parameters**
 
-| Parameter | Description |
-|-----------|-------------|
-| `:uuid` | User UUID (must be valid UUIDv4 format) |
+| Parameter | Description                             |
+| --------- | --------------------------------------- |
+| `:uuid`   | User UUID (must be valid UUIDv4 format) |
 
 **Query Parameters**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `limit` | integer | 1000 | Maximum events to return |
+| Parameter | Type    | Default | Description              |
+| --------- | ------- | ------- | ------------------------ |
+| `limit`   | integer | 1000    | Maximum events to return |
 
 **Response**
 
@@ -274,18 +279,20 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 ```
 
 **UUID Validation:**
-- Must be valid UUIDv4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
-- Invalid UUID returns 400 error with message: `"Invalid UUID format"`
+
+* Must be valid UUIDv4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
+* Invalid UUID returns 400 error with message: `"Invalid UUID format"`
 
 **Use Cases:**
-- Investigate suspicious user activity
-- Troubleshoot user verification issues
-- Generate user activity reports
-- Compliance audits
+
+* Investigate suspicious user activity
+* Troubleshoot user verification issues
+* Generate user activity reports
+* Compliance audits
 
 **Rate Limit:** Standard Audit Limiter (100 req/15min)
 
----
+***
 
 ### IP Address History
 
@@ -303,15 +310,15 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **URL Parameters**
 
-| Parameter | Description |
-|-----------|-------------|
+| Parameter    | Description          |
+| ------------ | -------------------- |
 | `:ipAddress` | IPv4 or IPv6 address |
 
 **Query Parameters**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `limit` | integer | 1000 | Maximum events to return |
+| Parameter | Type    | Default | Description              |
+| --------- | ------- | ------- | ------------------------ |
+| `limit`   | integer | 1000    | Maximum events to return |
 
 **Response**
 
@@ -365,15 +372,16 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 ```
 
 **Use Cases:**
-- Detect distributed brute force attacks
-- Identify malicious IP addresses
-- Geographic threat analysis
-- VPN/proxy detection
-- IP blocklist management
+
+* Detect distributed brute force attacks
+* Identify malicious IP addresses
+* Geographic threat analysis
+* VPN/proxy detection
+* IP blocklist management
 
 **Rate Limit:** Standard Audit Limiter (100 req/15min)
 
----
+***
 
 ### Security Events
 
@@ -391,11 +399,11 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **Query Parameters**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `time_range` | string | `24h` | Time range: `24h`, `7d`, `30d` |
-| `severity` | string | - | Filter by severity: `low`, `medium`, `high`, `critical` |
-| `limit` | integer | 500 | Maximum results |
+| Parameter    | Type    | Default | Description                                             |
+| ------------ | ------- | ------- | ------------------------------------------------------- |
+| `time_range` | string  | `24h`   | Time range: `24h`, `7d`, `30d`                          |
+| `severity`   | string  | -       | Filter by severity: `low`, `medium`, `high`, `critical` |
+| `limit`      | integer | 500     | Maximum results                                         |
 
 **Response**
 
@@ -454,21 +462,22 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 ```
 
 **Security Event Types:**
-- `FAILED_LOGIN_ATTEMPT` - Failed authentication
-- `RATE_LIMIT_EXCEEDED` - Rate limiter triggered
-- `SUSPICIOUS_ACTIVITY` - Behavior anomaly detected
-- `UNAUTHORIZED_ACCESS` - Access denied (insufficient permissions)
-- `ACCOUNT_LOCKED` - Account automatically locked
-- `IP_BLACKLISTED` - IP address blocked
-- `DEVICE_BLACKLISTED` - Device fingerprint blocked
-- `BRUTE_FORCE_DETECTED` - Brute force attack detected
-- `DEVICE_CHANGE_DETECTED` - User changed device
-- `LOCATION_ANOMALY` - Geographic anomaly (impossible travel)
-- `ADMIN_LOGIN_FAILED` - Admin authentication failed
+
+* `FAILED_LOGIN_ATTEMPT` - Failed authentication
+* `RATE_LIMIT_EXCEEDED` - Rate limiter triggered
+* `SUSPICIOUS_ACTIVITY` - Behavior anomaly detected
+* `UNAUTHORIZED_ACCESS` - Access denied (insufficient permissions)
+* `ACCOUNT_LOCKED` - Account automatically locked
+* `IP_BLACKLISTED` - IP address blocked
+* `DEVICE_BLACKLISTED` - Device fingerprint blocked
+* `BRUTE_FORCE_DETECTED` - Brute force attack detected
+* `DEVICE_CHANGE_DETECTED` - User changed device
+* `LOCATION_ANOMALY` - Geographic anomaly (impossible travel)
+* `ADMIN_LOGIN_FAILED` - Admin authentication failed
 
 **Rate Limit:** Standard Audit Limiter (100 req/15min)
 
----
+***
 
 ### Compliance Reports
 
@@ -488,10 +497,10 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **Query Parameters**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `start_date` | ISO 8601 | No | Report start date (defaults to 30 days ago) |
-| `end_date` | ISO 8601 | No | Report end date (defaults to now) |
+| Parameter    | Type     | Required | Description                                 |
+| ------------ | -------- | -------- | ------------------------------------------- |
+| `start_date` | ISO 8601 | No       | Report start date (defaults to 30 days ago) |
+| `end_date`   | ISO 8601 | No       | Report end date (defaults to now)           |
 
 **Response**
 
@@ -551,15 +560,16 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 ```
 
 **GDPR Compliance Criteria:**
-- ✅ **Right to Access** - Users can request their data
-- ✅ **Right to Erasure** - Users can delete their data
-- ✅ **Right to Portability** - Users can export their data
-- ✅ **Consent Management** - Users can grant/revoke consent
-- ✅ **Data Retention** - Data automatically deleted after 24h TTL
+
+* ✅ **Right to Access** - Users can request their data
+* ✅ **Right to Erasure** - Users can delete their data
+* ✅ **Right to Portability** - Users can export their data
+* ✅ **Consent Management** - Users can grant/revoke consent
+* ✅ **Data Retention** - Data automatically deleted after 24h TTL
 
 **Rate Limit:** Compliance Limiter (20 req/15min)
 
----
+***
 
 #### PSD3 SCA Compliance Report
 
@@ -577,10 +587,10 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **Query Parameters**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `start_date` | ISO 8601 | No | Report start date |
-| `end_date` | ISO 8601 | No | Report end date |
+| Parameter    | Type     | Required | Description       |
+| ------------ | -------- | -------- | ----------------- |
+| `start_date` | ISO 8601 | No       | Report start date |
+| `end_date`   | ISO 8601 | No       | Report end date   |
 
 **Response**
 
@@ -631,15 +641,16 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 ```
 
 **PSD3 SCA Requirements:**
-- ✅ **Minimum 2 factors** - All verifications use 2+ factors
-- ✅ **Minimum 2 categories** - At least 2 of 5 categories (knowledge, biometric, possession, behavior, location)
-- ✅ **Cryptographic security** - SHA-256 hashing, AES-256-GCM encryption
-- ✅ **Fraud detection** - Risk scoring, velocity checks, blocklists
-- ✅ **Audit trail** - Complete immutable logs
+
+* ✅ **Minimum 2 factors** - All verifications use 2+ factors
+* ✅ **Minimum 2 categories** - At least 2 of 5 categories (knowledge, biometric, possession, behavior, location)
+* ✅ **Cryptographic security** - SHA-256 hashing, AES-256-GCM encryption
+* ✅ **Fraud detection** - Risk scoring, velocity checks, blocklists
+* ✅ **Audit trail** - Complete immutable logs
 
 **Rate Limit:** Compliance Limiter (20 req/15min)
 
----
+***
 
 ### Export Logs
 
@@ -659,9 +670,9 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 All query parameters from `/logs` endpoint are supported, plus:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | Yes | Export format: `csv`, `json` |
+| Parameter | Type   | Required | Description                  |
+| --------- | ------ | -------- | ---------------------------- |
+| `format`  | string | Yes      | Export format: `csv`, `json` |
 
 **Response (CSV)**
 
@@ -713,11 +724,12 @@ Content-Disposition: attachment; filename="audit-logs-1700000000000.json"
 **Rate Limit:** Export Audit Limiter (10 req/15min)
 
 **Performance Notes:**
-- Large exports (10,000+ records) may take several seconds
-- Consider using pagination for very large datasets
-- CSV format is more efficient for large exports
 
----
+* Large exports (10,000+ records) may take several seconds
+* Consider using pagination for very large datasets
+* CSV format is more efficient for large exports
+
+***
 
 ### Statistics
 
@@ -793,65 +805,65 @@ X-Admin-API-Key: admin_key_1234567890abcdef
 
 **Rate Limit:** Standard Audit Limiter (100 req/15min)
 
----
+***
 
 ## Event Types
 
 ### Complete Event Type List
 
-| Event Type | Severity | Description |
-|------------|----------|-------------|
-| **Authentication** | | |
-| `FAILED_LOGIN_ATTEMPT` | medium | User authentication failed |
-| `RATE_LIMIT_EXCEEDED` | medium | Rate limiter triggered |
-| `UNAUTHORIZED_ACCESS` | high | Access denied (insufficient permissions) |
-| `ADMIN_LOGIN_FAILED` | high | Admin authentication failed |
-| **Security** | | |
-| `SUSPICIOUS_ACTIVITY` | high | Behavior anomaly detected |
-| `ACCOUNT_LOCKED` | high | Account automatically locked |
-| `IP_BLACKLISTED` | high | IP address blocked |
-| `DEVICE_BLACKLISTED` | high | Device fingerprint blocked |
-| `BRUTE_FORCE_DETECTED` | critical | Brute force attack detected |
-| `DEVICE_CHANGE_DETECTED` | low | User changed device |
-| `LOCATION_ANOMALY` | high | Geographic anomaly detected |
-| **User Actions** | | |
-| `USER_ENROLLED` | info | New user enrollment |
-| `USER_DELETED` | info | User requested data deletion (GDPR) |
-| `CONSENT_GRANTED` | info | User granted consent |
-| `CONSENT_REVOKED` | info | User revoked consent |
-| `DATA_EXPORTED` | info | User exported their data |
-| `VERIFICATION_SUCCESS` | info | Verification succeeded |
-| `VERIFICATION_FAILED` | low | Verification failed |
-| **Payment** | | |
-| `PAYMENT_LINKED` | info | Payment provider linked |
-| `PAYMENT_UNLINKED` | info | Payment provider unlinked |
-| `PAYMENT_TRANSACTION` | info | Payment processed |
-| `PAYMENT_REFUND` | info | Payment refunded |
-| **Blockchain** | | |
-| `WALLET_LINKED` | info | Blockchain wallet linked |
-| `WALLET_UNLINKED` | info | Blockchain wallet unlinked |
-| `BLOCKCHAIN_TRANSACTION` | info | Blockchain transaction recorded |
-| **Admin Actions** | | |
-| `ADMIN_USER_CREATED` | medium | Admin created new user |
-| `ADMIN_USER_DELETED` | high | Admin deleted user |
-| `ADMIN_USER_UPDATED` | medium | Admin updated user |
-| `ADMIN_SETTINGS_CHANGED` | medium | Admin changed system settings |
-| `ADMIN_API_KEY_CREATED` | medium | Admin created API key |
-| `ADMIN_API_KEY_REVOKED` | high | Admin revoked API key |
+| Event Type               | Severity | Description                              |
+| ------------------------ | -------- | ---------------------------------------- |
+| **Authentication**       |          |                                          |
+| `FAILED_LOGIN_ATTEMPT`   | medium   | User authentication failed               |
+| `RATE_LIMIT_EXCEEDED`    | medium   | Rate limiter triggered                   |
+| `UNAUTHORIZED_ACCESS`    | high     | Access denied (insufficient permissions) |
+| `ADMIN_LOGIN_FAILED`     | high     | Admin authentication failed              |
+| **Security**             |          |                                          |
+| `SUSPICIOUS_ACTIVITY`    | high     | Behavior anomaly detected                |
+| `ACCOUNT_LOCKED`         | high     | Account automatically locked             |
+| `IP_BLACKLISTED`         | high     | IP address blocked                       |
+| `DEVICE_BLACKLISTED`     | high     | Device fingerprint blocked               |
+| `BRUTE_FORCE_DETECTED`   | critical | Brute force attack detected              |
+| `DEVICE_CHANGE_DETECTED` | low      | User changed device                      |
+| `LOCATION_ANOMALY`       | high     | Geographic anomaly detected              |
+| **User Actions**         |          |                                          |
+| `USER_ENROLLED`          | info     | New user enrollment                      |
+| `USER_DELETED`           | info     | User requested data deletion (GDPR)      |
+| `CONSENT_GRANTED`        | info     | User granted consent                     |
+| `CONSENT_REVOKED`        | info     | User revoked consent                     |
+| `DATA_EXPORTED`          | info     | User exported their data                 |
+| `VERIFICATION_SUCCESS`   | info     | Verification succeeded                   |
+| `VERIFICATION_FAILED`    | low      | Verification failed                      |
+| **Payment**              |          |                                          |
+| `PAYMENT_LINKED`         | info     | Payment provider linked                  |
+| `PAYMENT_UNLINKED`       | info     | Payment provider unlinked                |
+| `PAYMENT_TRANSACTION`    | info     | Payment processed                        |
+| `PAYMENT_REFUND`         | info     | Payment refunded                         |
+| **Blockchain**           |          |                                          |
+| `WALLET_LINKED`          | info     | Blockchain wallet linked                 |
+| `WALLET_UNLINKED`        | info     | Blockchain wallet unlinked               |
+| `BLOCKCHAIN_TRANSACTION` | info     | Blockchain transaction recorded          |
+| **Admin Actions**        |          |                                          |
+| `ADMIN_USER_CREATED`     | medium   | Admin created new user                   |
+| `ADMIN_USER_DELETED`     | high     | Admin deleted user                       |
+| `ADMIN_USER_UPDATED`     | medium   | Admin updated user                       |
+| `ADMIN_SETTINGS_CHANGED` | medium   | Admin changed system settings            |
+| `ADMIN_API_KEY_CREATED`  | medium   | Admin created API key                    |
+| `ADMIN_API_KEY_REVOKED`  | high     | Admin revoked API key                    |
 
----
+***
 
 ## Severity Levels
 
 ### Severity Classification
 
-| Severity | Description | Examples | Action Required |
-|----------|-------------|----------|-----------------|
-| **critical** | Immediate threat requiring instant action | Brute force detected, mass data breach | Alert security team, auto-block |
-| **high** | Serious security concern | Account locked, location anomaly, unauthorized access | Investigate within 1 hour |
-| **medium** | Moderate security event | Failed login, rate limit exceeded | Monitor, investigate if repeated |
-| **low** | Minor security event | Device change, single verification failure | Log only, no action required |
-| **info** | Normal system operation | Successful verification, enrollment | Log only |
+| Severity     | Description                               | Examples                                              | Action Required                  |
+| ------------ | ----------------------------------------- | ----------------------------------------------------- | -------------------------------- |
+| **critical** | Immediate threat requiring instant action | Brute force detected, mass data breach                | Alert security team, auto-block  |
+| **high**     | Serious security concern                  | Account locked, location anomaly, unauthorized access | Investigate within 1 hour        |
+| **medium**   | Moderate security event                   | Failed login, rate limit exceeded                     | Monitor, investigate if repeated |
+| **low**      | Minor security event                      | Device change, single verification failure            | Log only, no action required     |
+| **info**     | Normal system operation                   | Successful verification, enrollment                   | Log only                         |
 
 ### Severity-Based Alerts
 
@@ -886,7 +898,7 @@ const SEVERITY_ALERTS = {
 };
 ```
 
----
+***
 
 ## Data Models
 
@@ -922,7 +934,7 @@ interface SecurityEvent extends AuditLog {
 }
 ```
 
----
+***
 
 ## Error Handling
 
@@ -938,15 +950,15 @@ interface SecurityEvent extends AuditLog {
 
 ### Common Errors
 
-| HTTP Status | Error | Cause |
-|-------------|-------|-------|
-| `400 Bad Request` | `Invalid date range: start_date must be before end_date` | Date validation failed |
-| `400 Bad Request` | `Invalid UUID format` | UUID format invalid |
-| `403 Forbidden` | `Unauthorized. Valid API key required.` | Missing/invalid admin API key |
-| `429 Too Many Requests` | `Too many audit log requests. Please try again later.` | Rate limit exceeded |
-| `500 Internal Server Error` | `Failed to query audit logs` | Server-side error |
+| HTTP Status                 | Error                                                    | Cause                         |
+| --------------------------- | -------------------------------------------------------- | ----------------------------- |
+| `400 Bad Request`           | `Invalid date range: start_date must be before end_date` | Date validation failed        |
+| `400 Bad Request`           | `Invalid UUID format`                                    | UUID format invalid           |
+| `403 Forbidden`             | `Unauthorized. Valid API key required.`                  | Missing/invalid admin API key |
+| `429 Too Many Requests`     | `Too many audit log requests. Please try again later.`   | Rate limit exceeded           |
+| `500 Internal Server Error` | `Failed to query audit logs`                             | Server-side error             |
 
----
+***
 
 ## Best Practices
 
@@ -1033,30 +1045,33 @@ cron.schedule('0 0 1 * *', async () => { // 1st of every month
 });
 ```
 
----
+***
 
 ## Changelog
 
 ### Version 1.0.0 (2025-11-17)
-- ✅ Initial release
-- ✅ Query logs with advanced filtering
-- ✅ User timeline and IP history
-- ✅ Security events filtering
-- ✅ GDPR and PSD3 compliance reports
-- ✅ CSV/JSON export
-- ✅ Real-time statistics
-- ✅ Multi-tier rate limiting
-- ✅ 30+ event types with severity classification
 
----
+* ✅ Initial release
+* ✅ Query logs with advanced filtering
+* ✅ User timeline and IP history
+* ✅ Security events filtering
+* ✅ GDPR and PSD3 compliance reports
+* ✅ CSV/JSON export
+* ✅ Real-time statistics
+* ✅ Multi-tier rate limiting
+* ✅ 30+ event types with severity classification
+
+***
 
 ## Support
 
 For API issues or questions:
-- **Documentation**: https://docs.notap.io
-- **Support Email**: support@notap.io
-- **GitHub Issues**: https://github.com/keikworld/zero-pay-sdk/issues
+
+* **Documentation**: https://docs.notap.io
+* **Support Email**: support@notap.io
+* **GitHub Issues**: https://github.com/keikworld/zero-pay-sdk/issues
 
 For security vulnerabilities:
-- **Security Email**: security@notap.io
-- **PGP Key**: https://notap.io/.well-known/pgp-key.txt
+
+* **Security Email**: security@notap.io
+* **PGP Key**: https://notap.io/.well-known/pgp-key.txt

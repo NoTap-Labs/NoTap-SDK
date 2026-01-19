@@ -1,22 +1,24 @@
+---
+hidden: true
+---
+
 # Multi-Chain Name Service Implementation
 
-**Status:** ✅ **Architecture Complete** (Solana working, other chains ready for implementation)
-**Date:** 2025-12-02
-**Version:** 2.0.0
+**Status:** ✅ **Architecture Complete** (Solana working, other chains ready for implementation) **Date:** 2025-12-02 **Version:** 2.0.0
 
----
+***
 
 ## 🎯 What Was Built
 
 We've successfully refactored the SNS (Solana Name Service) code into a **pluggable, scalable, multi-chain architecture** that supports:
 
-- ✅ **Solana Name Service** (Bonfida) - **WORKING**
-- 🎯 **Ethereum Name Service** (ENS) - Placeholder ready
-- 🎯 **Unstoppable Domains** - Placeholder ready
-- 🎯 **BASE Name Service** - Placeholder ready
-- 🔮 **Easy to add:** Space ID, Arbitrum One, Lens, Farcaster, etc.
+* ✅ **Solana Name Service** (Bonfida) - **WORKING**
+* 🎯 **Ethereum Name Service** (ENS) - Placeholder ready
+* 🎯 **Unstoppable Domains** - Placeholder ready
+* 🎯 **BASE Name Service** - Placeholder ready
+* 🔮 **Easy to add:** Space ID, Arbitrum One, Lens, Farcaster, etc.
 
----
+***
 
 ## 📦 What You Get
 
@@ -67,14 +69,14 @@ Users can have names on multiple chains:
 
 ### **4. Two-Level Validation**
 
-- **Level 1 (Basic):** Check if name exists on blockchain (FREE, ~100ms)
-- **Level 2 (Ownership):** Verify wallet signature to prove ownership (FREE, ~110ms)
+* **Level 1 (Basic):** Check if name exists on blockchain (FREE, \~100ms)
+* **Level 2 (Ownership):** Verify wallet signature to prove ownership (FREE, \~110ms)
 
 ### **5. Backward Compatible**
 
 Existing `/v1/sns/*` endpoints still work, now powered by the new system.
 
----
+***
 
 ## 📁 Architecture
 
@@ -121,13 +123,14 @@ Query Ethereum blockchain
 Return: { address: "0x742d35...", chain: "ethereum", provider: "ens" }
 ```
 
----
+***
 
 ## 🚀 API Endpoints
 
 ### **New Multi-Chain Endpoints**
 
 #### **1. Resolve Name**
+
 ```http
 GET /v1/names/resolve/:name
 
@@ -144,6 +147,7 @@ Response:
 ```
 
 #### **2. Reverse Lookup**
+
 ```http
 GET /v1/names/reverse/:address
 
@@ -160,6 +164,7 @@ Response:
 ```
 
 #### **3. Check Availability**
+
 ```http
 GET /v1/names/check-availability/:name
 
@@ -177,6 +182,7 @@ Response:
 ```
 
 #### **4. Validate Ownership**
+
 ```http
 POST /v1/names/validate
 
@@ -203,6 +209,7 @@ Response:
 ```
 
 #### **5. Get Supported Chains**
+
 ```http
 GET /v1/names/supported
 
@@ -224,6 +231,7 @@ Response:
 ```
 
 #### **6. Health Check**
+
 ```http
 GET /v1/names/health
 
@@ -251,18 +259,18 @@ Response:
 
 All `/v1/sns/*` endpoints still work, now using the new architecture:
 
-- `GET /v1/sns/check-availability/:name`
-- `GET /v1/sns/resolve/:name`
-- `GET /v1/sns/reverse/:uuid`
-- `POST /v1/sns/transfer`
-- `POST /v1/sns/relink`
-- `GET /v1/sns/status`
+* `GET /v1/sns/check-availability/:name`
+* `GET /v1/sns/resolve/:name`
+* `GET /v1/sns/reverse/:uuid`
+* `POST /v1/sns/transfer`
+* `POST /v1/sns/relink`
+* `GET /v1/sns/status`
 
----
+***
 
 ## 🗄️ Database Changes
 
-### **Migration: 009_add_multichain_name_service.sql**
+### **Migration: 009\_add\_multichain\_name\_service.sql**
 
 **What Changed:**
 
@@ -270,17 +278,17 @@ All `/v1/sns/*` endpoints still work, now using the new architecture:
 2. **Added Column:** `blockchain_chain` (solana, ethereum, polygon, base, etc.)
 3. **Added Column:** `name_service_provider` (bonfida, ens, unstoppable, etc.)
 4. **New Constraint:** `UNIQUE (blockchain_address, blockchain_chain)`
-   - Allows same address on multiple chains
+   * Allows same address on multiple chains
 5. **New Indexes:** Fast lookups by chain, provider, address+chain
 
 **Example Data:**
 
-| uuid | blockchain_address | blockchain_chain | name_service_provider | sns_name |
-|------|-------------------|------------------|----------------------|----------|
-| abc-123 | 9xQeWvG... | solana | bonfida | alice.sol |
-| abc-123 | 0x742d35... | ethereum | ens | alice.eth |
-| abc-123 | 0x742d35... | polygon | unstoppable | alice.crypto |
-| abc-123 | 0x742d35... | base | basename | alice.base.eth |
+| uuid    | blockchain\_address | blockchain\_chain | name\_service\_provider | sns\_name      |
+| ------- | ------------------- | ----------------- | ----------------------- | -------------- |
+| abc-123 | 9xQeWvG...          | solana            | bonfida                 | alice.sol      |
+| abc-123 | 0x742d35...         | ethereum          | ens                     | alice.eth      |
+| abc-123 | 0x742d35...         | polygon           | unstoppable             | alice.crypto   |
+| abc-123 | 0x742d35...         | base              | basename                | alice.base.eth |
 
 **Run Migration:**
 
@@ -289,7 +297,7 @@ cd backend
 psql -U your_user -d your_database -f database/migrations/009_add_multichain_name_service.sql
 ```
 
----
+***
 
 ## ⚙️ Configuration
 
@@ -319,11 +327,12 @@ NAME_VALIDATION_ENABLED=true
 NAME_OWNERSHIP_REQUIRED=false
 ```
 
----
+***
 
 ## 🎨 SDK Changes (To Be Done)
 
 ### **Current SDK:**
+
 ```kotlin
 // sdk/src/commonMain/kotlin/com/zeropay/sdk/api/SNSClient.kt
 class SNSClient {
@@ -334,6 +343,7 @@ class SNSClient {
 ```
 
 ### **New SDK (Recommended):**
+
 ```kotlin
 // sdk/src/commonMain/kotlin/com/zeropay/sdk/api/NameServiceClient.kt
 class NameServiceClient {
@@ -346,6 +356,7 @@ class NameServiceClient {
 ```
 
 **API Models:**
+
 ```kotlin
 data class NameResolutionResponse(
     val name: String,
@@ -363,48 +374,48 @@ data class NameAvailabilityResponse(
 )
 ```
 
----
+***
 
 ## 📋 Next Steps
 
 ### **Phase 1: Test & Document** (Week 1)
 
-- [ ] Test all `/v1/names/*` endpoints with Solana
-- [ ] Test backward compatibility of `/v1/sns/*` endpoints
-- [ ] Run database migration on staging
-- [ ] Update SDK models (API response types)
-- [ ] Document migration process for clients
+* [ ] Test all `/v1/names/*` endpoints with Solana
+* [ ] Test backward compatibility of `/v1/sns/*` endpoints
+* [ ] Run database migration on staging
+* [ ] Update SDK models (API response types)
+* [ ] Document migration process for clients
 
 ### **Phase 2: Implement ENS** (Week 2-3)
 
-- [ ] Install dependencies: `viem`, `@wagmi/core`
-- [ ] Implement `ENSProvider.resolveName()`
-- [ ] Implement `ENSProvider.reverseResolveName()`
-- [ ] Implement `ENSProvider.validateNameExists()`
-- [ ] Test with mainnet
-- [ ] Update SDK to support `.eth` names
+* [ ] Install dependencies: `viem`, `@wagmi/core`
+* [ ] Implement `ENSProvider.resolveName()`
+* [ ] Implement `ENSProvider.reverseResolveName()`
+* [ ] Implement `ENSProvider.validateNameExists()`
+* [ ] Test with mainnet
+* [ ] Update SDK to support `.eth` names
 
 ### **Phase 3: Implement Unstoppable** (Week 4)
 
-- [ ] Install dependency: `@unstoppabledomains/resolution`
-- [ ] Implement `UnstoppableProvider` methods
-- [ ] Test with `.crypto`, `.wallet`, `.nft` domains
-- [ ] Update SDK
+* [ ] Install dependency: `@unstoppabledomains/resolution`
+* [ ] Implement `UnstoppableProvider` methods
+* [ ] Test with `.crypto`, `.wallet`, `.nft` domains
+* [ ] Update SDK
 
 ### **Phase 4: Implement BASE** (Week 5)
 
-- [ ] Implement `BaseNameProvider` (similar to ENS)
-- [ ] Test with `.base.eth` domains
-- [ ] Update SDK
+* [ ] Implement `BaseNameProvider` (similar to ENS)
+* [ ] Test with `.base.eth` domains
+* [ ] Update SDK
 
 ### **Phase 5: Universal Resolver** (Week 6)
 
-- [ ] Implement UUID → address → name lookup
-- [ ] Implement `/v1/names/reverse/:uuid` properly
-- [ ] Add SNS transfer/relink to new architecture
-- [ ] Complete SDK client implementation
+* [ ] Implement UUID → address → name lookup
+* [ ] Implement `/v1/names/reverse/:uuid` properly
+* [ ] Add SNS transfer/relink to new architecture
+* [ ] Complete SDK client implementation
 
----
+***
 
 ## 🧪 Testing
 
@@ -432,7 +443,7 @@ curl http://localhost:3000/v1/sns/status
 curl http://localhost:3000/v1/sns/check-availability/alice
 ```
 
----
+***
 
 ## 💡 Usage Examples
 
@@ -483,7 +494,7 @@ if (avail.isSuccess && avail.getOrNull()?.available == true) {
 }
 ```
 
----
+***
 
 ## 🔧 How to Add a New Provider
 
@@ -551,21 +562,21 @@ CHECK (blockchain_chain IN (..., 'bnb'));
 
 4. **Done!** The system now supports `.bnb` names automatically.
 
----
+***
 
 ## 📊 Provider Status
 
-| Provider | Chain | Status | Implementation | Notes |
-|----------|-------|--------|---------------|-------|
-| **Bonfida** | Solana | ✅ **Working** | Complete | Supports .sol, .notap.sol |
-| **ENS** | Ethereum | 🎯 **Placeholder** | 0% | Needs `viem` + `@wagmi/core` |
-| **Unstoppable** | Polygon | 🎯 **Placeholder** | 0% | Needs `@unstoppabledomains/resolution` |
-| **BASE** | Base | 🎯 **Placeholder** | 0% | Same as ENS (viem) |
-| **Space ID** | BNB Chain | 📝 **Not Started** | 0% | Easy to add |
-| **Lens** | Polygon | 📝 **Not Started** | 0% | Social naming |
-| **Farcaster** | Optimism | 📝 **Not Started** | 0% | Social naming |
+| Provider        | Chain     | Status             | Implementation | Notes                                  |
+| --------------- | --------- | ------------------ | -------------- | -------------------------------------- |
+| **Bonfida**     | Solana    | ✅ **Working**      | Complete       | Supports .sol, .notap.sol              |
+| **ENS**         | Ethereum  | 🎯 **Placeholder** | 0%             | Needs `viem` + `@wagmi/core`           |
+| **Unstoppable** | Polygon   | 🎯 **Placeholder** | 0%             | Needs `@unstoppabledomains/resolution` |
+| **BASE**        | Base      | 🎯 **Placeholder** | 0%             | Same as ENS (viem)                     |
+| **Space ID**    | BNB Chain | 📝 **Not Started** | 0%             | Easy to add                            |
+| **Lens**        | Polygon   | 📝 **Not Started** | 0%             | Social naming                          |
+| **Farcaster**   | Optimism  | 📝 **Not Started** | 0%             | Social naming                          |
 
----
+***
 
 ## 🎓 Key Learnings
 
@@ -579,51 +590,52 @@ CHECK (blockchain_chain IN (..., 'bnb'));
 
 ### **Design Patterns Used**
 
-- **Strategy Pattern:** Different providers, same interface
-- **Registry Pattern:** Central dispatcher for auto-routing
-- **Factory Pattern:** Provider creation and initialization
-- **Adapter Pattern:** Wrapping external APIs (Bonfida, ENS, etc.)
+* **Strategy Pattern:** Different providers, same interface
+* **Registry Pattern:** Central dispatcher for auto-routing
+* **Factory Pattern:** Provider creation and initialization
+* **Adapter Pattern:** Wrapping external APIs (Bonfida, ENS, etc.)
 
 ### **Why Not Just ENS for Everything?**
 
 ENS is Ethereum-only. Cross-chain names require:
-- **Solana:** Bonfida SNS (.sol)
-- **Polygon:** Unstoppable Domains (.crypto)
-- **Base:** BASE Names (.base.eth)
-- **BNB:** Space ID (.bnb)
+
+* **Solana:** Bonfida SNS (.sol)
+* **Polygon:** Unstoppable Domains (.crypto)
+* **Base:** BASE Names (.base.eth)
+* **BNB:** Space ID (.bnb)
 
 Each chain has its own name service. Our architecture supports them all!
 
----
+***
 
 ## 🚨 Important Notes
 
 ### **What's Working Now**
 
-- ✅ Full multi-chain architecture
-- ✅ Solana Name Service (Bonfida)
-- ✅ Auto-routing by TLD
-- ✅ Multi-chain database schema
-- ✅ New `/v1/names/*` endpoints
-- ✅ Refactored `/v1/sns/*` endpoints
-- ✅ Validation service (Level 1 & 2)
+* ✅ Full multi-chain architecture
+* ✅ Solana Name Service (Bonfida)
+* ✅ Auto-routing by TLD
+* ✅ Multi-chain database schema
+* ✅ New `/v1/names/*` endpoints
+* ✅ Refactored `/v1/sns/*` endpoints
+* ✅ Validation service (Level 1 & 2)
 
 ### **What Needs Implementation**
 
-- ⏳ ENS provider (needs `viem` install + implementation)
-- ⏳ Unstoppable provider (needs `@unstoppabledomains/resolution` install)
-- ⏳ BASE provider (needs `viem` install + implementation)
-- ⏳ SDK updates (NameServiceClient.kt + API models)
-- ⏳ UUID reverse lookup (database queries)
-- ⏳ Transfer/relink functions (need provider-specific logic)
+* ⏳ ENS provider (needs `viem` install + implementation)
+* ⏳ Unstoppable provider (needs `@unstoppabledomains/resolution` install)
+* ⏳ BASE provider (needs `viem` install + implementation)
+* ⏳ SDK updates (NameServiceClient.kt + API models)
+* ⏳ UUID reverse lookup (database queries)
+* ⏳ Transfer/relink functions (need provider-specific logic)
 
 ### **Breaking Changes**
 
-- Database column renamed: `solana_address` → `blockchain_address`
-- New required columns: `blockchain_chain`, `name_service_provider`
-- Run migration before deploying!
+* Database column renamed: `solana_address` → `blockchain_address`
+* New required columns: `blockchain_chain`, `name_service_provider`
+* Run migration before deploying!
 
----
+***
 
 ## 📞 Support
 
@@ -634,6 +646,6 @@ For questions or issues:
 3. Review logs for provider initialization errors
 4. Verify environment variables are set correctly
 
----
+***
 
 **🎉 Congratulations!** You now have a production-ready multi-chain name service architecture that's ready to scale across all major blockchains!

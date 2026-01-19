@@ -1,48 +1,52 @@
+---
+hidden: true
+---
+
 # Test Profiles Guide
 
 **Complete step-by-step guide for testing all NoTap platform features using dynamic test profiles.**
 
 **Last Updated:** 2026-01-04
 
----
+***
 
 ## Table of Contents
 
-1. [What Are Test Profiles?](#what-are-test-profiles)
-2. [Quick Start](#quick-start)
-3. [Pre-Built Test Profiles](#pre-built-test-profiles)
-4. [Testing Enrollment Flow](#testing-enrollment-flow)
-5. [Testing Verification Flow](#testing-verification-flow)
-6. [Testing Management Features](#testing-management-features)
-7. [Testing Admin Panel](#testing-admin-panel)
-8. [Creating Custom Test Profiles](#creating-custom-test-profiles)
-9. [Test Inputs Reference](#test-inputs-reference)
-10. [Common Issues](#common-issues)
+1. [What Are Test Profiles?](TEST_PROFILES_GUIDE.md#what-are-test-profiles)
+2. [Quick Start](TEST_PROFILES_GUIDE.md#quick-start)
+3. [Pre-Built Test Profiles](TEST_PROFILES_GUIDE.md#pre-built-test-profiles)
+4. [Testing Enrollment Flow](TEST_PROFILES_GUIDE.md#testing-enrollment-flow)
+5. [Testing Verification Flow](TEST_PROFILES_GUIDE.md#testing-verification-flow)
+6. [Testing Management Features](TEST_PROFILES_GUIDE.md#testing-management-features)
+7. [Testing Admin Panel](TEST_PROFILES_GUIDE.md#testing-admin-panel)
+8. [Creating Custom Test Profiles](TEST_PROFILES_GUIDE.md#creating-custom-test-profiles)
+9. [Test Inputs Reference](TEST_PROFILES_GUIDE.md#test-inputs-reference)
+10. [Common Issues](TEST_PROFILES_GUIDE.md#common-issues)
 
----
+***
 
 ## What Are Test Profiles?
 
 Test profiles are **pre-configured user accounts stored in the database** that simulate real users with all necessary data:
 
-- ✅ Complete enrollment with all factors
-- ✅ Verification history and sessions
-- ✅ Payment methods and transaction history
-- ✅ Admin permissions and API keys
-- ✅ Test credentials and JWT tokens
-- ✅ Pre-filled test inputs for easy factor verification
+* ✅ Complete enrollment with all factors
+* ✅ Verification history and sessions
+* ✅ Payment methods and transaction history
+* ✅ Admin permissions and API keys
+* ✅ Test credentials and JWT tokens
+* ✅ Pre-filled test inputs for easy factor verification
 
 **Key Benefits:**
 
-| Feature | Benefit |
-|---------|---------|
-| **No Hardcoding** | All data stored in database (editable via API) |
-| **Full Testing** | Test user, merchant, admin, and developer features |
+| Feature               | Benefit                                                 |
+| --------------------- | ------------------------------------------------------- |
+| **No Hardcoding**     | All data stored in database (editable via API)          |
+| **Full Testing**      | Test user, merchant, admin, and developer features      |
 | **Easy Verification** | `test_inputs` included in responses for instant testing |
-| **Flexible** | Create/edit profiles via admin API |
-| **Isolated** | Test data doesn't affect production |
+| **Flexible**          | Create/edit profiles via admin API                      |
+| **Isolated**          | Test data doesn't affect production                     |
 
----
+***
 
 ## Quick Start
 
@@ -53,6 +57,7 @@ curl https://api.notap.io/v1/test-profiles/load/rastafalso.sol
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -86,6 +91,7 @@ curl https://api.notap.io/v1/test-profiles/check/rastafalso.sol
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -108,6 +114,7 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Response (Test Mode):**
+
 ```json
 {
   "success": true,
@@ -124,7 +131,7 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 }
 ```
 
----
+***
 
 ## Pre-Built Test Profiles
 
@@ -139,14 +146,16 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Features:**
-- ✅ Full enrollment (verified, no expiration)
-- ✅ Admin permissions (role: super_admin)
-- ✅ Payment methods (Visa, Mastercard, test cards)
-- ✅ API keys (developer access)
-- ✅ Merchant access
-- ✅ Crypto wallet integration
+
+* ✅ Full enrollment (verified, no expiration)
+* ✅ Admin permissions (role: super\_admin)
+* ✅ Payment methods (Visa, Mastercard, test cards)
+* ✅ API keys (developer access)
+* ✅ Merchant access
+* ✅ Crypto wallet integration
 
 **Test Inputs:**
+
 ```json
 {
   "PIN": "1234",
@@ -173,6 +182,7 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Test Input:**
+
 ```json
 {
   "PIN": "5678"
@@ -190,6 +200,7 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Test Input:**
+
 ```json
 {
   "PIN": "9999"
@@ -207,6 +218,7 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Test Input:**
+
 ```json
 {
   "PIN": "0000"
@@ -224,13 +236,14 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Test Input:**
+
 ```json
 {
   "PIN": "1111"
 }
 ```
 
----
+***
 
 ## Testing Enrollment Flow
 
@@ -241,6 +254,7 @@ curl https://api.notap.io/v1/enrollment/retrieve/rastafalso.sol
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -268,12 +282,13 @@ curl https://api.notap.io/v1/enrollment/retrieve/rastafalso.sol
 ### Step 2: Verify Enrollment Status
 
 The enrollment is already pre-configured:
-- ✅ Status: verified
-- ✅ Auto-renewal: enabled
-- ✅ Factors: 10 enrolled
-- ✅ Expiration: 2099-12-31 (never expires for testing)
 
----
+* ✅ Status: verified
+* ✅ Auto-renewal: enabled
+* ✅ Factors: 10 enrolled
+* ✅ Expiration: 2099-12-31 (never expires for testing)
+
+***
 
 ## Testing Verification Flow
 
@@ -290,6 +305,7 @@ curl -X POST https://api.notap.io/v1/verification/initiate \
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -319,6 +335,7 @@ curl -X POST https://api.notap.io/v1/verification/submit-factor \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -343,6 +360,7 @@ curl -X POST https://api.notap.io/v1/verification/submit-factor \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -357,11 +375,12 @@ curl -X POST https://api.notap.io/v1/verification/submit-factor \
 ### Step 4: Complete Verification
 
 The verification is now complete. Use the token to:
-- Update payment status
-- Complete transaction
-- Update user profile
 
----
+* Update payment status
+* Complete transaction
+* Update user profile
+
+***
 
 ## Testing Management Features
 
@@ -372,11 +391,12 @@ curl https://api.notap.io/v1/management/profile/rastafalso.sol
 ```
 
 **Response includes:**
-- Profile information
-- Enrolled factors
-- Payment methods
-- Auto-renewal settings
-- Device information
+
+* Profile information
+* Enrolled factors
+* Payment methods
+* Auto-renewal settings
+* Device information
 
 ### Step 2: Test Auto-Renewal Settings
 
@@ -396,7 +416,7 @@ curl -X PUT https://api.notap.io/v1/management/settings \
 curl https://api.notap.io/v1/management/devices/rastafalso.sol
 ```
 
----
+***
 
 ## Testing Admin Panel
 
@@ -412,6 +432,7 @@ curl -X POST https://api.notap.io/v1/auth/admin/login \
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -452,7 +473,7 @@ curl -X PUT https://api.notap.io/v1/admin/settings/security \
   }'
 ```
 
----
+***
 
 ## Creating Custom Test Profiles
 
@@ -517,7 +538,7 @@ curl -X PUT https://api.notap.io/v1/test-profiles/<profile_id> \
 curl https://api.notap.io/v1/test-profiles/load/mytest.sol
 ```
 
----
+***
 
 ## Test Inputs Reference
 
@@ -581,7 +602,7 @@ Array of 4+ dictionary words
 
 Natural language passphrase (3+ words)
 
-### RHYTHM_TAP (Tap Rhythm)
+### RHYTHM\_TAP (Tap Rhythm)
 
 ```json
 {
@@ -591,7 +612,7 @@ Natural language passphrase (3+ words)
 
 Pattern of taps and pauses
 
-### MOUSE_DRAW (Mouse Pattern)
+### MOUSE\_DRAW (Mouse Pattern)
 
 ```json
 {
@@ -601,7 +622,7 @@ Pattern of taps and pauses
 
 User-drawn pattern with mouse
 
-### STYLUS_DRAW (Stylus Signature)
+### STYLUS\_DRAW (Stylus Signature)
 
 ```json
 {
@@ -611,7 +632,7 @@ User-drawn pattern with mouse
 
 User-drawn signature with stylus
 
-### IMAGE_TAP (Image Tap Positions)
+### IMAGE\_TAP (Image Tap Positions)
 
 ```json
 {
@@ -619,9 +640,9 @@ User-drawn signature with stylus
 }
 ```
 
-Array of normalized coordinates [x, y] (0.0-1.0)
+Array of normalized coordinates \[x, y] (0.0-1.0)
 
----
+***
 
 ## Common Issues
 
@@ -630,9 +651,10 @@ Array of normalized coordinates [x, y] (0.0-1.0)
 **Cause:** Incorrect identifier format
 
 **Solution:**
-- Use full SNS name: `rastafalso.sol` ✅
-- Not just: `rastafalso` ❌
-- Or use base identifier: `rastafalso` ✅
+
+* Use full SNS name: `rastafalso.sol` ✅
+* Not just: `rastafalso` ❌
+* Or use base identifier: `rastafalso` ✅
 
 ```bash
 # ✅ Both work
@@ -640,17 +662,19 @@ curl https://api.notap.io/v1/test-profiles/load/rastafalso.sol
 curl https://api.notap.io/v1/test-profiles/load/rastafalso
 ```
 
-### Issue: "Verification failed" with correct test_inputs
+### Issue: "Verification failed" with correct test\_inputs
 
 **Cause:** Test inputs might be case-sensitive or format-specific
 
 **Solution:**
-- PIN: Use exact string (no quotes in JSON)
-- PATTERN: Use exact array order
-- EMOJI: Copy-paste from response
-- COLOUR: Use hex format #RRGGBB
+
+* PIN: Use exact string (no quotes in JSON)
+* PATTERN: Use exact array order
+* EMOJI: Copy-paste from response
+* COLOUR: Use hex format #RRGGBB
 
 **Debug:**
+
 ```bash
 # Load profile and inspect test_inputs
 curl https://api.notap.io/v1/test-profiles/load/rastafalso.sol | jq '.profile.enrollment.test_inputs'
@@ -661,8 +685,9 @@ curl https://api.notap.io/v1/test-profiles/load/rastafalso.sol | jq '.profile.en
 **Cause:** Missing or invalid API key
 
 **Solution:**
-- Use `X-Admin-Key` header (development mode)
-- Or use valid JWT token with admin permissions
+
+* Use `X-Admin-Key` header (development mode)
+* Or use valid JWT token with admin permissions
 
 ```bash
 # Development mode (sandbox)
@@ -679,54 +704,55 @@ curl https://api.notap.io/v1/test-profiles \
 **Cause:** Profile might be inactive
 
 **Solution:**
-- Check profile status: `is_active: true`
-- Verify identifier format (lowercase, no spaces)
-- Use correct SNS format: identifier.sol
+
+* Check profile status: `is_active: true`
+* Verify identifier format (lowercase, no spaces)
+* Use correct SNS format: identifier.sol
 
 ```bash
 # Check profile details
 curl https://api.notap.io/v1/test-profiles/check/mytest.sol
 ```
 
----
+***
 
 ## Best Practices
 
 ### ✅ DO
 
-- Use test profiles for development/testing
-- Copy test_inputs from responses
-- Create separate profiles for different test scenarios
-- Document custom test profiles
-- Use descriptive identifiers (e.g., `test-payment-success`)
+* Use test profiles for development/testing
+* Copy test\_inputs from responses
+* Create separate profiles for different test scenarios
+* Document custom test profiles
+* Use descriptive identifiers (e.g., `test-payment-success`)
 
 ### ❌ DON'T
 
-- Use test profiles in production
-- Hardcode test inputs in code
-- Share test profile API keys
-- Use real user data in test profiles
-- Delete pre-built profiles
+* Use test profiles in production
+* Hardcode test inputs in code
+* Share test profile API keys
+* Use real user data in test profiles
+* Delete pre-built profiles
 
----
+***
 
 ## Related Documentation
 
-- **[TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md)** - Complete testing framework guide
-- **[SANDBOX_TESTING_GUIDE.md](../../backend/docs/SANDBOX_TESTING_GUIDE.md)** - Sandbox environment reference
-- **[Verification Flow](../../03-developer-guides/VERIFICATION_FLOW.md)** - Complete verification documentation
+* [**TEST\_ARCHITECTURE.md**](TEST_ARCHITECTURE.md) - Complete testing framework guide
+* [**SANDBOX\_TESTING\_GUIDE.md**](../../backend/docs/SANDBOX_TESTING_GUIDE.md) - Sandbox environment reference
+* [**Verification Flow**](../../03-developer-guides/VERIFICATION_FLOW.md) - Complete verification documentation
 
----
+***
 
 ## Support
 
 For issues or questions:
-1. Check [Common Issues](#common-issues) section above
+
+1. Check [Common Issues](TEST_PROFILES_GUIDE.md#common-issues) section above
 2. Review test profile response format
 3. Verify test inputs match expected format
 4. Check database migration status: `node scripts/run-migrations.js --status`
 
----
+***
 
-**Last Updated:** 2026-01-04
-**Status:** ✅ Complete and ready for testing
+**Last Updated:** 2026-01-04 **Status:** ✅ Complete and ready for testing

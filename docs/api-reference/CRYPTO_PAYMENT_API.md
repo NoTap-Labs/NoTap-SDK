@@ -1,31 +1,35 @@
+---
+hidden: true
+---
+
 # Crypto Payment API
 
 Device-free blockchain payment endpoints using relayer architecture.
 
 **Base URL:** `/v1/crypto`
 
----
+***
 
 ## Endpoints Overview
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/relayer/enroll` | User enrolls relayer approval | No |
-| PUT | `/relayer/limits` | Update spending limits | Yes |
-| DELETE | `/relayer/revoke` | Revoke relayer approval | Yes |
-| GET | `/relayer/status/:uuid` | Get approval status | Yes |
-| POST | `/merchant/wallet/connect` | Merchant connects wallet | Yes |
-| GET | `/merchant/wallet/status` | Get merchant wallet status | Yes |
-| POST | `/charge/create` | Create payment charge | Yes |
-| GET | `/charge/:id` | Get charge status | Yes |
-| POST | `/charge/:id/pay` | Pay a charge | Yes |
-| POST | `/payment/execute` | Execute direct payment | Yes |
-| GET | `/payment/:id` | Get payment status | Yes |
-| GET | `/spending/:uuid` | Get spending history | Yes |
-| GET | `/config/chains` | Get supported chains | No |
-| GET | `/config/tokens` | Get supported tokens | No |
+| Method | Endpoint                   | Description                   | Auth Required |
+| ------ | -------------------------- | ----------------------------- | ------------- |
+| POST   | `/relayer/enroll`          | User enrolls relayer approval | No            |
+| PUT    | `/relayer/limits`          | Update spending limits        | Yes           |
+| DELETE | `/relayer/revoke`          | Revoke relayer approval       | Yes           |
+| GET    | `/relayer/status/:uuid`    | Get approval status           | Yes           |
+| POST   | `/merchant/wallet/connect` | Merchant connects wallet      | Yes           |
+| GET    | `/merchant/wallet/status`  | Get merchant wallet status    | Yes           |
+| POST   | `/charge/create`           | Create payment charge         | Yes           |
+| GET    | `/charge/:id`              | Get charge status             | Yes           |
+| POST   | `/charge/:id/pay`          | Pay a charge                  | Yes           |
+| POST   | `/payment/execute`         | Execute direct payment        | Yes           |
+| GET    | `/payment/:id`             | Get payment status            | Yes           |
+| GET    | `/spending/:uuid`          | Get spending history          | Yes           |
+| GET    | `/config/chains`           | Get supported chains          | No            |
+| GET    | `/config/tokens`           | Get supported tokens          | No            |
 
----
+***
 
 ## Relayer Endpoints
 
@@ -36,6 +40,7 @@ Enroll user for relayer-based payments.
 **Rate Limit:** 5 requests per hour
 
 **Request:**
+
 ```json
 {
   "uuid": "abc-123-def-456",
@@ -48,6 +53,7 @@ Enroll user for relayer-based payments.
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -56,13 +62,14 @@ Enroll user for relayer-based payments.
 }
 ```
 
----
+***
 
 ### GET `/relayer/status/:uuid`
 
 Get relayer approval status for a user.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -75,7 +82,7 @@ Get relayer approval status for a user.
 }
 ```
 
----
+***
 
 ## Charge Endpoints
 
@@ -86,6 +93,7 @@ Create a payment charge (merchant-initiated).
 **Rate Limit:** 60 requests per minute
 
 **Request:**
+
 ```json
 {
   "merchantId": "merchant_abc123",
@@ -101,6 +109,7 @@ Create a payment charge (merchant-initiated).
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -113,7 +122,7 @@ Create a payment charge (merchant-initiated).
 }
 ```
 
----
+***
 
 ### POST `/charge/:id/pay`
 
@@ -122,6 +131,7 @@ Pay an existing charge.
 **Rate Limit:** 10 requests per minute
 
 **Request:**
+
 ```json
 {
   "uuid": "abc-123-def-456",
@@ -132,6 +142,7 @@ Pay an existing charge.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -145,7 +156,7 @@ Pay an existing charge.
 }
 ```
 
----
+***
 
 ## Configuration Endpoints
 
@@ -154,6 +165,7 @@ Pay an existing charge.
 Get list of supported blockchain networks.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -174,16 +186,18 @@ Get list of supported blockchain networks.
 }
 ```
 
----
+***
 
 ### GET `/config/tokens`
 
 Get supported tokens for a chain.
 
 **Query Parameters:**
-- `chain` (optional): Chain name (default: "solana")
+
+* `chain` (optional): Chain name (default: "solana")
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -210,11 +224,12 @@ Get supported tokens for a chain.
 }
 ```
 
----
+***
 
 ## Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
   "success": false,
@@ -223,6 +238,7 @@ Get supported tokens for a chain.
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "success": false,
@@ -231,6 +247,7 @@ Get supported tokens for a chain.
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "success": false,
@@ -239,6 +256,7 @@ Get supported tokens for a chain.
 ```
 
 ### 429 Too Many Requests
+
 ```json
 {
   "success": false,
@@ -246,17 +264,17 @@ Get supported tokens for a chain.
 }
 ```
 
----
+***
 
 ## Rate Limits
 
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| `/relayer/enroll` | 5 | 1 hour |
-| `/charge/:id/pay` | 10 | 1 minute |
-| `/payment/execute` | 10 | 1 minute |
-| Other endpoints | 60 | 1 minute |
+| Endpoint           | Limit | Window   |
+| ------------------ | ----- | -------- |
+| `/relayer/enroll`  | 5     | 1 hour   |
+| `/charge/:id/pay`  | 10    | 1 minute |
+| `/payment/execute` | 10    | 1 minute |
+| Other endpoints    | 60    | 1 minute |
 
----
+***
 
 **Last Updated:** 2025-12-27

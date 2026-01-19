@@ -1,22 +1,26 @@
+---
+hidden: true
+---
+
 # Railway Test Environment Configuration
 
 **Complete guide for running tests against Railway test deployment**
 
----
+***
 
 ## 🎯 Overview
 
 This guide covers how to configure and run **all types of tests** against the Railway test environment:
 
-| Test Type | Tool | Target |
-|-----------|------|--------|
-| **Backend API Tests** | Mocha | https://api-test-backend.notap.io |
-| **Integration Tests** | Mocha | Railway backend + database + Redis |
-| **E2E Tests** | Mocha + Bugster | Full stack (backend + frontend) |
-| **Penetration Tests** | Custom suite | Railway deployment |
-| **Frontend Tests** | Bugster | https://test-web-frontend.notap.io |
+| Test Type             | Tool            | Target                             |
+| --------------------- | --------------- | ---------------------------------- |
+| **Backend API Tests** | Mocha           | https://api-test-backend.notap.io  |
+| **Integration Tests** | Mocha           | Railway backend + database + Redis |
+| **E2E Tests**         | Mocha + Bugster | Full stack (backend + frontend)    |
+| **Penetration Tests** | Custom suite    | Railway deployment                 |
+| **Frontend Tests**    | Bugster         | https://test-web-frontend.notap.io |
 
----
+***
 
 ## 📋 Quick Setup
 
@@ -41,11 +45,13 @@ cat .env.test
 ### Step 2: Load Test Environment
 
 **Option A: Export for current session**
+
 ```bash
 export $(grep -v '^#' .env.test | xargs)
 ```
 
 **Option B: Use with npm scripts** (recommended)
+
 ```bash
 # Add to package.json:
 "test:railway": "NODE_ENV=test TEST_BASE_URL=https://api-test-backend.notap.io npm test"
@@ -65,7 +71,7 @@ curl https://api-test-backend.notap.io/health
 }
 ```
 
----
+***
 
 ## 🧪 Running Tests
 
@@ -88,13 +94,15 @@ TEST_BASE_URL=https://api-test-backend.notap.io npm run test:integration
 ```
 
 **What this tests:**
-- ✅ API endpoints respond correctly
-- ✅ Authentication works
-- ✅ Database operations succeed
-- ✅ Redis caching works
-- ✅ Business logic functions
+
+* ✅ API endpoints respond correctly
+* ✅ Authentication works
+* ✅ Database operations succeed
+* ✅ Redis caching works
+* ✅ Business logic functions
 
 **Example test output:**
+
 ```
   Enrollment Router
     POST /v1/enrollment/initiate
@@ -177,7 +185,7 @@ nano config.env
 ./scripts/run-all-tests.sh --skip-shannon
 ```
 
----
+***
 
 ## 🔧 Configuration Details
 
@@ -236,20 +244,20 @@ TARGET_WEB_URL=https://test-web-frontend.notap.io
 ENVIRONMENT=railway_test
 ```
 
----
+***
 
 ## 📊 Test Types & Commands
 
 ### Quick Reference
 
-| Test Type | Command | Duration |
-|-----------|---------|----------|
-| **Unit Tests** | `TEST_BASE_URL=... npm test` | 30 seconds |
-| **Integration** | `TEST_BASE_URL=... npm run test:integration` | 2 minutes |
-| **E2E** | `TEST_BASE_URL=... npm run test:e2e` | 5 minutes |
-| **Frontend (Bugster)** | `bugster run` | 10 minutes |
-| **Pentest (Quick)** | `./scripts/run-all-tests.sh --quick` | 30 minutes |
-| **Pentest (Full)** | `./scripts/run-all-tests.sh` | 90 minutes |
+| Test Type              | Command                                      | Duration   |
+| ---------------------- | -------------------------------------------- | ---------- |
+| **Unit Tests**         | `TEST_BASE_URL=... npm test`                 | 30 seconds |
+| **Integration**        | `TEST_BASE_URL=... npm run test:integration` | 2 minutes  |
+| **E2E**                | `TEST_BASE_URL=... npm run test:e2e`         | 5 minutes  |
+| **Frontend (Bugster)** | `bugster run`                                | 10 minutes |
+| **Pentest (Quick)**    | `./scripts/run-all-tests.sh --quick`         | 30 minutes |
+| **Pentest (Full)**     | `./scripts/run-all-tests.sh`                 | 90 minutes |
 
 ### Complete Test Suite
 
@@ -277,13 +285,14 @@ cd ../.bugster && bugster run
 echo "✓ All tests complete!"
 ```
 
----
+***
 
 ## 🔍 Troubleshooting
 
 ### Issue: Tests Timeout
 
 **Symptom:**
+
 ```
 Error: Timeout of 5000ms exceeded
 ```
@@ -291,6 +300,7 @@ Error: Timeout of 5000ms exceeded
 **Solutions:**
 
 1. **Increase timeout in test files:**
+
 ```javascript
 describe('Enrollment', function() {
   this.timeout(30000); // 30 seconds for Railway
@@ -302,16 +312,19 @@ describe('Enrollment', function() {
 ```
 
 2. **Check Railway backend is running:**
+
 ```bash
 curl https://api-test-backend.notap.io/health
 ```
 
 3. **Check Railway service logs:**
-- Railway Dashboard → Backend service → Deployments → View Logs
+
+* Railway Dashboard → Backend service → Deployments → View Logs
 
 ### Issue: Database Connection Failed
 
 **Symptom:**
+
 ```
 Error: Connection refused to database
 ```
@@ -319,13 +332,16 @@ Error: Connection refused to database
 **Solutions:**
 
 1. **Verify PostgreSQL is running:**
-- Railway Dashboard → PostgreSQL service → Check status
 
-2. **Check DATABASE_URL in backend:**
-- Backend service → Variables → DATABASE_URL exists
+* Railway Dashboard → PostgreSQL service → Check status
+
+2. **Check DATABASE\_URL in backend:**
+
+* Backend service → Variables → DATABASE\_URL exists
 
 3. **Restart backend:**
-- Backend service → Deployments → Redeploy
+
+* Backend service → Deployments → Redeploy
 
 ### Issue: Redis Connection Failed
 
@@ -334,6 +350,7 @@ Error: Connection refused to database
 ### Issue: CORS Errors
 
 **Symptom:**
+
 ```
 Access to XMLHttpRequest blocked by CORS policy
 ```
@@ -350,6 +367,7 @@ CORS_ORIGIN=https://test-web-frontend.notap.io,http://localhost:3000
 ### Issue: 401 Unauthorized
 
 **Symptom:**
+
 ```
 Response: 401 Unauthorized
 ```
@@ -357,19 +375,22 @@ Response: 401 Unauthorized
 **Solutions:**
 
 1. **Get fresh test API key:**
+
 ```bash
 curl https://api-test-backend.notap.io/v1/sandbox/tokens
 ```
 
 2. **Update test credentials:**
+
 ```javascript
 const apiKey = 'sk_test_...' // Use sandbox token
 ```
 
 3. **Check token expiration:**
-- Sandbox tokens expire after 30 days
 
----
+* Sandbox tokens expire after 30 days
+
+***
 
 ## 🎯 Best Practices
 
@@ -426,7 +447,7 @@ it('should return 400 when PIN is missing from enrollment request')
 it('test enrollment')
 ```
 
----
+***
 
 ## 📝 Adding New Tests
 
@@ -470,7 +491,7 @@ describe('My Feature', function() {
 TEST_BASE_URL=https://api-test-backend.notap.io mocha tests/my-feature.test.js
 ```
 
----
+***
 
 ## 🚀 CI/CD Integration
 
@@ -503,35 +524,34 @@ jobs:
           npm run test:e2e
 ```
 
----
+***
 
 ## 📚 Related Documentation
 
-- [RAILWAY_TEST_SETUP.md](../../pentest/RAILWAY_TEST_SETUP.md) - Railway infrastructure setup
-- [TEST_ARCHITECTURE.md](../../documentation/07-testing/TEST_ARCHITECTURE.md) - Complete test framework
-- [SANDBOX_TESTING_GUIDE.md](SANDBOX_TESTING_GUIDE.md) - Sandbox API usage
+* [RAILWAY\_TEST\_SETUP.md](../../pentest/RAILWAY_TEST_SETUP.md) - Railway infrastructure setup
+* [TEST\_ARCHITECTURE.md](../../documentation/07-testing/TEST_ARCHITECTURE.md) - Complete test framework
+* [SANDBOX\_TESTING\_GUIDE.md](SANDBOX_TESTING_GUIDE.md) - Sandbox API usage
 
----
+***
 
 ## ✅ Checklist
 
 **Before running tests against Railway:**
 
-- [ ] Railway backend is deployed and healthy
-- [ ] Railway PostgreSQL is connected
-- [ ] Railway Redis is connected
-- [ ] `.env.test` is configured
-- [ ] Test credentials obtained from `/v1/sandbox/tokens`
-- [ ] CORS allows test frontend URL
+* [ ] Railway backend is deployed and healthy
+* [ ] Railway PostgreSQL is connected
+* [ ] Railway Redis is connected
+* [ ] `.env.test` is configured
+* [ ] Test credentials obtained from `/v1/sandbox/tokens`
+* [ ] CORS allows test frontend URL
 
 **After tests:**
 
-- [ ] Review test results
-- [ ] Check Railway logs for errors
-- [ ] Clean up test data if needed
-- [ ] Document any failures
+* [ ] Review test results
+* [ ] Check Railway logs for errors
+* [ ] Clean up test data if needed
+* [ ] Document any failures
 
----
+***
 
-*Last Updated: 2026-01-17*
-*Railway Test Environment Configuration*
+_Last Updated: 2026-01-17_ _Railway Test Environment Configuration_

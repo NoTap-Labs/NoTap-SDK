@@ -1,14 +1,17 @@
+---
+hidden: true
+---
+
 # Test Creation Patterns - Always Read Before Writing Tests
 
-**Date:** 2025-12-24
-**Status:** Mandatory Reference Document
-**Purpose:** Prevent test/code mismatches by following production code patterns
+**Date:** 2025-12-24 **Status:** Mandatory Reference Document **Purpose:** Prevent test/code mismatches by following production code patterns
 
----
+***
 
 ## 🚨 Critical Rule: NEVER Write Tests Without Reading Production Code First
 
 **Pattern Observed Across ALL Modules:**
+
 1. Production code evolves (new parameters, validation rules, security fixes)
 2. Tests are written/updated without reading current production code
 3. Tests fail with compilation errors or assertion failures
@@ -16,13 +19,14 @@
 
 **Solution:** Always read the actual production code before writing or updating any test.
 
----
+***
 
 ## 📋 Mandatory Pre-Test Checklist
 
 Before writing ANY test, complete this checklist:
 
 ### Step 1: Read Production Code
+
 ```bash
 # Find the production class/function
 grep -r "class ClassName\|data class ClassName" */src/*/kotlin
@@ -39,6 +43,7 @@ Read <file_path>
 ```
 
 ### Step 2: Check for Recent Changes
+
 ```bash
 # Check git history for recent changes to the class
 git log --oneline -10 -- path/to/ProductionFile.kt
@@ -48,6 +53,7 @@ git show <commit-hash>:path/to/ProductionFile.kt
 ```
 
 ### Step 3: Verify Dependencies
+
 ```bash
 # Check what the production code imports/depends on
 grep "^import\|^require\|^const.*= require" ProductionFile.*
@@ -56,7 +62,8 @@ grep "^import\|^require\|^const.*= require" ProductionFile.*
 ```
 
 ### Step 4: Document Your Findings
-```markdown
+
+````markdown
 # Test Plan for ClassName
 
 ## Production Code Analysis (Date: YYYY-MM-DD)
@@ -68,24 +75,28 @@ constructor(
   param2: Type2 = default,    // Optional with default
   param3?: Type3              // Optional nullable
 )
-```
+````
 
 **Validation Rules:**
-- param1: Regex `/pattern/`, length > 0
-- param2: Range [0, 100], default = 50
-- param3: Must be HTTPS URL if provided
+
+* param1: Regex `/pattern/`, length > 0
+* param2: Range \[0, 100], default = 50
+* param3: Must be HTTPS URL if provided
 
 **Dependencies:**
-- ExternalService (mocked in tests)
-- ValidationUtils (use actual implementation)
+
+* ExternalService (mocked in tests)
+* ValidationUtils (use actual implementation)
 
 **Test Cases Needed:**
+
 1. Valid construction with all parameters
 2. Valid construction with only required parameters
 3. Invalid param1 (fails regex)
 4. Invalid param2 (out of range)
 5. etc.
-```
+
+````
 
 ---
 
@@ -101,9 +112,10 @@ PSPConfig.production(
     pspId = "id",
     metadata = mapOf("key" to "value")  // ❌ Parameter doesn't exist in companion function
 )
-```
+````
 
 **✅ CORRECT - Read production code first:**
+
 ```kotlin
 // Production code (PSPConfig.kt):
 // companion object {
@@ -126,19 +138,22 @@ PSPConfig(
 ```
 
 **Files Where This Occurred:**
-- `psp-sdk/src/test/kotlin/com/zeropay/psp/PSPConfigTest.kt:156`
 
----
+* `psp-sdk/src/test/kotlin/com/zeropay/psp/PSPConfigTest.kt:156`
+
+***
 
 ### Pattern 2: Constructor Argument Order/Type Mismatch
 
 **❌ WRONG - Positional arguments without reading signature:**
+
 ```kotlin
 // Test assumes (errorCode: String, message: String)
 ApiErrorResponse("ERROR_CODE", "Error message")  // ❌ First param is Boolean!
 ```
 
 **✅ CORRECT - Read production signature:**
+
 ```kotlin
 // Production code (PSPModels.kt):
 // data class ApiErrorResponse(
@@ -156,13 +171,15 @@ ApiErrorResponse(
 ```
 
 **Files Where This Occurred:**
-- `psp-sdk/src/test/kotlin/com/zeropay/psp/PSPModelsTest.kt:233, 254`
 
----
+* `psp-sdk/src/test/kotlin/com/zeropay/psp/PSPModelsTest.kt:233, 254`
+
+***
 
 ### Pattern 3: Validation Rule Mismatch
 
 **❌ WRONG - Not matching actual validation:**
+
 ```kotlin
 // Test uses production environment with test API key
 PSPConfig(
@@ -173,6 +190,7 @@ PSPConfig(
 ```
 
 **✅ CORRECT - Read validation logic:**
+
 ```kotlin
 // Production code (PSPConfig.kt):
 // val keyEnv = apiKey.split("_")[1]  // "test" or "live"
@@ -191,13 +209,15 @@ PSPConfig(
 ```
 
 **Files Where This Occurred:**
-- `psp-sdk/src/test/kotlin/com/zeropay/psp/PSPConfigTest.kt:102, 114`
 
----
+* `psp-sdk/src/test/kotlin/com/zeropay/psp/PSPConfigTest.kt:102, 114`
+
+***
 
 ### Pattern 4: Hardcoded Timestamps (CRITICAL)
 
 **❌ WRONG - Using old fixed timestamps:**
+
 ```kotlin
 class SessionManagerTest {
     private val now = 1700000000000L  // ❌ November 14, 2023 - 2 years old!
@@ -213,6 +233,7 @@ class SessionManagerTest {
 ```
 
 **Production Impact:**
+
 ```kotlin
 // Production code calls System.currentTimeMillis() internally
 fun getSession(id: String): VerificationSession? {
@@ -225,6 +246,7 @@ assertEquals(session, manager.getSession(id))  // ❌ FAILS - session is null (e
 ```
 
 **✅ CORRECT - Use current time:**
+
 ```kotlin
 class SessionManagerTest {
     private val now = System.currentTimeMillis()  // ✅ Current time
@@ -240,19 +262,22 @@ class SessionManagerTest {
 ```
 
 **Files Where This Occurred:**
-- `psp-sdk/src/test/kotlin/com/zeropay/psp/VerificationSessionTest.kt:7, 189`
+
+* `psp-sdk/src/test/kotlin/com/zeropay/psp/VerificationSessionTest.kt:7, 189`
 
 **Why This Happens:**
-- Developer copies test from old code
-- Timestamp was valid when originally written
-- Time passes, production code uses `System.currentTimeMillis()`
-- Test sessions are now ancient history and immediately expire
 
----
+* Developer copies test from old code
+* Timestamp was valid when originally written
+* Time passes, production code uses `System.currentTimeMillis()`
+* Test sessions are now ancient history and immediately expire
+
+***
 
 ### Pattern 5: Security Boundary Changes
 
 **❌ WRONG - Not matching security fixes:**
+
 ```kotlin
 // Old code used `>`
 fun isExpired(): Boolean {
@@ -268,6 +293,7 @@ fun `session at exact expiration boundary should be valid`() {
 ```
 
 **✅ CORRECT - Read current security logic:**
+
 ```kotlin
 // Production code after security audit (>=, not >)
 fun isExpired(): Boolean {
@@ -283,14 +309,16 @@ fun `session at exact expiration boundary should be expired`() {
 ```
 
 **Files Where This Occurred:**
-- All modules after 2025-12-23 security audit
-- Changed `>` to `>=` in 4 files (SDK, Merchant, Enrollment, PSP-SDK)
 
----
+* All modules after 2025-12-23 security audit
+* Changed `>` to `>=` in 4 files (SDK, Merchant, Enrollment, PSP-SDK)
+
+***
 
 ### Pattern 6: Missing Test Data Updates
 
 **❌ WRONG - Test data doesn't match production requirements:**
+
 ```kotlin
 // Production requires minimum 3 factors (updated 2025-11-05)
 @Test
@@ -302,6 +330,7 @@ fun `should enroll user successfully`() {
 ```
 
 **✅ CORRECT - Read current requirements:**
+
 ```kotlin
 // Production code (EnrollmentManager.kt):
 // require(factors.size >= 3) { "Minimum 3 factors required" }
@@ -315,9 +344,10 @@ fun `should enroll user successfully`() {
 ```
 
 **Files Where This Occurred:**
-- `merchant/src/commonTest/kotlin/.../*Test.kt` (23 tests fixed)
 
----
+* `merchant/src/commonTest/kotlin/.../*Test.kt` (23 tests fixed)
+
+***
 
 ## 📝 Test Creation Template
 
@@ -397,54 +427,56 @@ class ClassNameTest {
 }
 ```
 
----
+***
 
 ## 🔄 Test Maintenance Checklist
 
 **When production code changes:**
 
-1. **Search for ALL tests using changed code:**
-   ```bash
-   grep -r "ClassName\|functionName" */test/
-   ```
+1.  **Search for ALL tests using changed code:**
 
+    ```bash
+    grep -r "ClassName\|functionName" */test/
+    ```
 2. **Update EVERY test found:**
-   - Fix parameter names/types
-   - Fix validation expectations
-   - Fix return type assertions
-   - Fix import statements
+   * Fix parameter names/types
+   * Fix validation expectations
+   * Fix return type assertions
+   * Fix import statements
+3.  **Verify tests compile:**
 
-3. **Verify tests compile:**
-   ```bash
-   gradlew :module:compileDebugUnitTestKotlinAndroid
-   npm test -- --listTests
-   ```
+    ```bash
+    gradlew :module:compileDebugUnitTestKotlinAndroid
+    npm test -- --listTests
+    ```
+4.  **Run tests to ensure they pass:**
 
-4. **Run tests to ensure they pass:**
-   ```bash
-   gradlew :module:test
-   npm test
-   ```
+    ```bash
+    gradlew :module:test
+    npm test
+    ```
+5.  **Commit code + test updates together:**
 
-5. **Commit code + test updates together:**
-   ```bash
-   git add ProductionFile.kt ProductionFileTest.kt
-   git commit -m "feat: Update feature X (includes test updates)"
-   ```
+    ```bash
+    git add ProductionFile.kt ProductionFileTest.kt
+    git commit -m "feat: Update feature X (includes test updates)"
+    ```
 
 **NEVER:**
-- ❌ Change production code without updating tests
-- ❌ Commit code that breaks test compilation
-- ❌ Leave tests with outdated signatures
-- ❌ Assume tests "probably still work"
+
+* ❌ Change production code without updating tests
+* ❌ Commit code that breaks test compilation
+* ❌ Leave tests with outdated signatures
+* ❌ Assume tests "probably still work"
 
 **ALWAYS:**
-- ✅ Update tests in SAME commit as code changes
-- ✅ Search for ALL usages before changing APIs
-- ✅ Verify test compilation before committing
-- ✅ Run full test suite after major changes
 
----
+* ✅ Update tests in SAME commit as code changes
+* ✅ Search for ALL usages before changing APIs
+* ✅ Verify test compilation before committing
+* ✅ Run full test suite after major changes
+
+***
 
 ## 🎯 Real-World Examples from This Codebase
 
@@ -453,6 +485,7 @@ class ClassNameTest {
 **Problem:** Tests used 2 factors, production required 3 minimum
 
 **Investigation:**
+
 ```bash
 # Read production code
 Read merchant/src/commonMain/kotlin/.../VerificationManager.kt
@@ -463,13 +496,14 @@ require(factors.size >= 3) { "Minimum 3 factors required" }
 
 **Fix:** Updated ALL 23 tests to use 3+ factors
 
----
+***
 
 ### Example 2: PSP-SDK Session Tests (4 failures fixed)
 
 **Problem:** All sessions immediately expired
 
 **Investigation:**
+
 ```kotlin
 // Test code
 private val now = 1700000000000L  // Nov 14, 2023
@@ -483,13 +517,14 @@ fun getSession(id: String) {
 
 **Fix:** Changed to `System.currentTimeMillis()`
 
----
+***
 
 ### Example 3: Security Boundary (multiple modules)
 
 **Problem:** Tests assumed `>` boundary, production changed to `>=`
 
 **Investigation:**
+
 ```bash
 # Security audit fixed timing attack
 git show 0d49136:psp-sdk/src/commonMain/kotlin/.../VerificationSession.kt
@@ -501,7 +536,7 @@ git show 0d49136:psp-sdk/src/commonMain/kotlin/.../VerificationSession.kt
 
 **Fix:** Updated test expectations to match `>=` behavior
 
----
+***
 
 ## 📚 Required Reading Before Writing Tests
 
@@ -511,14 +546,15 @@ git show 0d49136:psp-sdk/src/commonMain/kotlin/.../VerificationSession.kt
 2. **Production code file** - The ACTUAL code you're testing
 3. **Recent git history** - `git log -10 -- ProductionFile.*`
 4. **Related test files** - See how similar tests are written
-5. **LESSONS_LEARNED.md** - Common pitfalls to avoid
+5. **LESSONS\_LEARNED.md** - Common pitfalls to avoid
 
 **Recommended:**
-- `TEST_ARCHITECTURE.md` - Framework-specific patterns (Mocha vs Jest vs JUnit)
-- `SECURITY_PATTERNS_REFERENCE.md` - Security testing patterns
-- Recent pull requests touching the same code
 
----
+* `TEST_ARCHITECTURE.md` - Framework-specific patterns (Mocha vs Jest vs JUnit)
+* `SECURITY_PATTERNS_REFERENCE.md` - Security testing patterns
+* Recent pull requests touching the same code
+
+***
 
 ## ✅ Pre-Commit Test Validation
 
@@ -545,38 +581,40 @@ npm test
 # - Edge cases are covered
 ```
 
----
+***
 
 ## 🚫 Anti-Patterns to Avoid
 
-| Anti-Pattern | Why It's Wrong | Correct Approach |
-|--------------|----------------|------------------|
-| Copy-paste old tests | Old tests have outdated assumptions | Write new tests after reading current code |
-| Hardcode 2023 timestamps | Production uses current time | Use `System.currentTimeMillis()` |
-| Guess constructor params | Wrong types/names/order | Read production class definition |
-| Assume validation rules | Rules change over time | Read actual validation logic |
-| Skip test compilation | Syntax errors block CI/CD | Always verify tests compile |
-| Test in isolation | Miss integration issues | Run full test suite |
+| Anti-Pattern             | Why It's Wrong                      | Correct Approach                           |
+| ------------------------ | ----------------------------------- | ------------------------------------------ |
+| Copy-paste old tests     | Old tests have outdated assumptions | Write new tests after reading current code |
+| Hardcode 2023 timestamps | Production uses current time        | Use `System.currentTimeMillis()`           |
+| Guess constructor params | Wrong types/names/order             | Read production class definition           |
+| Assume validation rules  | Rules change over time              | Read actual validation logic               |
+| Skip test compilation    | Syntax errors block CI/CD           | Always verify tests compile                |
+| Test in isolation        | Miss integration issues             | Run full test suite                        |
 
----
+***
 
 ## 📊 Success Metrics
 
 **Good Test Suite Indicators:**
-- ✅ 95%+ pass rate
-- ✅ Zero compilation errors
-- ✅ Tests updated in same commit as code changes
-- ✅ Test data matches current requirements
-- ✅ No hardcoded old timestamps
+
+* ✅ 95%+ pass rate
+* ✅ Zero compilation errors
+* ✅ Tests updated in same commit as code changes
+* ✅ Test data matches current requirements
+* ✅ No hardcoded old timestamps
 
 **Bad Test Suite Indicators:**
-- ❌ <80% pass rate
-- ❌ Compilation errors
-- ❌ Tests lag behind code changes
-- ❌ Test data from years ago
-- ❌ Tests fail on timing boundaries
 
----
+* ❌ <80% pass rate
+* ❌ Compilation errors
+* ❌ Tests lag behind code changes
+* ❌ Test data from years ago
+* ❌ Tests fail on timing boundaries
+
+***
 
 ## 🔧 Quick Fix Guide
 
@@ -590,6 +628,7 @@ npm test
 6. **Commit together** - Code + test updates in one commit
 
 **Common Quick Fixes:**
+
 ```kotlin
 // Fix 1: Add missing environment parameter
 - PSPConfig(apiKey = "psp_test_...", pspId = "id")
@@ -608,13 +647,14 @@ npm test
 + createSession(factors = listOf("PIN", "EMOJI", "PATTERN"))
 ```
 
----
+***
 
 ## 📝 Lesson Summary
 
 **Core Principle:** Tests must ALWAYS match current production code, not historical assumptions.
 
 **Workflow:**
+
 1. Read production code FIRST
 2. Understand current behavior
 3. Write tests matching ACTUAL behavior
@@ -623,8 +663,6 @@ npm test
 
 **Remember:** 10 minutes reading production code saves hours debugging test failures.
 
----
+***
 
-**Last Updated:** 2025-12-24
-**Applies To:** All modules (SDK, Merchant, Enrollment, PSP-SDK, PSP-SDK-Web, Online-Web)
-**Status:** Mandatory for all test creation and updates
+**Last Updated:** 2025-12-24 **Applies To:** All modules (SDK, Merchant, Enrollment, PSP-SDK, PSP-SDK-Web, Online-Web) **Status:** Mandatory for all test creation and updates

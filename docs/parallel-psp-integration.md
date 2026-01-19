@@ -1,10 +1,12 @@
+---
+hidden: true
+---
+
 # Parallel PSP Session Integration
 
-**Version**: 2.2.0
-**Date**: 2025-12-03
-**Status**: Production Ready
+**Version**: 2.2.0 **Date**: 2025-12-03 **Status**: Production Ready
 
----
+***
 
 ## 📋 Overview
 
@@ -30,11 +32,11 @@ TIME SAVED: 200ms (28% faster)
 
 ### **Business Model Clarification**
 
-- **NoTap Role**: Authentication provider (bouncer checking ID)
-- **PSP Role**: Payment processor (cashier handling money)
-- **This Feature**: Pre-creates checkout sessions, does **NOT** process payments
+* **NoTap Role**: Authentication provider (bouncer checking ID)
+* **PSP Role**: Payment processor (cashier handling money)
+* **This Feature**: Pre-creates checkout sessions, does **NOT** process payments
 
----
+***
 
 ## 🔧 Technical Architecture
 
@@ -78,20 +80,19 @@ TIME SAVED: 200ms (28% faster)
 ### **Components**
 
 1. **PSP Session Service** (`backend/services/pspSessionService.js`)
-   - Creates checkout sessions with Stripe, Tilopay, Adyen, MercadoPago, Square
-   - Non-blocking (auth succeeds even if PSP fails)
-   - 5-minute session TTL (auto-expires via Redis TTL)
-   - **Redis storage** for multi-server support (production-ready)
-   - Input validation
-   - Error isolation
-
+   * Creates checkout sessions with Stripe, Tilopay, Adyen, MercadoPago, Square
+   * Non-blocking (auth succeeds even if PSP fails)
+   * 5-minute session TTL (auto-expires via Redis TTL)
+   * **Redis storage** for multi-server support (production-ready)
+   * Input validation
+   * Error isolation
 2. **Verification Router** (`backend/routes/verificationRouter.js`)
-   - Modified `/v1/verification/initiate` endpoint
-   - Accepts optional `psp_config` parameter
-   - Uses `Promise.allSettled` for parallel execution
-   - Backward compatible (works without `psp_config`)
+   * Modified `/v1/verification/initiate` endpoint
+   * Accepts optional `psp_config` parameter
+   * Uses `Promise.allSettled` for parallel execution
+   * Backward compatible (works without `psp_config`)
 
----
+***
 
 ## 🚀 API Usage
 
@@ -108,6 +109,7 @@ TIME SAVED: 200ms (28% faster)
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -147,6 +149,7 @@ TIME SAVED: 200ms (28% faster)
 ```
 
 **Response (Enhanced)**:
+
 ```json
 {
   "success": true,
@@ -171,13 +174,14 @@ TIME SAVED: 200ms (28% faster)
 }
 ```
 
----
+***
 
 ## 🔐 Supported PSPs
 
 ### **1. Stripe**
 
 **Configuration**:
+
 ```json
 {
   "psp": "stripe",
@@ -187,17 +191,19 @@ TIME SAVED: 200ms (28% faster)
 ```
 
 **Environment Variables**:
+
 ```bash
 STRIPE_SECRET_KEY=sk_live_...
 ```
 
 **Session Type**: Checkout Session (stripe.checkout.sessions.create)
 
----
+***
 
 ### **2. Tilopay**
 
 **Configuration**:
+
 ```json
 {
   "psp": "tilopay",
@@ -207,6 +213,7 @@ STRIPE_SECRET_KEY=sk_live_...
 ```
 
 **Environment Variables**:
+
 ```bash
 TILOPAY_API_KEY=...
 TILOPAY_API_URL=https://api.tilopay.com
@@ -214,11 +221,12 @@ TILOPAY_API_URL=https://api.tilopay.com
 
 **Session Type**: Checkout Session (POST /v1/checkout/sessions)
 
----
+***
 
 ### **3. Adyen**
 
 **Configuration**:
+
 ```json
 {
   "psp": "adyen",
@@ -228,6 +236,7 @@ TILOPAY_API_URL=https://api.tilopay.com
 ```
 
 **Environment Variables**:
+
 ```bash
 ADYEN_API_KEY=...
 ADYEN_API_URL=https://checkout-test.adyen.com
@@ -235,11 +244,12 @@ ADYEN_API_URL=https://checkout-test.adyen.com
 
 **Session Type**: Payment Session (POST /v69/sessions)
 
----
+***
 
 ### **4. MercadoPago**
 
 **Configuration**:
+
 ```json
 {
   "psp": "mercadopago",
@@ -249,6 +259,7 @@ ADYEN_API_URL=https://checkout-test.adyen.com
 ```
 
 **Environment Variables**:
+
 ```bash
 MERCADOPAGO_ACCESS_TOKEN=...
 MERCADOPAGO_API_URL=https://api.mercadopago.com
@@ -256,11 +267,12 @@ MERCADOPAGO_API_URL=https://api.mercadopago.com
 
 **Session Type**: Checkout Preference (POST /checkout/preferences)
 
----
+***
 
 ### **5. Square**
 
 **Configuration**:
+
 ```json
 {
   "psp": "square",
@@ -270,6 +282,7 @@ MERCADOPAGO_API_URL=https://api.mercadopago.com
 ```
 
 **Environment Variables**:
+
 ```bash
 SQUARE_ACCESS_TOKEN=...
 SQUARE_API_URL=https://connect.squareup.com
@@ -277,7 +290,7 @@ SQUARE_API_URL=https://connect.squareup.com
 
 **Session Type**: Payment Link (POST /v2/online-checkout/payment-links)
 
----
+***
 
 ## ⚙️ Configuration
 
@@ -314,58 +327,63 @@ const PSP_CONFIG = {
 };
 ```
 
----
+***
 
 ## 🔒 Security
 
 ### **1. No Payment Processing**
-- NoTap only creates checkout sessions
-- Merchant completes payment via PSP directly
-- NoTap never touches payment data
+
+* NoTap only creates checkout sessions
+* Merchant completes payment via PSP directly
+* NoTap never touches payment data
 
 ### **2. Non-Blocking Architecture**
-- Auth succeeds even if PSP fails
-- PSP errors logged but don't block user
-- Graceful degradation
+
+* Auth succeeds even if PSP fails
+* PSP errors logged but don't block user
+* Graceful degradation
 
 ### **3. Session Expiration & Storage**
-- PSP sessions expire in 5 minutes (Redis TTL)
-- Auto-cleanup via Redis expiration (no manual cleanup needed)
-- **Redis storage**: Multi-server compatible, survives restarts
-- Secure session storage with TLS encryption
+
+* PSP sessions expire in 5 minutes (Redis TTL)
+* Auto-cleanup via Redis expiration (no manual cleanup needed)
+* **Redis storage**: Multi-server compatible, survives restarts
+* Secure session storage with TLS encryption
 
 ### **4. Input Validation**
-- PSP configuration validated
-- Amount/currency validation
-- Metadata size limits (prevent DoS)
+
+* PSP configuration validated
+* Amount/currency validation
+* Metadata size limits (prevent DoS)
 
 ### **5. Error Isolation**
-- PSP errors don't affect auth flow
-- Detailed error logging
-- No sensitive data in responses
 
----
+* PSP errors don't affect auth flow
+* Detailed error logging
+* No sensitive data in responses
+
+***
 
 ## 📊 Performance Metrics
 
 ### **Timing Breakdown**
 
-| Operation | Duration | Notes |
-|-----------|----------|-------|
-| Auth session creation | 100-200ms | Redis + factor selection |
-| PSP API call (Stripe) | 300-500ms | Checkout session creation |
-| PSP API call (Tilopay) | 400-600ms | Checkout session creation |
-| **Sequential Total** | 700-800ms | Without parallel execution |
-| **Parallel Total** | 400-600ms | With parallel execution |
-| **Time Saved** | 200-300ms | **28-38% faster** |
+| Operation              | Duration  | Notes                      |
+| ---------------------- | --------- | -------------------------- |
+| Auth session creation  | 100-200ms | Redis + factor selection   |
+| PSP API call (Stripe)  | 300-500ms | Checkout session creation  |
+| PSP API call (Tilopay) | 400-600ms | Checkout session creation  |
+| **Sequential Total**   | 700-800ms | Without parallel execution |
+| **Parallel Total**     | 400-600ms | With parallel execution    |
+| **Time Saved**         | 200-300ms | **28-38% faster**          |
 
 ### **Success Rates**
 
-- Auth session creation: 99.9% (critical path)
-- PSP session creation: 98.5% (non-critical)
-- Overall success: 99.9% (auth always succeeds)
+* Auth session creation: 99.9% (critical path)
+* PSP session creation: 98.5% (non-critical)
+* Overall success: 99.9% (auth always succeeds)
 
----
+***
 
 ## 🧪 Testing
 
@@ -392,6 +410,7 @@ npm test -- backward-compat.test.js
 ### **Manual Testing**
 
 1. **Without PSP config** (backward compatibility):
+
 ```bash
 curl -X POST http://localhost:3000/v1/verification/initiate \
   -H "Content-Type: application/json" \
@@ -403,6 +422,7 @@ curl -X POST http://localhost:3000/v1/verification/initiate \
 ```
 
 2. **With Stripe PSP config**:
+
 ```bash
 curl -X POST http://localhost:3000/v1/verification/initiate \
   -H "Content-Type: application/json" \
@@ -419,6 +439,7 @@ curl -X POST http://localhost:3000/v1/verification/initiate \
 ```
 
 3. **With invalid PSP** (should succeed with warning):
+
 ```bash
 curl -X POST http://localhost:3000/v1/verification/initiate \
   -H "Content-Type: application/json" \
@@ -435,7 +456,7 @@ curl -X POST http://localhost:3000/v1/verification/initiate \
 # Auth should succeed, PSP creation fails (non-critical)
 ```
 
----
+***
 
 ## 🐛 Troubleshooting
 
@@ -444,12 +465,14 @@ curl -X POST http://localhost:3000/v1/verification/initiate \
 **Symptoms**: Auth succeeds, but `psp_session` not in response
 
 **Causes**:
+
 1. Missing PSP API keys in environment
 2. Invalid PSP merchant ID
 3. Network timeout (> 5 seconds)
 4. PSP API down
 
 **Solution**:
+
 ```bash
 # Check logs
 tail -f logs/backend.log | grep PSPSession
@@ -474,11 +497,13 @@ curl https://api.stripe.com/v1/checkout/sessions \
 **Symptoms**: Total time > 1 second
 
 **Causes**:
+
 1. PSP API timeout (> 5 seconds)
 2. Network latency
 3. Auth session creation slow (Redis/DB)
 
 **Solution**:
+
 ```bash
 # Check PSP API timeout
 grep "API_TIMEOUT" backend/services/pspSessionService.js
@@ -497,6 +522,7 @@ psql -c "SELECT * FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;
 **Causes**: Response format changed (should not happen)
 
 **Verification**:
+
 ```bash
 # Test old request format
 curl -X POST http://localhost:3000/v1/verification/initiate \
@@ -506,25 +532,28 @@ curl -X POST http://localhost:3000/v1/verification/initiate \
 # Response should NOT include psp_ready/psp_session
 ```
 
----
+***
 
 ## 📚 Migration Guide
 
 ### **Existing Merchants (No Changes Required)**
 
 If you don't want parallel PSP integration:
-- **No action needed**
-- Continue using existing API format
-- Zero breaking changes
+
+* **No action needed**
+* Continue using existing API format
+* Zero breaking changes
 
 ### **New Merchants (Using PSP Integration)**
 
 1. **Configure PSP credentials**:
+
 ```bash
 export STRIPE_SECRET_KEY=sk_live_...
 ```
 
 2. **Update API calls**:
+
 ```javascript
 // Add psp_config to initiate request
 const response = await fetch('/v1/verification/initiate', {
@@ -551,19 +580,21 @@ if (data.psp_ready && data.psp_session) {
 ```
 
 3. **Handle authentication + payment**:
+
 ```javascript
 // 1. User completes factors
 // 2. Redirect to PSP checkout URL
 window.location.href = data.psp_session.checkout_url;
 ```
 
----
+***
 
 ## 🔄 Rollback Plan
 
 If issues occur, disable PSP integration:
 
 1. **Server-side disable** (no deployment):
+
 ```bash
 # Remove PSP API keys from environment
 unset STRIPE_SECRET_KEY
@@ -575,6 +606,7 @@ pm2 restart backend
 ```
 
 2. **Code rollback** (if needed):
+
 ```bash
 git revert <commit-hash>
 npm install
@@ -582,6 +614,7 @@ pm2 restart backend
 ```
 
 3. **Client-side rollback**:
+
 ```javascript
 // Remove psp_config from requests
 const response = await fetch('/v1/verification/initiate', {
@@ -595,7 +628,7 @@ const response = await fetch('/v1/verification/initiate', {
 });
 ```
 
----
+***
 
 ## 📈 Future Enhancements
 
@@ -605,29 +638,27 @@ const response = await fetch('/v1/verification/initiate', {
 4. **More PSPs**: PayPal, Authorize.net, Braintree
 5. **Webhook Integration**: PSP webhooks for payment status updates
 
----
+***
 
 ## 📞 Support
 
-- **Documentation**: This file + `CLAUDE.md`
-- **Code Reference**:
-  - `backend/services/pspSessionService.js`
-  - `backend/routes/verificationRouter.js` (lines 174-366)
-- **Logs**: `backend/logs/` directory
-- **Issues**: GitHub Issues or internal support channel
+* **Documentation**: This file + `CLAUDE.md`
+* **Code Reference**:
+  * `backend/services/pspSessionService.js`
+  * `backend/routes/verificationRouter.js` (lines 174-366)
+* **Logs**: `backend/logs/` directory
+* **Issues**: GitHub Issues or internal support channel
 
----
+***
 
 ## ✅ Summary
 
-- ✅ **Backward Compatible**: Works without `psp_config`
-- ✅ **Non-Blocking**: Auth succeeds even if PSP fails
-- ✅ **Performance**: 200-300ms faster (28% improvement)
-- ✅ **Security**: NoTap never processes payments
-- ✅ **Scalable**: Supports 5 PSPs (more coming)
-- ✅ **Production Ready**: Comprehensive error handling
-- ✅ **Redis Storage**: Multi-server support with auto-expiration
+* ✅ **Backward Compatible**: Works without `psp_config`
+* ✅ **Non-Blocking**: Auth succeeds even if PSP fails
+* ✅ **Performance**: 200-300ms faster (28% improvement)
+* ✅ **Security**: NoTap never processes payments
+* ✅ **Scalable**: Supports 5 PSPs (more coming)
+* ✅ **Production Ready**: Comprehensive error handling
+* ✅ **Redis Storage**: Multi-server support with auto-expiration
 
-**Version**: 2.2.0
-**Status**: ✅ Production Ready
-**Last Updated**: 2025-12-03
+**Version**: 2.2.0 **Status**: ✅ Production Ready **Last Updated**: 2025-12-03

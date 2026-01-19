@@ -1,11 +1,14 @@
+---
+hidden: true
+---
+
 # Wallet Signature Infrastructure
+
 ## Complete Implementation Guide
 
-**Implementation Date:** 2025-11-25
-**Status:** ✅ Production-Ready
-**Components:** Backend Services, API Endpoints, Android SDK, Security
+**Implementation Date:** 2025-11-25 **Status:** ✅ Production-Ready **Components:** Backend Services, API Endpoints, Android SDK, Security
 
----
+***
 
 ## 🎯 **Problem Statement & Solution**
 
@@ -26,6 +29,7 @@ async function relinkExistingSNS({ uuid, snsName, solanaAddress, signature }) {
 ```
 
 **Attack Scenario:**
+
 1. Alice owns `alice.notap.sol` with wallet `7xKXYZ...`
 2. Attacker Bob sees Alice's address on-chain (public blockchain)
 3. Bob creates new enrollment with UUID `bob123`
@@ -47,13 +51,14 @@ User Flow:
 ```
 
 **Security Properties:**
-- ✅ Proves wallet control (private key ownership)
-- ✅ Prevents replay attacks (one-time challenges)
-- ✅ No blockchain transaction required (off-chain signing)
-- ✅ 5-minute challenge TTL (prevents old challenge reuse)
-- ✅ Constant-time verification (prevents timing attacks)
 
----
+* ✅ Proves wallet control (private key ownership)
+* ✅ Prevents replay attacks (one-time challenges)
+* ✅ No blockchain transaction required (off-chain signing)
+* ✅ 5-minute challenge TTL (prevents old challenge reuse)
+* ✅ Constant-time verification (prevents timing attacks)
+
+***
 
 ## 🏗️ **Architecture Overview**
 
@@ -99,13 +104,13 @@ User Flow:
 └─────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## 📚 **Implementation Details**
 
 ### **1. Backend: Wallet Signature Service**
 
-**File:** `backend/services/walletSignatureService.js` (~400 LOC)
+**File:** `backend/services/walletSignatureService.js` (\~400 LOC)
 
 **Key Functions:**
 
@@ -199,21 +204,24 @@ async function verifyChallengeSignature(redis, walletAddress, uuid, signatureBas
 ```
 
 **Dependencies:**
-- `tweetnacl` - Ed25519 signature verification
-- `bs58` - Base58 encoding/decoding (Solana standard)
 
----
+* `tweetnacl` - Ed25519 signature verification
+* `bs58` - Base58 encoding/decoding (Solana standard)
+
+***
 
 ### **2. Backend: Wallet Router**
 
-**File:** `backend/routes/walletRouter.js` (~350 LOC)
+**File:** `backend/routes/walletRouter.js` (\~350 LOC)
 
 **Endpoints:**
 
 #### **POST /v1/wallet/challenge/generate**
+
 Generate a signature challenge.
 
 **Request:**
+
 ```json
 {
   "walletAddress": "7xKXYZ...",
@@ -223,6 +231,7 @@ Generate a signature challenge.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -240,9 +249,11 @@ Generate a signature challenge.
 ```
 
 #### **POST /v1/wallet/challenge/verify**
+
 Verify a signed challenge.
 
 **Request:**
+
 ```json
 {
   "walletAddress": "7xKXYZ...",
@@ -252,6 +263,7 @@ Verify a signed challenge.
 ```
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -263,6 +275,7 @@ Verify a signed challenge.
 ```
 
 **Response (Failure):**
+
 ```json
 {
   "success": false,
@@ -271,9 +284,11 @@ Verify a signed challenge.
 ```
 
 #### **POST /v1/wallet/connect**
+
 Complete wallet connection (challenge verification + linking).
 
 **Request:**
+
 ```json
 {
   "walletAddress": "7xKXYZ...",
@@ -283,6 +298,7 @@ Complete wallet connection (challenge verification + linking).
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -293,13 +309,14 @@ Complete wallet connection (challenge verification + linking).
 }
 ```
 
----
+***
 
 ### **3. Updated: SNS Re-Link with Signature Verification**
 
 **File:** `backend/services/snsIntegrationService.js`
 
 **Before (VULNERABLE):**
+
 ```javascript
 // ❌ OLD CODE (line 1300)
 // TODO: Implement signature verification
@@ -307,6 +324,7 @@ Complete wallet connection (challenge verification + linking).
 ```
 
 **After (SECURE):**
+
 ```javascript
 // ✅ NEW CODE (line 1311-1337)
 // Step 2: Verify wallet signature (CRITICAL SECURITY CHECK)
@@ -336,6 +354,7 @@ console.log(`✅ Wallet signature verified for SNS re-link`);
 ```
 
 **Updated Endpoint:**
+
 ```javascript
 // backend/routes/snsRouter.js (line 417-423)
 const result = await snsService.relinkExistingSNS({
@@ -347,19 +366,21 @@ const result = await snsService.relinkExistingSNS({
 });
 ```
 
----
+***
 
 ### **4. Android SDK: Wallet Callback Handler**
 
-**File:** `sdk/src/androidMain/kotlin/com/zeropay/sdk/blockchain/WalletCallbackHandler.kt` (~350 LOC)
+**File:** `sdk/src/androidMain/kotlin/com/zeropay/sdk/blockchain/WalletCallbackHandler.kt` (\~350 LOC)
 
 **Features:**
-- Parse deep link callbacks from Phantom wallet
-- Extract signature and public key
-- Send to backend for verification
-- Handle success/error callbacks
+
+* Parse deep link callbacks from Phantom wallet
+* Extract signature and public key
+* Send to backend for verification
+* Handle success/error callbacks
 
 **AndroidManifest.xml Configuration:**
+
 ```xml
 <activity android:name=".WalletCallbackActivity">
     <intent-filter>
@@ -375,6 +396,7 @@ const result = await snsService.relinkExistingSNS({
 ```
 
 **Usage:**
+
 ```kotlin
 // Store UUID before opening wallet
 WalletCallbackHandler.storeUUID(context, userUuid)
@@ -406,7 +428,7 @@ override fun onNewIntent(intent: Intent?) {
 }
 ```
 
----
+***
 
 ## 🔄 **Complete User Flows**
 
@@ -464,7 +486,7 @@ User Story: Alice deleted her NoTap account but wants to keep her SNS name
                      ✅ SNS Re-Linked!
 ```
 
----
+***
 
 ### **Flow 2: Wallet Connection**
 
@@ -513,32 +535,32 @@ User Story: New user wants to connect their Phantom wallet to NoTap.
                      ✅ Wallet Connected!
 ```
 
----
+***
 
 ## 🛡️ **Security Analysis**
 
 ### **Attack Scenarios & Defenses**
 
-| Attack | Defense | Result |
-|--------|---------|--------|
-| **Replay Attack** | One-time challenges deleted after use | ✅ Protected |
-| **Challenge Reuse** | 5-minute TTL in Redis | ✅ Protected |
-| **Signature Forgery** | Ed25519 verification (cryptographic) | ✅ Protected |
-| **Timing Attack** | Constant-time verification (TweetNaCl) | ✅ Protected |
-| **MitM Attack** | HTTPS + cryptographic signatures | ✅ Protected |
-| **Challenge Theft** | Challenge only useful with private key | ✅ Protected |
-| **Database Breach** | Only hashes stored (SHA-256) | ✅ Protected |
-| **Redis Breach** | Challenges expire in 5 minutes | ✅ Minimized |
+| Attack                | Defense                                | Result      |
+| --------------------- | -------------------------------------- | ----------- |
+| **Replay Attack**     | One-time challenges deleted after use  | ✅ Protected |
+| **Challenge Reuse**   | 5-minute TTL in Redis                  | ✅ Protected |
+| **Signature Forgery** | Ed25519 verification (cryptographic)   | ✅ Protected |
+| **Timing Attack**     | Constant-time verification (TweetNaCl) | ✅ Protected |
+| **MitM Attack**       | HTTPS + cryptographic signatures       | ✅ Protected |
+| **Challenge Theft**   | Challenge only useful with private key | ✅ Protected |
+| **Database Breach**   | Only hashes stored (SHA-256)           | ✅ Protected |
+| **Redis Breach**      | Challenges expire in 5 minutes         | ✅ Minimized |
 
 ### **Cryptographic Properties**
 
-- **Algorithm:** Ed25519 (Curve25519)
-- **Signature Size:** 64 bytes
-- **Public Key Size:** 32 bytes
-- **Security Level:** 128-bit (equivalent to RSA 3072-bit)
-- **Verification Time:** < 1ms (constant-time)
+* **Algorithm:** Ed25519 (Curve25519)
+* **Signature Size:** 64 bytes
+* **Public Key Size:** 32 bytes
+* **Security Level:** 128-bit (equivalent to RSA 3072-bit)
+* **Verification Time:** < 1ms (constant-time)
 
----
+***
 
 ## 📊 **Database Changes**
 
@@ -567,7 +589,7 @@ SET wallet:challenge:7xKXYZ...:uuid123 '{"walletAddress":"7xKXYZ...","uuid":"uui
 SET wallet:hash:sha256_hash 'uuid123' EX 86400
 ```
 
----
+***
 
 ## 🧪 **Testing Guide**
 
@@ -675,19 +697,21 @@ curl -X POST http://localhost:3000/v1/sns/relink \
   }'
 ```
 
----
+***
 
 ## 🧪 **Testing**
 
 ### **Test Coverage:**
-- ✅ **Unit Tests:** 17 tests for wallet signature service
-- ✅ **Integration Tests:** 16 tests for wallet endpoints
-- ✅ **E2E Tests:** 5 tests for complete SNS re-link flow
-- **Total: 38 tests across ~1,250 LOC**
+
+* ✅ **Unit Tests:** 17 tests for wallet signature service
+* ✅ **Integration Tests:** 16 tests for wallet endpoints
+* ✅ **E2E Tests:** 5 tests for complete SNS re-link flow
+* **Total: 38 tests across \~1,250 LOC**
 
 ### **1. Unit Tests** (`backend/tests/unit/walletSignatureService.test.js`)
 
 **Challenge Generation Tests (5 tests):**
+
 ```javascript
 describe('Challenge Generation', () => {
   test('generates valid challenge with all required fields', async () => {
@@ -727,6 +751,7 @@ describe('Challenge Generation', () => {
 ```
 
 **Signature Verification Tests (6 tests):**
+
 ```javascript
 describe('Signature Verification', () => {
   test('verifies valid Ed25519 signature', () => {
@@ -787,6 +812,7 @@ describe('Signature Verification', () => {
 ```
 
 **Challenge-Response Flow Tests (4 tests):**
+
 ```javascript
 describe('Challenge-Response Flow', () => {
   test('verifies valid challenge signature and deletes challenge', async () => {
@@ -830,11 +856,12 @@ describe('Challenge-Response Flow', () => {
 });
 ```
 
----
+***
 
 ### **2. Integration Tests** (`backend/tests/integration/walletRouter.test.js`)
 
 **Endpoint Tests (16 tests across 7 suites):**
+
 ```javascript
 describe('POST /v1/wallet/challenge/generate', () => {
   test('generates challenge for valid wallet address and UUID', async () => {
@@ -940,11 +967,12 @@ describe('Rate Limiting', () => {
 });
 ```
 
----
+***
 
 ### **3. E2E Tests** (`backend/tests/e2e/sns-relink-flow.test.js`)
 
 **Complete SNS Re-Link Flow Test:**
+
 ```javascript
 test('should successfully re-link SNS name with valid signature', async () => {
   const originalUuid = 'original-uuid-1234-5678-90ab-cdef';
@@ -1004,6 +1032,7 @@ test('should successfully re-link SNS name with valid signature', async () => {
 ```
 
 **Security Attack Tests (4 scenarios):**
+
 ```javascript
 test('should prevent re-link without valid signature', async () => {
   const response = await request(app)
@@ -1065,7 +1094,7 @@ test('should prevent re-link if user does not own SNS on-chain', async () => {
 });
 ```
 
----
+***
 
 ### **Running Tests:**
 
@@ -1082,98 +1111,101 @@ npm test sns-relink-flow.test.js
 npm test -- --coverage
 ```
 
----
+***
 
 ## 📈 **Performance Metrics**
 
-| Operation | Time | Notes |
-|-----------|------|-------|
-| **Challenge Generation** | ~10ms | Crypto.randomBytes + Redis SET |
-| **Signature Verification** | ~1ms | Ed25519 constant-time |
-| **Challenge Lookup** | ~5ms | Redis GET |
-| **Total (Generate)** | **~15ms** | Acceptable |
-| **Total (Verify)** | **~6ms** | Fast verification |
+| Operation                  | Time       | Notes                          |
+| -------------------------- | ---------- | ------------------------------ |
+| **Challenge Generation**   | \~10ms     | Crypto.randomBytes + Redis SET |
+| **Signature Verification** | \~1ms      | Ed25519 constant-time          |
+| **Challenge Lookup**       | \~5ms      | Redis GET                      |
+| **Total (Generate)**       | **\~15ms** | Acceptable                     |
+| **Total (Verify)**         | **\~6ms**  | Fast verification              |
 
----
+***
 
 ## 🚀 **Deployment Checklist**
 
 ### **Backend:**
-- [x] Install dependencies (`npm install tweetnacl tweetnacl-util bs58`)
-- [x] Add `walletSignatureService.js` to services
-- [x] Add `walletRouter.js` to routes
-- [x] Register router in `server.js`
-- [x] Update `snsIntegrationService.js` with signature verification
-- [x] Update `snsRouter.js` to pass Redis client
-- [ ] Test all endpoints (generate, verify, connect, relink)
-- [ ] Add rate limiting (already applied: 10 req/min)
-- [ ] Monitor Redis challenge storage
+
+* [x] Install dependencies (`npm install tweetnacl tweetnacl-util bs58`)
+* [x] Add `walletSignatureService.js` to services
+* [x] Add `walletRouter.js` to routes
+* [x] Register router in `server.js`
+* [x] Update `snsIntegrationService.js` with signature verification
+* [x] Update `snsRouter.js` to pass Redis client
+* [ ] Test all endpoints (generate, verify, connect, relink)
+* [ ] Add rate limiting (already applied: 10 req/min)
+* [ ] Monitor Redis challenge storage
 
 ### **Android SDK:**
-- [x] Add `WalletCallbackHandler.kt` to SDK
-- [ ] Update AndroidManifest.xml with deep link intent filter
-- [ ] Test deep link handling
-- [ ] Test Phantom integration
+
+* [x] Add `WalletCallbackHandler.kt` to SDK
+* [ ] Update AndroidManifest.xml with deep link intent filter
+* [ ] Test deep link handling
+* [ ] Test Phantom integration
 
 ### **Web:**
-- [x] Implement Phantom wallet JavaScript interop (`PhantomWallet.kt`)
-- [x] Create `WalletConnectionService.kt` with challenge-response flow
-- [x] Create `ConnectWalletButton` component (Kotlin HTML DSL)
-- [x] Add wallet CSS styling with dark mode support
-- [x] Create example integrations (`WalletConnectionExample.kt`)
-- [x] Add bs58 library for Base58 encoding
-- [ ] Test Phantom browser extension with live backend
 
----
+* [x] Implement Phantom wallet JavaScript interop (`PhantomWallet.kt`)
+* [x] Create `WalletConnectionService.kt` with challenge-response flow
+* [x] Create `ConnectWalletButton` component (Kotlin HTML DSL)
+* [x] Add wallet CSS styling with dark mode support
+* [x] Create example integrations (`WalletConnectionExample.kt`)
+* [x] Add bs58 library for Base58 encoding
+* [ ] Test Phantom browser extension with live backend
+
+***
 
 ## 📚 **Summary**
 
 ### **What We Built:**
-1. ✅ Wallet signature verification service (~400 LOC)
+
+1. ✅ Wallet signature verification service (\~400 LOC)
 2. ✅ Challenge/nonce system with Redis (5-min TTL)
 3. ✅ Wallet connection endpoints (4 endpoints)
 4. ✅ Ed25519 signature verification (TweetNaCl)
 5. ✅ Updated SNS re-link with security fix
-6. ✅ Android deep link handler (~350 LOC)
-7. ✅ **Web wallet integration (~950 LOC)**
-   - PhantomWallet.kt - JavaScript interop
-   - WalletConnectionService.kt - Challenge-response flow
-   - ConnectWalletButton.kt - Reusable UI component
-   - wallet.css - Complete styling with dark mode
-   - WalletConnectionExample.kt - Integration examples
-8. ✅ **Comprehensive tests (~1,250 LOC)**
-   - Unit tests (17 tests)
-   - Integration tests (16 tests)
-   - E2E tests (5 tests)
-9. ✅ Comprehensive documentation (~1,600 LOC)
+6. ✅ Android deep link handler (\~350 LOC)
+7. ✅ **Web wallet integration (\~950 LOC)**
+   * PhantomWallet.kt - JavaScript interop
+   * WalletConnectionService.kt - Challenge-response flow
+   * ConnectWalletButton.kt - Reusable UI component
+   * wallet.css - Complete styling with dark mode
+   * WalletConnectionExample.kt - Integration examples
+8. ✅ **Comprehensive tests (\~1,250 LOC)**
+   * Unit tests (17 tests)
+   * Integration tests (16 tests)
+   * E2E tests (5 tests)
+9. ✅ Comprehensive documentation (\~1,600 LOC)
 
 ### **Security Improvements:**
-- ✅ **FIXED:** SNS re-link vulnerability (critical)
-- ✅ **ADDED:** Replay attack prevention
-- ✅ **ADDED:** Challenge expiration (5 minutes)
-- ✅ **ADDED:** Constant-time verification
-- ✅ **ADDED:** Action validation (wallet_connect, sns_relink, etc.)
-- ✅ **TESTED:** 4 attack scenario tests (all prevented)
+
+* ✅ **FIXED:** SNS re-link vulnerability (critical)
+* ✅ **ADDED:** Replay attack prevention
+* ✅ **ADDED:** Challenge expiration (5 minutes)
+* ✅ **ADDED:** Constant-time verification
+* ✅ **ADDED:** Action validation (wallet\_connect, sns\_relink, etc.)
+* ✅ **TESTED:** 4 attack scenario tests (all prevented)
 
 ### **Total Code Added:**
-- Backend Services: ~750 LOC (service + router)
-- Android SDK: ~350 LOC (callback handler)
-- **Web Integration: ~950 LOC (Kotlin/JS + CSS)**
-- **Tests: ~1,250 LOC (unit + integration + E2E)**
-- Documentation: ~1,600 LOC
-- **Total: ~4,900 LOC**
 
----
+* Backend Services: \~750 LOC (service + router)
+* Android SDK: \~350 LOC (callback handler)
+* **Web Integration: \~950 LOC (Kotlin/JS + CSS)**
+* **Tests: \~1,250 LOC (unit + integration + E2E)**
+* Documentation: \~1,600 LOC
+* **Total: \~4,900 LOC**
 
-**Implementation Status:** ✅ **COMPLETE**
-**Production Ready:** ✅ **YES** (with 38 passing tests)
-**Security Reviewed:** ✅ **CRITICAL VULNERABILITY FIXED**
-**Test Coverage:** ✅ **38 tests (unit + integration + E2E)**
-**Web Integration:** ✅ **Kotlin/JS with Phantom wallet support**
+***
 
----
+**Implementation Status:** ✅ **COMPLETE** **Production Ready:** ✅ **YES** (with 38 passing tests) **Security Reviewed:** ✅ **CRITICAL VULNERABILITY FIXED** **Test Coverage:** ✅ **38 tests (unit + integration + E2E)** **Web Integration:** ✅ **Kotlin/JS with Phantom wallet support**
+
+***
 
 **Next Steps:**
+
 1. ✅ ~~Add unit tests for signature verification~~ **COMPLETED** (17 tests)
 2. ✅ ~~Add integration tests for wallet endpoints~~ **COMPLETED** (16 tests)
 3. ✅ ~~Add E2E tests for SNS re-link flow~~ **COMPLETED** (5 tests)

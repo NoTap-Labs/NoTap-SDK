@@ -1,63 +1,60 @@
+---
+hidden: true
+---
+
 # Fraud Detection & ML Enhancement Implementation Roadmap
 
-**Version:** 1.0
-**Status:** Draft
-**Last Updated:** 2026-01-13
-**Owner:** Security & Fraud Prevention Team
-**Timeline:** 16 weeks (4 phases)
-**Team Size:** 2 developers
-**Estimated LOC:** 8,000+
-**Risk Level:** LOW-MEDIUM
+**Version:** 1.0 **Status:** Draft **Last Updated:** 2026-01-13 **Owner:** Security & Fraud Prevention Team **Timeline:** 16 weeks (4 phases) **Team Size:** 2 developers **Estimated LOC:** 8,000+ **Risk Level:** LOW-MEDIUM
 
----
+***
 
 ## Table of Contents
 
-1. [Executive Summary](#executive-summary)
-2. [Current State Analysis](#current-state-analysis)
-3. [Problem Statement](#problem-statement)
-4. [Target Architecture](#target-architecture)
-5. [Implementation Phases](#implementation-phases)
-   - [Phase 1: ML Fraud Detection](#phase-1-ml-fraud-detection)
-   - [Phase 2: Liveness Detection](#phase-2-liveness-detection)
-   - [Phase 3: Continuous Auth & Response](#phase-3-continuous-auth--response)
-   - [Phase 4: Monitoring & Compliance](#phase-4-monitoring--compliance)
-6. [Backward Compatibility](#backward-compatibility)
-7. [Feature Flags Strategy](#feature-flags-strategy)
-8. [Database Schema Changes](#database-schema-changes)
-9. [Dependencies & Prerequisites](#dependencies--prerequisites)
-10. [Testing Strategy](#testing-strategy)
-11. [Monitoring & Observability](#monitoring--observability)
-12. [Risk Mitigation](#risk-mitigation)
-13. [Success Metrics](#success-metrics)
-14. [Deployment Roadmap](#deployment-roadmap)
+1. [Executive Summary](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#executive-summary)
+2. [Current State Analysis](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#current-state-analysis)
+3. [Problem Statement](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#problem-statement)
+4. [Target Architecture](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#target-architecture)
+5. [Implementation Phases](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#implementation-phases)
+   * [Phase 1: ML Fraud Detection](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#phase-1-ml-fraud-detection)
+   * [Phase 2: Liveness Detection](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#phase-2-liveness-detection)
+   * [Phase 3: Continuous Auth & Response](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#phase-3-continuous-auth--response)
+   * [Phase 4: Monitoring & Compliance](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#phase-4-monitoring--compliance)
+6. [Backward Compatibility](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#backward-compatibility)
+7. [Feature Flags Strategy](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#feature-flags-strategy)
+8. [Database Schema Changes](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#database-schema-changes)
+9. [Dependencies & Prerequisites](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#dependencies--prerequisites)
+10. [Testing Strategy](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#testing-strategy)
+11. [Monitoring & Observability](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#monitoring--observability)
+12. [Risk Mitigation](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#risk-mitigation)
+13. [Success Metrics](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#success-metrics)
+14. [Deployment Roadmap](FRAUD_DETECTION_ML_IMPLEMENTATION_ROADMAP.md#deployment-roadmap)
 
----
+***
 
 ## Executive Summary
 
 The NoTap fraud detection system currently relies on 7 rule-based strategies implemented in `FraudDetector.kt`. While effective at preventing brute force attacks and detecting obvious patterns, it has limitations:
 
-- **Gap 1:** Cannot detect synthetic identities (multiple accounts with identical behavior from same IP)
-- **Gap 2:** Vulnerable to sophisticated bots that mimic human timing and behavior patterns
-- **Gap 3:** Cannot counter deepfakes or AI-generated voice/video
-- **Gap 4:** Lacks mid-session continuous authentication for high-value transactions
-- **Gap 5:** No integration with external threat intelligence (IP reputation, device blacklists)
-- **Gap 6:** Limited explainability for fraud decisions (audit compliance requirement)
-- **Gap 7:** No fairness checks (potential bias against certain demographics, accents, etc.)
+* **Gap 1:** Cannot detect synthetic identities (multiple accounts with identical behavior from same IP)
+* **Gap 2:** Vulnerable to sophisticated bots that mimic human timing and behavior patterns
+* **Gap 3:** Cannot counter deepfakes or AI-generated voice/video
+* **Gap 4:** Lacks mid-session continuous authentication for high-value transactions
+* **Gap 5:** No integration with external threat intelligence (IP reputation, device blacklists)
+* **Gap 6:** Limited explainability for fraud decisions (audit compliance requirement)
+* **Gap 7:** No fairness checks (potential bias against certain demographics, accents, etc.)
 
 ### Solution: Phased ML Enhancement
 
 This roadmap adds **machine learning, biometric liveness detection, continuous authentication, and compliance monitoring** in 4 phases, each independently toggleable and deployable. Key benefits:
 
-| Benefit | Impact | Evidence |
-|---------|--------|----------|
-| **Reduce False Positives** | 20-30% | Industry benchmarks (Stripe, Adyen) |
-| **Detect Deepfakes** | 99%+ | Liveness + entropy analysis |
-| **Catch Synthetic IDs** | 95%+ | Isolation forests on enrollment patterns |
-| **Improve UX** | 30% fewer escalations | ML disambiguates legitimate medium-risk txns |
-| **Audit Compliance** | 100% | Explainability logs for every decision |
-| **Zero Breaking Changes** | 100% | Feature-flagged, backward compatible |
+| Benefit                    | Impact                | Evidence                                     |
+| -------------------------- | --------------------- | -------------------------------------------- |
+| **Reduce False Positives** | 20-30%                | Industry benchmarks (Stripe, Adyen)          |
+| **Detect Deepfakes**       | 99%+                  | Liveness + entropy analysis                  |
+| **Catch Synthetic IDs**    | 95%+                  | Isolation forests on enrollment patterns     |
+| **Improve UX**             | 30% fewer escalations | ML disambiguates legitimate medium-risk txns |
+| **Audit Compliance**       | 100%                  | Explainability logs for every decision       |
+| **Zero Breaking Changes**  | 100%                  | Feature-flagged, backward compatible         |
 
 ### Timeline & Effort
 
@@ -69,7 +66,7 @@ This roadmap adds **machine learning, biometric liveness detection, continuous a
     └─ TOTAL: 8,000+ LOC | 4 months | 2 devs | Risk: LOW-MEDIUM
 ```
 
----
+***
 
 ## Current State Analysis
 
@@ -81,17 +78,18 @@ This roadmap adds **machine learning, biometric liveness detection, continuous a
 
 **7 Detection Strategies:**
 
-| # | Strategy | What It Detects | Risk Points | How It Works |
-|---|----------|-----------------|------------|-------------|
-| 1 | **Velocity Checks** | Brute force attacks | 15-30 | Tracks failed attempts: 5/min, 20/hour, 50/day |
-| 2 | **Geolocation** | Impossible travel | 15-50 | Haversine formula: >1000 km/h instant travel, >500 km/h suspicious, country change <4h |
-| 3 | **Device Fingerprint** | Account takeover | 15-100 | Blacklisted devices (100), new devices (15), device velocity (20), shared devices (15) |
-| 4 | **Behavioral Patterns** | Bot attacks | 10-30 | Factor completion time window 500ms-5min, deviation >0.7 (25 pts), >0.5 (10 pts) |
-| 5 | **IP Reputation** | Proxy abuse | 10-100 | Blacklist (100), IP velocity (25), shared IP (20), proxy/VPN (10) |
-| 6 | **Time-of-Day** | Unusual patterns | 10 | ⚠️ **PARTIALLY DISABLED** - UTC vs local timezone issue documented in FRAUD_DETECTION_TIMEZONE_FIX.md |
-| 7 | **Transaction Amount** | Unusual spending | 15-30 | Compares to 30-day history: 10x avg (30 pts), 5x avg (15 pts), 3+ high-value in 1h (20 pts) |
+| # | Strategy                | What It Detects     | Risk Points | How It Works                                                                                             |
+| - | ----------------------- | ------------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
+| 1 | **Velocity Checks**     | Brute force attacks | 15-30       | Tracks failed attempts: 5/min, 20/hour, 50/day                                                           |
+| 2 | **Geolocation**         | Impossible travel   | 15-50       | Haversine formula: >1000 km/h instant travel, >500 km/h suspicious, country change <4h                   |
+| 3 | **Device Fingerprint**  | Account takeover    | 15-100      | Blacklisted devices (100), new devices (15), device velocity (20), shared devices (15)                   |
+| 4 | **Behavioral Patterns** | Bot attacks         | 10-30       | Factor completion time window 500ms-5min, deviation >0.7 (25 pts), >0.5 (10 pts)                         |
+| 5 | **IP Reputation**       | Proxy abuse         | 10-100      | Blacklist (100), IP velocity (25), shared IP (20), proxy/VPN (10)                                        |
+| 6 | **Time-of-Day**         | Unusual patterns    | 10          | ⚠️ **PARTIALLY DISABLED** - UTC vs local timezone issue documented in FRAUD\_DETECTION\_TIMEZONE\_FIX.md |
+| 7 | **Transaction Amount**  | Unusual spending    | 15-30       | Compares to 30-day history: 10x avg (30 pts), 5x avg (15 pts), 3+ high-value in 1h (20 pts)              |
 
 **Risk Scoring:**
+
 ```kotlin
 - 0-30 (LOW): Allow transaction, monitor
 - 31-70 (MEDIUM): Challenge with extra factor
@@ -99,50 +97,56 @@ This roadmap adds **machine learning, biometric liveness detection, continuous a
 ```
 
 **Strengths:**
-- ✅ Fast execution (<10ms per check)
-- ✅ Deterministic, no model dependencies
-- ✅ High precision for obvious patterns
-- ✅ Easy to audit and explain
-- ✅ Works on minimal data (no ML training needed)
+
+* ✅ Fast execution (<10ms per check)
+* ✅ Deterministic, no model dependencies
+* ✅ High precision for obvious patterns
+* ✅ Easy to audit and explain
+* ✅ Works on minimal data (no ML training needed)
 
 **Weaknesses:**
-- ❌ Cannot detect novel patterns (only known rules)
-- ❌ High false positive rate for legitimate high-velocity users (e.g., traders, merchants)
-- ❌ Vulnerable to sophisticated bot attacks that mimic timing
-- ❌ Cannot distinguish between legitimate and synthetic identities in early enrollment
-- ❌ No protection against deepfakes or AI-generated voice/behavior
-- ❌ Limited context: treats all users equally regardless of history
+
+* ❌ Cannot detect novel patterns (only known rules)
+* ❌ High false positive rate for legitimate high-velocity users (e.g., traders, merchants)
+* ❌ Vulnerable to sophisticated bot attacks that mimic timing
+* ❌ Cannot distinguish between legitimate and synthetic identities in early enrollment
+* ❌ No protection against deepfakes or AI-generated voice/behavior
+* ❌ Limited context: treats all users equally regardless of history
 
 #### 2. SecurityMonitoringService.js (Backend - 500+ LOC)
 
 **Location:** `backend/services/SecurityMonitoringService.js`
 
 **Capabilities:**
-- Failed verification tracking (breakdown by user, factor, IP)
-- Security alert generation (real-time threat notifications)
-- Threat score calculation (multi-dimensional, 0-100)
-- Event logging (Redis storage, 30-day retention)
+
+* Failed verification tracking (breakdown by user, factor, IP)
+* Security alert generation (real-time threat notifications)
+* Threat score calculation (multi-dimensional, 0-100)
+* Event logging (Redis storage, 30-day retention)
 
 **Event Types:**
-- FAILED_VERIFICATION
-- SUSPICIOUS_LOGIN
-- DEVICE_CHANGE
-- LOCATION_ANOMALY
-- VELOCITY_VIOLATION
-- BRUTE_FORCE
+
+* FAILED\_VERIFICATION
+* SUSPICIOUS\_LOGIN
+* DEVICE\_CHANGE
+* LOCATION\_ANOMALY
+* VELOCITY\_VIOLATION
+* BRUTE\_FORCE
 
 **Threat Score Components:**
-- Failed verifications: 0-30 points
-- Device changes: 0-20 points
-- Location anomalies: 0-20 points
-- Velocity violations: 0-15 points
-- Rate anomalies: 0-15 points
+
+* Failed verifications: 0-30 points
+* Device changes: 0-20 points
+* Location anomalies: 0-20 points
+* Velocity violations: 0-15 points
+* Rate anomalies: 0-15 points
 
 #### 3. VerificationManager.kt Integration
 
 **Location:** `merchant/src/commonMain/kotlin/com/zeropay/merchant/verification/VerificationManager.kt`
 
 Current integration pattern:
+
 ```kotlin
 val fraudCheck = fraudDetector.checkFraud(userId, deviceFingerprint, ipAddress, location, ...)
 val requiredFactors = when {
@@ -153,31 +157,35 @@ val requiredFactors = when {
 ```
 
 **Escalation Rules (MerchantConfig.kt):**
-- Max 2 escalations per session
-- Max 2 challenge attempts
-- 30-minute lockout after max attempts
+
+* Max 2 escalations per session
+* Max 2 challenge attempts
+* 30-minute lockout after max attempts
 
 ### Known Limitations & Gaps
 
 #### Gap 1: No Synthetic Identity Detection
 
 **Problem:** Cannot detect multiple accounts created by same fraudster using same device/IP
-- Fraudster: Creates 10 accounts from same IP, different UUIDs, using bot-generated data
-- Current system: Each account passes risk checks independently
-- Result: 10 fraudulent accounts slip through
+
+* Fraudster: Creates 10 accounts from same IP, different UUIDs, using bot-generated data
+* Current system: Each account passes risk checks independently
+* Result: 10 fraudulent accounts slip through
 
 **Root Cause:** Rules check individual transactions, not patterns across enrollment cohorts
 
 **Detection Difficulty:** Hard to distinguish:
-- Legitimate use case: Business user with 5 team member accounts from same office IP
-- Fraudulent use case: Fraudster with 5 bot accounts from same VPN IP
+
+* Legitimate use case: Business user with 5 team member accounts from same office IP
+* Fraudulent use case: Fraudster with 5 bot accounts from same VPN IP
 
 #### Gap 2: Vulnerable to Sophisticated Bots
 
 **Problem:** Modern bots can mimic human behavior
-- Perfect randomness in typing: 200-220ms per character with natural variation
-- Natural mouse movements: Not perfectly straight lines
-- Realistic pauses and hesitations: Follows psychological patterns
+
+* Perfect randomness in typing: 200-220ms per character with natural variation
+* Natural mouse movements: Not perfectly straight lines
+* Realistic pauses and hesitations: Follows psychological patterns
 
 **Current Detection:** Only checks if timing is "suspiciously FAST" (< 500ms), not "suspiciously PERFECT"
 
@@ -188,68 +196,74 @@ val requiredFactors = when {
 #### Gap 3: No Deepfake Protection
 
 **Problem:** Voice and face factors vulnerable to:
-- Deepfake videos (AI-generated face videos)
-- Voice cloning (AI-generated speech)
-- Spoofing attacks (replay of recorded biometrics)
+
+* Deepfake videos (AI-generated face videos)
+* Voice cloning (AI-generated speech)
+* Spoofing attacks (replay of recorded biometrics)
 
 **Current Status:** No liveness checks for face/voice enrollment
-- User enrolls with recorded video? ❌ System accepts it
-- User enrolls with voice cloning? ❌ System accepts it
+
+* User enrolls with recorded video? ❌ System accepts it
+* User enrolls with voice cloning? ❌ System accepts it
 
 **Root Cause:** No real-time biometric verification; factors are offline digests only
 
 #### Gap 4: No Mid-Session Re-Authentication
 
 **Problem:** Risk changes during long transactions
-- User starts verification: LOW risk (home IP, known device)
-- 10 minutes later: MEDIUM risk (IP changed, new device detected mid-transaction)
-- Current system: Doesn't re-check, verification continues at original risk level
+
+* User starts verification: LOW risk (home IP, known device)
+* 10 minutes later: MEDIUM risk (IP changed, new device detected mid-transaction)
+* Current system: Doesn't re-check, verification continues at original risk level
 
 **Root Cause:** One-time risk check at session start; no continuous monitoring
 
 #### Gap 5: No External Threat Intel Integration
 
 **Problem:** Public threat feeds not leveraged
-- IP detected in AbuseIPDB as "payment fraud" 2 days ago
-- Current system: No visibility into this; treats as normal IP
-- Result: Fraudster uses known-bad IP without additional scrutiny
+
+* IP detected in AbuseIPDB as "payment fraud" 2 days ago
+* Current system: No visibility into this; treats as normal IP
+* Result: Fraudster uses known-bad IP without additional scrutiny
 
 **Root Cause:** No integration with external threat intelligence APIs (AbuseIPDB, CrowdStrike, etc.)
 
 #### Gap 6: Limited Explainability
 
 **Problem:** Audit requirement for fraud decisions
-- Admin question: "Why did we block user X?"
-- Current answer: "Risk score was 75" (not specific enough)
-- Better answer: "Risk score 75 = velocity (30) + new device (25) + impossible travel (20)"
+
+* Admin question: "Why did we block user X?"
+* Current answer: "Risk score was 75" (not specific enough)
+* Better answer: "Risk score 75 = velocity (30) + new device (25) + impossible travel (20)"
 
 **Root Cause:** No detailed audit logging; can't explain individual components of score
 
 #### Gap 7: No Fairness Checks
 
 **Problem:** Potential bias in behavioral factors
-- Voice factor: May discriminate against non-native speakers (different speech patterns)
-- Pattern factor: May discriminate against users with disabilities (atypical motor movements)
-- Behavioral patterns: May discriminate by timezone (time-of-day patterns differ by region)
+
+* Voice factor: May discriminate against non-native speakers (different speech patterns)
+* Pattern factor: May discriminate against users with disabilities (atypical motor movements)
+* Behavioral patterns: May discriminate by timezone (time-of-day patterns differ by region)
 
 **Current Status:** No bias detection or fairness monitoring
 
 **Root Cause:** No demographic tracking or fairness metrics
 
----
+***
 
 ## Problem Statement
 
 ### Business Goals Addressed
 
-| Goal | Current State | Target State | Impact |
-|------|---------------|--------------|--------|
-| **Fraud Prevention** | 7 rule-based strategies | +ML for novel patterns | Catch 20-30% more sophisticated fraud |
-| **User Experience** | 25% of legitimate txns escalate | Reduce to 10-15% | Better conversion, less friction |
-| **PSD3 Compliance** | Basic SCA implementation | Enhanced with biometrics | Better regulatory positioning |
-| **Deepfake Defense** | Not addressed | Face + voice liveness | Prevent AI-generated spoofing |
-| **Audit Trail** | Basic event logging | Detailed explainability | Regulatory/legal defensibility |
-| **Operational Efficiency** | Manual fraud review | Auto-escalation + webhooks | Faster incident response |
+| Goal                       | Current State                   | Target State               | Impact                                |
+| -------------------------- | ------------------------------- | -------------------------- | ------------------------------------- |
+| **Fraud Prevention**       | 7 rule-based strategies         | +ML for novel patterns     | Catch 20-30% more sophisticated fraud |
+| **User Experience**        | 25% of legitimate txns escalate | Reduce to 10-15%           | Better conversion, less friction      |
+| **PSD3 Compliance**        | Basic SCA implementation        | Enhanced with biometrics   | Better regulatory positioning         |
+| **Deepfake Defense**       | Not addressed                   | Face + voice liveness      | Prevent AI-generated spoofing         |
+| **Audit Trail**            | Basic event logging             | Detailed explainability    | Regulatory/legal defensibility        |
+| **Operational Efficiency** | Manual fraud review             | Auto-escalation + webhooks | Faster incident response              |
 
 ### Why This Matters Now
 
@@ -259,7 +273,7 @@ val requiredFactors = when {
 4. **Cost savings:** Each prevented fraud = $100+ in dispute resolution, chargebacks, refunds
 5. **User trust:** Transparency in fraud decisions builds confidence
 
----
+***
 
 ## Target Architecture
 
@@ -323,15 +337,17 @@ VERIFICATION REQUEST (USER INITIATES PAYMENT/LOGIN)
 **Purpose:** Central coordinator that routes to rule engine, ML engine, and liveness checks
 
 **Responsibility:**
-- Load feature flags at initialization
-- Execute rule-based engine (always)
-- Conditionally execute ML engine (if enabled)
-- Conditionally check liveness (if enabled)
-- Aggregate scores with weighted averaging
-- Log explainability data for audit
-- Implement fallback mechanisms
+
+* Load feature flags at initialization
+* Execute rule-based engine (always)
+* Conditionally execute ML engine (if enabled)
+* Conditionally check liveness (if enabled)
+* Aggregate scores with weighted averaging
+* Log explainability data for audit
+* Implement fallback mechanisms
 
 **Key Code Pattern:**
+
 ```kotlin
 // Path: sdk/src/commonMain/kotlin/com/zeropay/sdk/fraud/FraudDetectionOrchestrator.kt
 
@@ -472,41 +488,45 @@ class RuleBasedFraudDetector(
 **Purpose:** Detect novel patterns, synthetic identities, bot behavior
 
 **Key Capabilities:**
-- Isolation forests for synthetic ID detection
-- Entropy analysis for behavioral patterns
-- Feature extraction from enrollment/transaction history
-- Dynamic risk scoring with confidence probabilities
+
+* Isolation forests for synthetic ID detection
+* Entropy analysis for behavioral patterns
+* Feature extraction from enrollment/transaction history
+* Dynamic risk scoring with confidence probabilities
 
 #### 4. Liveness Detection (NEW - Phase 2)
 
 **Purpose:** Verify user is real, not deepfake/spoofing
 
 **Components:**
-- Face liveness (blink detection)
-- Voice liveness (phrase matching)
-- Behavioral biometrics (keystroke/mouse patterns)
+
+* Face liveness (blink detection)
+* Voice liveness (phrase matching)
+* Behavioral biometrics (keystroke/mouse patterns)
 
 #### 5. Continuous Auth Service (NEW - Phase 3)
 
 **Purpose:** Re-verify during long sessions, detect mid-session anomalies
 
 **Key Checks:**
-- IP changes during session
-- Device changes during session
-- Location changes
-- Transaction pattern deviations
+
+* IP changes during session
+* Device changes during session
+* Location changes
+* Transaction pattern deviations
 
 #### 6. Response Engine (NEW - Phase 3)
 
 **Purpose:** Execute automated responses and external integrations
 
 **Capabilities:**
-- Webhook delivery to security platforms
-- External threat intelligence queries
-- Auto-escalation workflows
-- User education prompts
 
----
+* Webhook delivery to security platforms
+* External threat intelligence queries
+* Auto-escalation workflows
+* User education prompts
+
+***
 
 ## Implementation Phases
 
@@ -519,12 +539,14 @@ Add machine learning layer to detect novel fraud patterns that rule-based system
 **Goal:** Reduce false positives by 20-30%, catch 95%+ of synthetic identity fraud
 
 **Deliverables:**
+
 1. MLFraudDetector.kt (SDK) - 600 LOC
 2. FeatureEngineeringService.js (Backend) - 400 LOC
-3. Database migrations (fraud_detection_tables.sql) - 200 LOC
+3. Database migrations (fraud\_detection\_tables.sql) - 200 LOC
 4. Tests and documentation - 700 LOC
 
 **Feature Flags:**
+
 ```properties
 # gradle.properties
 zeropay.fraud.ml_enabled=false
@@ -537,13 +559,15 @@ zeropay.fraud.ml_entropy_analysis=false
 **Problem 1: Synthetic Identity Fraud**
 
 Fraudster creates 10 accounts to:
-- Test stolen credit cards (1 card per account before blocking)
-- Build fraud rings (each account makes small transactions, aggregates to high value)
-- Evade detection (spread activity across accounts)
+
+* Test stolen credit cards (1 card per account before blocking)
+* Build fraud rings (each account makes small transactions, aggregates to high value)
+* Evade detection (spread activity across accounts)
 
 **Current system:** Each account passes risk checks independently (no pattern recognition)
 
 **ML solution:** Isolation forest detects cohort of accounts with identical characteristics:
+
 ```
 Account 1: UUID=abc-111, Device FP=xyz, IP=10.0.0.5, Enrollment time=2:15 AM, Pattern=PIN only
 Account 2: UUID=abc-222, Device FP=xyz, IP=10.0.0.5, Enrollment time=2:16 AM, Pattern=PIN only
@@ -560,15 +584,16 @@ Account 10: UUID=abc-999, Device FP=xyz, IP=10.0.0.5, Enrollment time=2:24 AM, P
 
 Bot vs. Human factor entry:
 
-| Aspect | Human | Bot (Unsophisticated) | Bot (Sophisticated) |
-|--------|-------|----------------------|---------------------|
-| **Timing** | 150-350ms vary | 200ms consistent | 200-220ms random |
-| **Entropy** | High (natural variation) | Low (too consistent) | High (but unnatural) |
-| **Deviation** | Matches history | Matches history | Perfectly random (never seen) |
+| Aspect        | Human                    | Bot (Unsophisticated) | Bot (Sophisticated)           |
+| ------------- | ------------------------ | --------------------- | ----------------------------- |
+| **Timing**    | 150-350ms vary           | 200ms consistent      | 200-220ms random              |
+| **Entropy**   | High (natural variation) | Low (too consistent)  | High (but unnatural)          |
+| **Deviation** | Matches history          | Matches history       | Perfectly random (never seen) |
 
 **Current system:** Only catches unsophisticated bots (timing < 500ms)
 
 **ML solution:** Entropy analysis detects "too perfect" randomness
+
 ```
 Human typing PIN "1234":
   - First time: 280ms, 150ms, 320ms, 200ms (natural variation)
@@ -589,6 +614,7 @@ ML learns: Human entropy 0.5-0.8, bot entropy 0.85-1.0
 **Problem 3: High-Risk User Friction**
 
 Current system:
+
 ```
 Transaction: $5, Medium risk
 → Escalate to 3 factors (unnecessary friction)
@@ -596,6 +622,7 @@ Transaction: $5, Medium risk
 ```
 
 ML solution: Disambiguate true risk vs. benign activity
+
 ```
 Rule score: 50 (medium - new device)
 ML score: 15 (low - device matches IP region, timing normal)
@@ -606,7 +633,7 @@ Combined: 32 (low) → Only 2 factors needed
 
 #### Detailed Implementation
 
-##### File 1: MLFraudDetector.kt (SDK)
+**File 1: MLFraudDetector.kt (SDK)**
 
 **Location:** `sdk/src/commonMain/kotlin/com/zeropay/sdk/fraud/MLFraudDetector.kt`
 
@@ -874,7 +901,7 @@ data class Transaction(
 )
 ```
 
-##### File 2: FeatureEngineeringService.js (Backend)
+**File 2: FeatureEngineeringService.js (Backend)**
 
 **Location:** `backend/services/ml/FeatureEngineeringService.js`
 
@@ -1138,7 +1165,7 @@ class FeatureEngineeringService {
 module.exports = new FeatureEngineeringService();
 ```
 
-##### File 3: Database Migrations
+**File 3: Database Migrations**
 
 **Location:** `backend/database/migrations/025_fraud_detection_tables.sql`
 
@@ -1464,6 +1491,7 @@ ON CONFLICT (table_name) DO NOTHING;
 #### Configuration for Phase 1
 
 **gradle.properties additions:**
+
 ```properties
 # ML Fraud Detection (Phase 1)
 zeropay.fraud.ml_enabled=false
@@ -1472,6 +1500,7 @@ zeropay.fraud.ml_entropy_analysis=false
 ```
 
 **.env.example additions:**
+
 ```bash
 # ============================================================================
 # PHASE 1: ML-BASED FRAUD DETECTION
@@ -1621,18 +1650,18 @@ class MLFraudDetectorTest {
 
 #### Phase 1 Success Criteria
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| **Model Accuracy** | > 95% | Precision + Recall on test set |
-| **False Positive Rate** | < 2% | Legitimate txns flagged |
-| **False Negative Rate** | < 5% | Fraudulent txns missed |
-| **Inference Latency** | < 500ms p99 | Milliseconds |
-| **Synthetic ID Detection** | 95%+ | Fraud rings caught |
-| **Bot Detection** | 85%+ | Sophisticated bots caught |
-| **UX Improvement** | 30% fewer escalations | Legitimate high-velocity users |
-| **Production Stability** | 0 incidents | Critical failures |
+| Metric                     | Target                | Measurement                    |
+| -------------------------- | --------------------- | ------------------------------ |
+| **Model Accuracy**         | > 95%                 | Precision + Recall on test set |
+| **False Positive Rate**    | < 2%                  | Legitimate txns flagged        |
+| **False Negative Rate**    | < 5%                  | Fraudulent txns missed         |
+| **Inference Latency**      | < 500ms p99           | Milliseconds                   |
+| **Synthetic ID Detection** | 95%+                  | Fraud rings caught             |
+| **Bot Detection**          | 85%+                  | Sophisticated bots caught      |
+| **UX Improvement**         | 30% fewer escalations | Legitimate high-velocity users |
+| **Production Stability**   | 0 incidents           | Critical failures              |
 
----
+***
 
 ### Phase 2: Liveness Detection (Weeks 5-8)
 
@@ -1643,6 +1672,7 @@ Add biometric liveness detection to prevent deepfakes and spoofing attacks.
 **Goal:** Prevent 99%+ of deepfake/spoofing attacks, improve PSD3 compliance
 
 **Deliverables:**
+
 1. LivenessDetectionService.kt (SDK) - 500 LOC
 2. Face/Voice detection canvases (online-web) - 300 LOC
 3. Backend liveness verification service - 400 LOC
@@ -1653,14 +1683,16 @@ Add biometric liveness detection to prevent deepfakes and spoofing attacks.
 **Problem 1: Deepfake Voice Enrollment**
 
 Attack scenario:
-- Fraudster obtains voice recording of victim
-- Uses voice cloning AI to generate synthesis of victim saying PIN
-- Enrolls voice factor with synthetic voice
-- Can now impersonate victim
+
+* Fraudster obtains voice recording of victim
+* Uses voice cloning AI to generate synthesis of victim saying PIN
+* Enrolls voice factor with synthetic voice
+* Can now impersonate victim
 
 **Current system:** No verification that voice is real, accepts deepfake
 
 **Liveness solution:** Require random phrase + live recording
+
 ```
 Challenge: "Please say: 'I authorize NoTap for verification'"
 User speaks in real-time (must match: exact words, natural prosody)
@@ -1673,13 +1705,15 @@ System verifies: Speech matches expected text, audio shows natural patterns
 **Problem 2: Deepfake Video Enrollment**
 
 Attack scenario:
-- Fraudster creates deepfake video of victim blinking
-- Enrolls face factor with deepfake video
-- Can now bypass face authentication
+
+* Fraudster creates deepfake video of victim blinking
+* Enrolls face factor with deepfake video
+* Can now bypass face authentication
 
 **Current system:** No verification that face is real, accepts deepfake video
 
 **Liveness solution:** Require real-time blink detection with randomization
+
 ```
 Challenge: "Please blink 3 times"
 System detects: Real eye closure, open, closure pattern (natural eyelid physics)
@@ -1691,13 +1725,15 @@ Deepfakes detected: Frame interpolation artifacts, inconsistent eye tracking
 **Problem 3: Spoofing (Print/Video Replay)**
 
 Attack scenario:
-- Fraudster prints victim's face photo or plays video
-- Holds print/video to camera for enrollment
-- Bypasses face factor
+
+* Fraudster prints victim's face photo or plays video
+* Holds print/video to camera for enrollment
+* Bypasses face factor
 
 **Current system:** No liveness check, accepts 2D spoof
 
 **Liveness solution:** Require 3D head movement or blink detection
+
 ```
 Challenge: "Please move your head left and right"
 System detects: 3D rotation (paper can't do this)
@@ -1709,7 +1745,7 @@ System detects: Real eyelid movement (video replay loop detectable)
 
 #### Detailed Implementation
 
-##### File 1: LivenessDetectionService.kt (SDK)
+**File 1: LivenessDetectionService.kt (SDK)**
 
 **Location:** `sdk/src/commonMain/kotlin/com/zeropay/sdk/fraud/liveness/LivenessDetectionService.kt`
 
@@ -2160,7 +2196,7 @@ class BehavioralBiometricsAnalyzer(
 }
 ```
 
-##### File 2: Face & Voice Canvas for online-web
+**File 2: Face & Voice Canvas for online-web**
 
 **Location:** `online-web/src/jsMain/kotlin/com/zeropay/web/enrollment/canvases/FaceLivenessCanvas.kt`
 
@@ -2313,32 +2349,35 @@ object FaceLivenessCanvas {
 }
 ```
 
----
+***
 
-*(Due to length constraints, I'll continue with the remaining phases in a shortened format. Please see the comprehensive documentation for full details.)*
+_(Due to length constraints, I'll continue with the remaining phases in a shortened format. Please see the comprehensive documentation for full details.)_
 
 ### Phase 3: Continuous Auth & Response (Weeks 9-12)
 
 **Deliverables:**
-- ContinuousAuthService.kt - Real-time session monitoring
-- ResponseEngineService.js - Webhook delivery + escalation
-- ThreatIntelligenceClient.js - External threat feeds (AbuseIPDB, CrowdStrike)
+
+* ContinuousAuthService.kt - Real-time session monitoring
+* ResponseEngineService.js - Webhook delivery + escalation
+* ThreatIntelligenceClient.js - External threat feeds (AbuseIPDB, CrowdStrike)
 
 **Key Features:**
-- Mid-session anomaly detection (IP/device changes, geolocation jumps)
-- Context-aware escalation rules
-- Webhook delivery for security incidents
-- External threat intelligence integration
+
+* Mid-session anomaly detection (IP/device changes, geolocation jumps)
+* Context-aware escalation rules
+* Webhook delivery for security incidents
+* External threat intelligence integration
 
 ### Phase 4: Monitoring & Compliance (Weeks 13-16)
 
 **Deliverables:**
-- Audit logging with explainability (WHY each decision)
-- Fairness checking system (bias detection)
-- Compliance auditor (OWASP/NIST/PSD3)
-- Admin dashboard enhancements
 
----
+* Audit logging with explainability (WHY each decision)
+* Fairness checking system (bias detection)
+* Compliance auditor (OWASP/NIST/PSD3)
+* Admin dashboard enhancements
+
+***
 
 ## Backward Compatibility
 
@@ -2383,7 +2422,7 @@ Continuous auth disabled → Same behavior as v2.0
 Threat intel API down → Proceed with local rules
 ```
 
----
+***
 
 ## Feature Flags Strategy
 
@@ -2438,27 +2477,29 @@ FRAUD_FAIRNESS_CHECKS_ENABLED=false
 FRAUD_QUARTERLY_COMPLIANCE_AUDIT=true
 ```
 
----
+***
 
 ## Database Schema Changes
 
 ### Migration 025: Fraud Detection Tables
 
 Adds new tables for ML, liveness, threat intel, and audit logging:
-- fraud_detection_events
-- fraud_ml_training_samples
-- liveness_sessions
-- threat_intelligence_cache
-- fraud_audit_logs
+
+* fraud\_detection\_events
+* fraud\_ml\_training\_samples
+* liveness\_sessions
+* threat\_intelligence\_cache
+* fraud\_audit\_logs
 
 ### Non-Breaking
 
 All migrations are ADDITIVE:
-- No changes to existing tables
-- New tables only
-- Can be disabled via DATABASE_ENABLED flag
 
----
+* No changes to existing tables
+* New tables only
+* Can be disabled via DATABASE\_ENABLED flag
+
+***
 
 ## Dependencies & Prerequisites
 
@@ -2483,32 +2524,32 @@ implementation 'com.google.mediapipe:tasks-vision:0.10.9'
 implementation 'com.google.mlkit:face-detection:16.1.5'
 ```
 
----
+***
 
 ## Testing Strategy
 
 ### Unit Tests
 
-- ML model inference tests
-- Entropy calculation tests
-- Isolation forest anomaly detection tests
-- Liveness detection tests (face, voice, behavioral)
+* ML model inference tests
+* Entropy calculation tests
+* Isolation forest anomaly detection tests
+* Liveness detection tests (face, voice, behavioral)
 
 ### Integration Tests
 
-- ML + Rule-based orchestration
-- Liveness verification end-to-end
-- Database persistence
-- Webhook delivery
+* ML + Rule-based orchestration
+* Liveness verification end-to-end
+* Database persistence
+* Webhook delivery
 
 ### E2E Tests (Bugster)
 
-- Complete fraud detection flow
-- Liveness detection workflow
-- Continuous authentication scenarios
-- Multi-phase verification flows
+* Complete fraud detection flow
+* Liveness detection workflow
+* Continuous authentication scenarios
+* Multi-phase verification flows
 
----
+***
 
 ## Monitoring & Observability
 
@@ -2526,11 +2567,11 @@ fraud_false_negative_rate
 
 ### Grafana Dashboards
 
-- Risk score distribution
-- Model performance (accuracy, precision, recall)
-- Liveness success rates
-- High-risk transaction trends
-- False positive/negative tracking
+* Risk score distribution
+* Model performance (accuracy, precision, recall)
+* Liveness success rates
+* High-risk transaction trends
+* False positive/negative tracking
 
 ### Health Checks
 
@@ -2548,76 +2589,81 @@ GET /health/fraud-detection
 }
 ```
 
----
+***
 
 ## Risk Mitigation
 
 ### ML Model Degradation
 
-- Circuit breaker: Disable ML if inference fails 3x
-- Fallback: Always fall back to rule-based system
-- Monitoring: Alert on accuracy drops
-- Revert: Can disable ML via FRAUD_DETECTION_ML_ENABLED=false
+* Circuit breaker: Disable ML if inference fails 3x
+* Fallback: Always fall back to rule-based system
+* Monitoring: Alert on accuracy drops
+* Revert: Can disable ML via FRAUD\_DETECTION\_ML\_ENABLED=false
 
 ### Liveness Spoofing
 
-- Multi-channel: Require face + voice for high risk
-- Liveness + behavior: Cross-check with behavioral patterns
-- Device verification: Check for known spoofing tools
+* Multi-channel: Require face + voice for high risk
+* Liveness + behavior: Cross-check with behavioral patterns
+* Device verification: Check for known spoofing tools
 
 ### Latency Impact
 
-- Async execution: ML doesn't block verification
-- Timeouts: ML inference has 5-second timeout
-- Caching: Model predictions cached
+* Async execution: ML doesn't block verification
+* Timeouts: ML inference has 5-second timeout
+* Caching: Model predictions cached
 
----
+***
 
 ## Success Metrics
 
-| Phase | Metric | Target | Impact |
-|-------|--------|--------|--------|
-| **1** | False positive rate | < 2% | Better UX |
-| **1** | Synthetic ID detection | 95%+ | Block fraud rings |
-| **2** | Deepfake prevention | 99%+ | Security |
-| **3** | Response time | < 1s | Fast incident response |
-| **4** | Explainability score | > 85% | Regulatory compliance |
+| Phase | Metric                 | Target | Impact                 |
+| ----- | ---------------------- | ------ | ---------------------- |
+| **1** | False positive rate    | < 2%   | Better UX              |
+| **1** | Synthetic ID detection | 95%+   | Block fraud rings      |
+| **2** | Deepfake prevention    | 99%+   | Security               |
+| **3** | Response time          | < 1s   | Fast incident response |
+| **4** | Explainability score   | > 85%  | Regulatory compliance  |
 
----
+***
 
 ## Deployment Roadmap
 
 ### Week 1-2: Preparation
-- Finalize architecture
-- Allocate team
-- Setup ML infrastructure
-- Begin model training
+
+* Finalize architecture
+* Allocate team
+* Setup ML infrastructure
+* Begin model training
 
 ### Week 3-6: Phase 1 (ML Detection)
-- Sandbox testing
-- 10% staging rollout
-- Monitor FP rate
-- Production rollout
+
+* Sandbox testing
+* 10% staging rollout
+* Monitor FP rate
+* Production rollout
 
 ### Week 7-10: Phase 2 (Liveness)
-- Sandbox testing
-- Optional enrollment
-- Monitor success rates
-- Gradual enablement
+
+* Sandbox testing
+* Optional enrollment
+* Monitor success rates
+* Gradual enablement
 
 ### Week 11-14: Phase 3 (Continuous Auth)
-- Testing with webhooks
-- Non-blocking logging
-- Enable auto-escalation
-- Production rollout
+
+* Testing with webhooks
+* Non-blocking logging
+* Enable auto-escalation
+* Production rollout
 
 ### Week 15-16: Phase 4 (Monitoring)
-- Audit logging
-- Fairness audits
-- Compliance reports
-- Documentation
 
----
+* Audit logging
+* Fairness audits
+* Compliance reports
+* Documentation
+
+***
 
 ## Configuration Examples
 
@@ -2650,13 +2696,14 @@ FRAUD_AUDIT_LOGGING_DETAILED=true
 FRAUD_FAIRNESS_CHECKS_ENABLED=true
 ```
 
----
+***
 
 ## Conclusion
 
 This implementation roadmap adds comprehensive ML-powered fraud detection, biometric liveness verification, continuous authentication, and compliance monitoring in 4 independent phases over 16 weeks with **zero breaking changes**.
 
 **Key Advantages:**
+
 1. ✅ All features toggleable (disabled by default)
 2. ✅ Each phase deployable independently
 3. ✅ Backward compatible APIs
@@ -2666,6 +2713,7 @@ This implementation roadmap adds comprehensive ML-powered fraud detection, biome
 7. ✅ PSD3/NIST compliance
 
 **Next Steps:**
+
 1. Review and approve architecture
 2. Allocate 2 developers for 4 months
 3. Begin Phase 1 implementation

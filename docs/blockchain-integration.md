@@ -1,25 +1,29 @@
+---
+hidden: true
+---
+
 # NoTap Blockchain Integration Guide
 
 ## Overview
 
 This guide explains how to integrate NoTap's blockchain components with your existing authentication system. The integration is **fully pluggable** and can be enabled/disabled without breaking current functionality.
 
----
+***
 
 ## Table of Contents
 
-1. [Architecture](#architecture)
-2. [Why Blockchain?](#why-blockchain)
-3. [What We Built](#what-we-built)
-4. [Quick Start](#quick-start)
-5. [Deployment](#deployment)
-6. [Integration](#integration)
-7. [Multi-Chain Blockchain Names](#multi-chain-blockchain-names)
-8. [Testing](#testing)
-9. [GDPR Compliance](#gdpr-compliance)
-10. [Troubleshooting](#troubleshooting)
+1. [Architecture](blockchain-integration.md#architecture)
+2. [Why Blockchain?](blockchain-integration.md#why-blockchain)
+3. [What We Built](blockchain-integration.md#what-we-built)
+4. [Quick Start](blockchain-integration.md#quick-start)
+5. [Deployment](blockchain-integration.md#deployment)
+6. [Integration](blockchain-integration.md#integration)
+7. [Multi-Chain Blockchain Names](blockchain-integration.md#multi-chain-blockchain-names)
+8. [Testing](blockchain-integration.md#testing)
+9. [GDPR Compliance](blockchain-integration.md#gdpr-compliance)
+10. [Troubleshooting](blockchain-integration.md#troubleshooting)
 
----
+***
 
 ## Architecture
 
@@ -67,66 +71,70 @@ This guide explains how to integrate NoTap's blockchain components with your exi
 ### Smart Contracts
 
 **1. Enrollment Program** (`notap-enrollment`)
-- **Purpose:** Store enrollment commitments on-chain for audit
-- **What's Stored:** User UUID hash, merkle root, factor count, expiration
-- **PDA Seed:** `["enrollment", user_uuid_hash]`
-- **Size:** ~120 bytes per enrollment
+
+* **Purpose:** Store enrollment commitments on-chain for audit
+* **What's Stored:** User UUID hash, merkle root, factor count, expiration
+* **PDA Seed:** `["enrollment", user_uuid_hash]`
+* **Size:** \~120 bytes per enrollment
 
 **2. Audit Program** (`notap-audit`)
-- **Purpose:** Immutable audit trail of authentication events
-- **What's Stored:** Authentication records, fraud reports, merkle roots
-- **PDA Seed:** `["auth_record", record_number]`
-- **Size:** ~155 bytes per record
 
----
+* **Purpose:** Immutable audit trail of authentication events
+* **What's Stored:** Authentication records, fraud reports, merkle roots
+* **PDA Seed:** `["auth_record", record_number]`
+* **Size:** \~155 bytes per record
+
+***
 
 ## Why Blockchain?
 
 ### 1. **Double Encryption for GDPR Compliance**
 
 Your current system uses **double encryption**:
+
 ```
 Factor Digest → PBKDF2(digest, salt) → AES-GCM(encrypted_digest, KMS_key)
 ```
 
 **Why this matters for GDPR:**
-- When user requests deletion, you **destroy the KMS key**
-- Encrypted data becomes **cryptographically irrecoverable**
-- Legally, this counts as "erasure" under GDPR Article 17
-- On-chain hash remains for audit (but is meaningless without key)
+
+* When user requests deletion, you **destroy the KMS key**
+* Encrypted data becomes **cryptographically irrecoverable**
+* Legally, this counts as "erasure" under GDPR Article 17
+* On-chain hash remains for audit (but is meaningless without key)
 
 **Blockchain advantage:**
-- Regulators can verify deletion happened (immutable on-chain record)
-- You have proof of deletion for legal defense
-- Audit trail preserved for PSD3 compliance
+
+* Regulators can verify deletion happened (immutable on-chain record)
+* You have proof of deletion for legal defense
+* Audit trail preserved for PSD3 compliance
 
 ### 2. **Immutable Audit Trail**
 
-**Problem:** PostgreSQL audit logs can be deleted/modified
-**Solution:** Solana blockchain provides immutable records
+**Problem:** PostgreSQL audit logs can be deleted/modified **Solution:** Solana blockchain provides immutable records
 
 **Use Cases:**
-- Regulator audits PSD3 compliance
-- Merchant disputes authentication (prove with on-chain record)
-- User proves they authenticated (legal disputes)
-- Fraud detection (cross-merchant reputation)
+
+* Regulator audits PSD3 compliance
+* Merchant disputes authentication (prove with on-chain record)
+* User proves they authenticated (legal disputes)
+* Fraud detection (cross-merchant reputation)
 
 ### 3. **Decentralized Trust**
 
-**Current:** You (NoTap) control all authentication data
-**Future:** Blockchain enables:
-- Merchants can verify enrollments without trusting NoTap
-- Users own their enrollment credentials (portable)
-- Cross-merchant reputation scoring (on-chain)
+**Current:** You (NoTap) control all authentication data **Future:** Blockchain enables:
 
----
+* Merchants can verify enrollments without trusting NoTap
+* Users own their enrollment credentials (portable)
+* Cross-merchant reputation scoring (on-chain)
+
+***
 
 ## What We Built
 
 ### ✅ **1. ZK-SNARK Trusted Setup Automation** (`circuits/setup-automated.sh`)
 
-**Problem:** Manual ceremony is complex and error-prone
-**Solution:** Fully automated script with 4 modes
+**Problem:** Manual ceremony is complex and error-prone **Solution:** Fully automated script with 4 modes
 
 ```bash
 # Mode 1: Initialize
@@ -157,15 +165,17 @@ Factor Digest → PBKDF2(digest, salt) → AES-GCM(encrypted_digest, KMS_key)
 ```
 
 **Output:**
-- `build/factor_auth_final.zkey` (proving key - **KEEP SECRET**)
-- `build/verification_key.json` (verification key - PUBLIC)
-- `build/factor_auth.wasm` (circuit WASM - PUBLIC)
+
+* `build/factor_auth_final.zkey` (proving key - **KEEP SECRET**)
+* `build/verification_key.json` (verification key - PUBLIC)
+* `build/factor_auth.wasm` (circuit WASM - PUBLIC)
 
 ### ✅ **2. Enrollment Smart Contract** (`programs/notap-enrollment/src/lib.rs`)
 
 **Rust/Anchor program for Solana**
 
 **Functions:**
+
 ```rust
 // Create enrollment record
 create_enrollment(
@@ -201,6 +211,7 @@ revoke_enrollment()
 ```
 
 **Account Structure:**
+
 ```rust
 pub struct Enrollment {
     pub user_uuid_hash: [u8; 32],      // SHA-256 of UUID
@@ -221,6 +232,7 @@ pub struct Enrollment {
 **Rust/Anchor program for immutable audit trail**
 
 **Functions:**
+
 ```rust
 // Initialize audit system
 initialize()
@@ -249,6 +261,7 @@ update_merkle_root(new_root: [u8; 32])
 ```
 
 **Account Structure:**
+
 ```rust
 pub struct AuthRecord {
     pub user_uuid_hash: [u8; 32],
@@ -267,12 +280,14 @@ pub struct AuthRecord {
 **Pluggable Node.js service**
 
 **Key Features:**
-- ✅ **Pluggable:** Enable/disable via `BLOCKCHAIN_ENABLED=true`
-- ✅ **Non-blocking:** Blockchain calls run async
-- ✅ **Fail-safe:** If blockchain fails, auth still succeeds
-- ✅ **Privacy-preserving:** Only stores hashes on-chain
+
+* ✅ **Pluggable:** Enable/disable via `BLOCKCHAIN_ENABLED=true`
+* ✅ **Non-blocking:** Blockchain calls run async
+* ✅ **Fail-safe:** If blockchain fails, auth still succeeds
+* ✅ **Privacy-preserving:** Only stores hashes on-chain
 
 **API:**
+
 ```javascript
 // Enrollment
 await createEnrollmentOnChain({
@@ -311,7 +326,7 @@ await recordFraudEventOnChain({
 });
 ```
 
----
+***
 
 ## Quick Start
 
@@ -348,6 +363,7 @@ cd circuits
 ```
 
 **Output:**
+
 ```
 ✅ build/factor_auth_final.zkey (proving key)
 ✅ build/verification_key.json (verification key)
@@ -367,6 +383,7 @@ cd programs
 ```
 
 **Output:**
+
 ```
 ✅ Enrollment Program: NotAp11111111111111111111111111111111111111
 ✅ Audit Program: NotAp22222222222222222222222222222222222222
@@ -395,6 +412,7 @@ SOLANA_RPC_ENDPOINT=https://api.devnet.solana.com
 ```
 
 **Get your keypair:**
+
 ```bash
 # Show public key
 solana address
@@ -415,7 +433,7 @@ npm run test:blockchain
 curl http://localhost:3000/v1/blockchain/health
 ```
 
----
+***
 
 ## Deployment
 
@@ -472,13 +490,14 @@ pm2 restart zeropay-backend
 ```
 
 **Cost Estimates:**
-- Enrollment program deployment: ~1 SOL (~$100)
-- Audit program deployment: ~1 SOL (~$100)
-- Create enrollment: ~0.002 SOL (~$0.20)
-- Record authentication: ~0.0002 SOL (~$0.02)
-- **Users pay transaction fees** (not NoTap)
 
----
+* Enrollment program deployment: ~~1 SOL (~~$100)
+* Audit program deployment: ~~1 SOL (~~$100)
+* Create enrollment: ~~0.002 SOL (~~$0.20)
+* Record authentication: ~~0.0002 SOL (~~$0.02)
+* **Users pay transaction fees** (not NoTap)
+
+***
 
 ## Integration
 
@@ -598,12 +617,13 @@ module.exports = router;
 ```
 
 **Key Points:**
-- ✅ **Non-blocking:** Blockchain call runs async
-- ✅ **Fail-safe:** Errors logged, not thrown
-- ✅ **Pluggable:** Check `isBlockchainReady()` first
-- ✅ **No breaking changes:** Existing code unchanged
 
----
+* ✅ **Non-blocking:** Blockchain call runs async
+* ✅ **Fail-safe:** Errors logged, not thrown
+* ✅ **Pluggable:** Check `isBlockchainReady()` first
+* ✅ **No breaking changes:** Existing code unchanged
+
+***
 
 ## Multi-Chain Blockchain Names
 
@@ -613,14 +633,14 @@ module.exports = router;
 
 **Supported Name Services:**
 
-| Service | TLDs | Blockchain | Example |
-|---------|------|------------|---------|
-| **Ethereum Name Service (ENS)** | `.eth` | Ethereum Mainnet | `alice.eth` |
-| **Unstoppable Domains** | `.crypto`, `.nft`, `.wallet`, `.dao`, `.x`, `.bitcoin`, `.blockchain`, `.zil`, `.888` | Polygon | `bob.crypto` |
-| **BASE Name Service** | `.base.eth` | Base L2 | `carol.base.eth` |
-| **Solana Name Service (SNS)** | `.sol`, `.notap.sol` | Solana Mainnet | `dave.notap.sol` |
+| Service                         | TLDs                                                                                  | Blockchain       | Example          |
+| ------------------------------- | ------------------------------------------------------------------------------------- | ---------------- | ---------------- |
+| **Ethereum Name Service (ENS)** | `.eth`                                                                                | Ethereum Mainnet | `alice.eth`      |
+| **Unstoppable Domains**         | `.crypto`, `.nft`, `.wallet`, `.dao`, `.x`, `.bitcoin`, `.blockchain`, `.zil`, `.888` | Polygon          | `bob.crypto`     |
+| **BASE Name Service**           | `.base.eth`                                                                           | Base L2          | `carol.base.eth` |
+| **Solana Name Service (SNS)**   | `.sol`, `.notap.sol`                                                                  | Solana Mainnet   | `dave.notap.sol` |
 
----
+***
 
 ### Architecture
 
@@ -648,7 +668,7 @@ module.exports = router;
 3. **Toggle System** - Enable/disable providers independently
 4. **Auto-Routing** - TLD-based provider selection
 
----
+***
 
 ### Backend Setup
 
@@ -660,12 +680,13 @@ npm install viem @unstoppabledomains/resolution @solana/web3.js @bonfida/spl-nam
 ```
 
 **Package Versions:**
-- `viem@^2.0.0` - Ethereum (ENS, BASE)
-- `@unstoppabledomains/resolution@^9.3.3` - Unstoppable Domains
-- `@solana/web3.js@^1.87.6` - Solana (SNS)
-- `@bonfida/spl-name-service@^0.1.67` - SNS resolution
 
----
+* `viem@^2.0.0` - Ethereum (ENS, BASE)
+* `@unstoppabledomains/resolution@^9.3.3` - Unstoppable Domains
+* `@solana/web3.js@^1.87.6` - Solana (SNS)
+* `@bonfida/spl-name-service@^0.1.67` - SNS resolution
+
+***
 
 #### 2. Environment Variables
 
@@ -710,14 +731,14 @@ SNS_REGISTRAR_ADDRESS=your_registrar_keypair_here
 
 **Rollout Strategy:**
 
-| Phase | Configuration | Purpose |
-|-------|---------------|---------|
-| **Phase 1** | `MULTICHAIN_NAMES_ENABLED=false` | SNS-only (current state) |
-| **Phase 2** | `MULTICHAIN_NAMES_ENABLED=true`<br>`ENS_ENABLED=true` | Add ENS support |
-| **Phase 3** | Add `UNSTOPPABLE_ENABLED=true` | Add Unstoppable |
-| **Phase 4** | Add `BASE_ENABLED=true` | Full multi-chain |
+| Phase       | Configuration                                                                      | Purpose                  |
+| ----------- | ---------------------------------------------------------------------------------- | ------------------------ |
+| **Phase 1** | `MULTICHAIN_NAMES_ENABLED=false`                                                   | SNS-only (current state) |
+| **Phase 2** | <p><code>MULTICHAIN_NAMES_ENABLED=true</code><br><code>ENS_ENABLED=true</code></p> | Add ENS support          |
+| **Phase 3** | Add `UNSTOPPABLE_ENABLED=true`                                                     | Add Unstoppable          |
+| **Phase 4** | Add `BASE_ENABLED=true`                                                            | Full multi-chain         |
 
----
+***
 
 #### 3. Backend Integration
 
@@ -822,7 +843,7 @@ if (process.env.MULTICHAIN_NAMES_ENABLED === 'true') {
 }
 ```
 
----
+***
 
 #### 4. Name Service Providers
 
@@ -942,7 +963,7 @@ async function resolveSNS(name) {
 module.exports = { resolveSNS };
 ```
 
----
+***
 
 ### SDK Integration
 
@@ -1008,7 +1029,7 @@ enum class BlockchainChain {
 }
 ```
 
----
+***
 
 ### Testing
 
@@ -1040,7 +1061,7 @@ curl -X POST http://localhost:3000/v1/names/resolve \
   -d '{"name": "bonfida.sol"}'
 ```
 
----
+***
 
 ### Security Considerations
 
@@ -1091,35 +1112,38 @@ async function resolveWithCache(name) {
 }
 ```
 
----
+***
 
 ### Cost Optimization
 
 **RPC Costs:**
 
-| Provider | RPC Calls per Resolution | Cost (Alchemy Free Tier) |
-|----------|-------------------------|--------------------------|
-| **ENS** | 1 call | 300M compute units/month free |
-| **Unstoppable** | 2 calls (L1 + L2) | 300M compute units/month free |
-| **BASE** | 1 call | Included in Alchemy |
-| **SNS** | 1 call | Free (public RPC) |
+| Provider        | RPC Calls per Resolution | Cost (Alchemy Free Tier)      |
+| --------------- | ------------------------ | ----------------------------- |
+| **ENS**         | 1 call                   | 300M compute units/month free |
+| **Unstoppable** | 2 calls (L1 + L2)        | 300M compute units/month free |
+| **BASE**        | 1 call                   | Included in Alchemy           |
+| **SNS**         | 1 call                   | Free (public RPC)             |
 
 **Tips:**
-- ✅ Use caching (reduces RPC calls by ~90%)
-- ✅ Use Alchemy free tier (300M CU/month = ~1M resolutions)
-- ✅ Enable only needed providers (reduce complexity)
 
----
+* ✅ Use caching (reduces RPC calls by \~90%)
+* ✅ Use Alchemy free tier (300M CU/month = \~1M resolutions)
+* ✅ Enable only needed providers (reduce complexity)
+
+***
 
 ### Migration Path
 
 **Current State (SNS-only):**
+
 ```bash
 MULTICHAIN_NAMES_ENABLED=false
 SNS_ENABLED=true
 ```
 
 **Phase 1: Enable ENS**
+
 ```bash
 MULTICHAIN_NAMES_ENABLED=true
 SNS_ENABLED=true
@@ -1127,6 +1151,7 @@ ENS_ENABLED=true
 ```
 
 **Phase 2: Add Unstoppable**
+
 ```bash
 MULTICHAIN_NAMES_ENABLED=true
 SNS_ENABLED=true
@@ -1135,6 +1160,7 @@ UNSTOPPABLE_ENABLED=true
 ```
 
 **Phase 3: Full Multi-Chain**
+
 ```bash
 MULTICHAIN_NAMES_ENABLED=true
 SNS_ENABLED=true
@@ -1145,7 +1171,7 @@ BASE_ENABLED=true
 
 **No Breaking Changes:** Existing SNS-only users unaffected.
 
----
+***
 
 ### Troubleshooting
 
@@ -1154,44 +1180,47 @@ BASE_ENABLED=true
 **Cause:** Name doesn't exist or wrong chain
 
 **Solution:**
+
 1. Check name exists on blockchain explorer
 2. Verify TLD → chain mapping
 3. Check RPC endpoint connectivity
 
----
+***
 
 #### ❌ "RPC Request Failed"
 
 **Cause:** RPC endpoint down or rate limited
 
 **Solution:**
+
 1. Check `ETHEREUM_RPC_URL`, `POLYGON_RPC_URL` validity
 2. Verify Alchemy API key is active
 3. Check rate limits (300M CU/month)
 4. Use caching to reduce RPC calls
 
----
+***
 
 #### ❌ "Ownership Verification Failed"
 
 **Cause:** Signature doesn't match name owner
 
 **Solution:**
+
 1. Ensure user signed with correct wallet
 2. Verify message format matches exactly
 3. Check signature algorithm (ECDSA for EVM, Ed25519 for Solana)
 
----
+***
 
 ### Further Reading
 
-- [Multi-Chain Name Service Quick Start](../01-getting-started/MULTICHAIN_NAME_SERVICE_QUICKSTART.md)
-- [Multi-Chain Implementation Details](../04-architecture/MULTICHAIN_NAME_SERVICE_IMPLEMENTATION.md)
-- [ENS Documentation](https://docs.ens.domains/)
-- [Unstoppable Domains API](https://docs.unstoppabledomains.com/)
-- [Solana Name Service](https://docs.bonfida.org/collection/v/naming-service/)
+* [Multi-Chain Name Service Quick Start](01-getting-started/MULTICHAIN_NAME_SERVICE_QUICKSTART.md)
+* [Multi-Chain Implementation Details](04-architecture/MULTICHAIN_NAME_SERVICE_IMPLEMENTATION.md)
+* [ENS Documentation](https://docs.ens.domains/)
+* [Unstoppable Domains API](https://docs.unstoppabledomains.com/)
+* [Solana Name Service](https://docs.bonfida.org/collection/v/naming-service/)
 
----
+***
 
 ## Testing
 
@@ -1235,13 +1264,14 @@ anchor test
 anchor test --skip-local-validator --provider.cluster devnet
 ```
 
----
+***
 
 ## GDPR Compliance
 
 ### How Double Encryption + Blockchain Works
 
 **1. Enrollment:**
+
 ```
 User Factors
   ↓ SHA-256
@@ -1255,6 +1285,7 @@ On-Chain Commitment → Solana (immutable)
 ```
 
 **2. Authentication:**
+
 ```
 User Factors (at POS)
   ↓ SHA-256
@@ -1268,6 +1299,7 @@ Proof Hash → Solana Audit Trail
 ```
 
 **3. GDPR Deletion:**
+
 ```
 User requests deletion
   ↓
@@ -1285,26 +1317,30 @@ On-chain hash remains (meaningless without key)
 ### Legal Basis
 
 **GDPR Article 17 (Right to Erasure):**
+
 > "The right to erasure does not apply when processing is necessary for compliance with a legal obligation (e.g., PSD3 audit requirements)"
 
 **Why our approach works:**
+
 1. **Off-chain data destroyed:** KMS key deletion makes data irrecoverable
 2. **On-chain hash preserved:** For regulatory audit (PSD3 compliance)
 3. **Hash is not personal data:** Cannot be reversed without key
 4. **Legal precedent:** EU Blockchain Observatory: "Hashed data is not personal data"
 
 **Proof of deletion:**
-- On-chain "revoked" flag with timestamp
-- Immutable record that deletion occurred
-- Regulator can verify compliance
 
----
+* On-chain "revoked" flag with timestamp
+* Immutable record that deletion occurred
+* Regulator can verify compliance
+
+***
 
 ## Troubleshooting
 
-### Problem: "Blockchain enabled but SOLANA_AUTHORITY_KEYPAIR not configured"
+### Problem: "Blockchain enabled but SOLANA\_AUTHORITY\_KEYPAIR not configured"
 
 **Solution:**
+
 ```bash
 # Generate new keypair
 solana-keygen new
@@ -1319,18 +1355,21 @@ SOLANA_AUTHORITY_KEYPAIR='[1,2,3,...]'
 ### Problem: "Insufficient balance for deployment"
 
 **Solution (Devnet):**
+
 ```bash
 solana config set --url https://api.devnet.solana.com
 solana airdrop 2
 ```
 
 **Solution (Mainnet):**
-- Purchase SOL from exchange (Coinbase, Binance, etc.)
-- Transfer to your wallet address
+
+* Purchase SOL from exchange (Coinbase, Binance, etc.)
+* Transfer to your wallet address
 
 ### Problem: "Program deployment failed"
 
 **Solution:**
+
 ```bash
 # Check Solana version
 solana --version  # Should be ≥1.17
@@ -1347,22 +1386,26 @@ anchor build
 ### Problem: "Transaction failed: blockhash not found"
 
 **Solution:**
-- RPC endpoint may be lagging
-- Try different endpoint:
-  ```bash
-  export SOLANA_RPC_ENDPOINT=https://api.mainnet-beta.solana.com
-  # OR
-  export SOLANA_RPC_ENDPOINT=https://solana-api.projectserum.com
-  ```
+
+* RPC endpoint may be lagging
+*   Try different endpoint:
+
+    ```bash
+    export SOLANA_RPC_ENDPOINT=https://api.mainnet-beta.solana.com
+    # OR
+    export SOLANA_RPC_ENDPOINT=https://solana-api.projectserum.com
+    ```
 
 ### Problem: "Enrollment created in Redis but not on blockchain"
 
 **This is expected behavior!** The system is designed to be fail-safe:
-- Enrollment in Redis = user can authenticate
-- Blockchain = supplementary audit trail
-- If blockchain fails, check logs (non-critical error)
+
+* Enrollment in Redis = user can authenticate
+* Blockchain = supplementary audit trail
+* If blockchain fails, check logs (non-critical error)
 
 **Check:**
+
 ```bash
 # View logs
 tail -f backend/logs/blockchain-integration.log
@@ -1371,46 +1414,52 @@ tail -f backend/logs/blockchain-integration.log
 curl http://localhost:3000/v1/blockchain/health
 ```
 
----
+***
 
 ## Next Steps
 
 ### Phase 1 (Week 1): Production Readiness
-- [ ] Complete trusted setup ceremony
-- [ ] Deploy smart contracts to devnet
-- [ ] Enable blockchain integration (`BLOCKCHAIN_ENABLED=true`)
-- [ ] Test with 10 pilot enrollments
-- [ ] Monitor for 7 days (verify stability)
+
+* [ ] Complete trusted setup ceremony
+* [ ] Deploy smart contracts to devnet
+* [ ] Enable blockchain integration (`BLOCKCHAIN_ENABLED=true`)
+* [ ] Test with 10 pilot enrollments
+* [ ] Monitor for 7 days (verify stability)
 
 ### Phase 2 (Week 2-3): Mainnet Deployment
-- [ ] External security audit (Trail of Bits, OtterSec)
-- [ ] Deploy to mainnet
-- [ ] Migrate existing enrollments (batch script)
-- [ ] Monitor gas fees and optimize
+
+* [ ] External security audit (Trail of Bits, OtterSec)
+* [ ] Deploy to mainnet
+* [ ] Migrate existing enrollments (batch script)
+* [ ] Monitor gas fees and optimize
 
 ### Phase 3 (Month 2): Advanced Features
-- [ ] Cross-chain support (Ethereum via Wormhole)
-- [ ] Reputation scoring system
-- [ ] Fraud detection ML model (using on-chain data)
-- [ ] Merchant dashboard (query blockchain)
 
----
+* [ ] Cross-chain support (Ethereum via Wormhole)
+* [ ] Reputation scoring system
+* [ ] Fraud detection ML model (using on-chain data)
+* [ ] Merchant dashboard (query blockchain)
+
+***
 
 ## Support
 
 **Questions?**
-- Read the full analysis: `documentation/BLOCKCHAIN_SECURITY_ANALYSIS.md`
-- Check smart contract code: `programs/notap-enrollment/src/lib.rs`
-- Backend integration: `backend/services/blockchainIntegrationService.js`
+
+* Read the full analysis: `documentation/BLOCKCHAIN_SECURITY_ANALYSIS.md`
+* Check smart contract code: `programs/notap-enrollment/src/lib.rs`
+* Backend integration: `backend/services/blockchainIntegrationService.js`
 
 **Issues?**
-- Check logs: `backend/logs/blockchain-integration.log`
-- Health check: `GET /v1/blockchain/health`
-- Discord: [Your support channel]
 
----
+* Check logs: `backend/logs/blockchain-integration.log`
+* Health check: `GET /v1/blockchain/health`
+* Discord: \[Your support channel]
+
+***
 
 **Remember:** Blockchain integration is **optional** and **pluggable**. Your existing authentication system works perfectly without it. Blockchain adds:
+
 1. Immutable audit trail (regulatory compliance)
 2. GDPR-compliant proof of deletion
 3. Decentralized trust (future: cross-merchant reputation)

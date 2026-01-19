@@ -1,66 +1,73 @@
+---
+hidden: true
+---
+
 # NoTap Super Admin API Documentation
 
-**Version:** 1.0.0
-**Base URL:** `https://api.notap.io/v1/admin`
-**Authentication:** API Key (Header: `X-Admin-API-Key`)
+**Version:** 1.0.0 **Base URL:** `https://api.notap.io/v1/admin` **Authentication:** API Key (Header: `X-Admin-API-Key`)
 
----
+***
 
 ## Table of Contents
 
-1. [Authentication](#authentication)
-2. [User Management](#user-management)
-3. [Security Monitoring](#security-monitoring)
-4. [Analytics](#analytics)
-5. [System Configuration](#system-configuration)
-6. [Rate Limiting](#rate-limiting)
-7. [Error Handling](#error-handling)
+1. [Authentication](SUPER_ADMIN_API.md#authentication)
+2. [User Management](SUPER_ADMIN_API.md#user-management)
+3. [Security Monitoring](SUPER_ADMIN_API.md#security-monitoring)
+4. [Analytics](SUPER_ADMIN_API.md#analytics)
+5. [System Configuration](SUPER_ADMIN_API.md#system-configuration)
+6. [Rate Limiting](SUPER_ADMIN_API.md#rate-limiting)
+7. [Error Handling](SUPER_ADMIN_API.md#error-handling)
 
----
+***
 
 ## Authentication
 
 All super admin endpoints require an API key for authentication.
 
 ### Headers
+
 ```http
 X-Admin-API-Key: your_super_admin_api_key_here
 ```
 
 ### Environment Setup
+
 ```bash
 # Add to .env
 ADMIN_API_KEY=your_super_admin_api_key_here
 ```
 
 ### Example Request
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/users" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
----
+***
 
 ## User Management
 
 ### 1. Search Users
 
-**Endpoint:** `GET /v1/admin/users`
-**Rate Limit:** 100 requests / 15 minutes
+**Endpoint:** `GET /v1/admin/users` **Rate Limit:** 100 requests / 15 minutes
 
 **Query Parameters:**
-- `search` (string, optional) - Search term (UUID, email)
-- `status` (string, optional) - Filter by status: `active`, `suspended`, `deleted`
-- `limit` (integer, optional) - Results per page (default: 50, max: 100)
-- `offset` (integer, optional) - Pagination offset (default: 0)
+
+* `search` (string, optional) - Search term (UUID, email)
+* `status` (string, optional) - Filter by status: `active`, `suspended`, `deleted`
+* `limit` (integer, optional) - Results per page (default: 50, max: 100)
+* `offset` (integer, optional) - Pagination offset (default: 0)
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/users?search=user@example.com&status=active&limit=10" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -81,20 +88,21 @@ curl -X GET "https://api.notap.io/v1/admin/users?search=user@example.com&status=
 }
 ```
 
----
+***
 
 ### 2. Get User Details
 
-**Endpoint:** `GET /v1/admin/users/:uuid`
-**Rate Limit:** 100 requests / 15 minutes
+**Endpoint:** `GET /v1/admin/users/:uuid` **Rate Limit:** 100 requests / 15 minutes
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -130,14 +138,14 @@ curl -X GET "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 }
 ```
 
----
+***
 
 ### 3. Suspend User
 
-**Endpoint:** `PUT /v1/admin/users/:uuid/suspend`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `PUT /v1/admin/users/:uuid/suspend` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Request Body:**
+
 ```json
 {
   "reason": "Suspicious activity detected",
@@ -147,6 +155,7 @@ curl -X GET "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 ```
 
 **Example Request:**
+
 ```bash
 curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890/suspend" \
   -H "X-Admin-API-Key: your_api_key_here" \
@@ -159,6 +168,7 @@ curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -175,20 +185,21 @@ curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 }
 ```
 
----
+***
 
 ### 4. Reactivate User
 
-**Endpoint:** `PUT /v1/admin/users/:uuid/reactivate`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `PUT /v1/admin/users/:uuid/reactivate` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Example Request:**
+
 ```bash
 curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890/reactivate" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -199,20 +210,21 @@ curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 }
 ```
 
----
+***
 
 ### 5. Delete User (GDPR)
 
-**Endpoint:** `DELETE /v1/admin/users/:uuid`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `DELETE /v1/admin/users/:uuid` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Example Request:**
+
 ```bash
 curl -X DELETE "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -228,14 +240,14 @@ curl -X DELETE "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12
 }
 ```
 
----
+***
 
 ### 6. Force Re-Enrollment
 
-**Endpoint:** `PUT /v1/admin/users/:uuid/force-reenroll`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `PUT /v1/admin/users/:uuid/force-reenroll` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Request Body:**
+
 ```json
 {
   "reason": "Security policy update requires re-enrollment"
@@ -243,6 +255,7 @@ curl -X DELETE "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12
 ```
 
 **Example Request:**
+
 ```bash
 curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890/force-reenroll" \
   -H "X-Admin-API-Key: your_api_key_here" \
@@ -253,6 +266,7 @@ curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -263,14 +277,14 @@ curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 }
 ```
 
----
+***
 
 ### 7. Bulk Delete Users
 
-**Endpoint:** `POST /v1/admin/users/bulk/delete`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `POST /v1/admin/users/bulk/delete` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Request Body:**
+
 ```json
 {
   "uuids": [
@@ -283,6 +297,7 @@ curl -X PUT "https://api.notap.io/v1/admin/users/a1b2c3d4-e5f6-7890-abcd-ef12345
 ```
 
 **Example Request:**
+
 ```bash
 curl -X POST "https://api.notap.io/v1/admin/users/bulk/delete" \
   -H "X-Admin-API-Key: your_api_key_here" \
@@ -294,6 +309,7 @@ curl -X POST "https://api.notap.io/v1/admin/users/bulk/delete" \
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -321,14 +337,14 @@ curl -X POST "https://api.notap.io/v1/admin/users/bulk/delete" \
 }
 ```
 
----
+***
 
 ### 8. Bulk Suspend Users
 
-**Endpoint:** `POST /v1/admin/users/bulk/suspend`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `POST /v1/admin/users/bulk/suspend` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Request Body:**
+
 ```json
 {
   "uuids": ["uuid-1", "uuid-2"],
@@ -336,19 +352,20 @@ curl -X POST "https://api.notap.io/v1/admin/users/bulk/delete" \
 }
 ```
 
----
+***
 
 ### 9. Export Users to CSV
 
-**Endpoint:** `GET /v1/admin/users/export/csv`
-**Rate Limit:** 10 requests / hour (export limiter)
+**Endpoint:** `GET /v1/admin/users/export/csv` **Rate Limit:** 10 requests / hour (export limiter)
 
 **Query Parameters:**
-- `status` (string, optional) - Filter by status
-- `fromDate` (string, optional) - ISO date (e.g., "2025-11-01")
-- `toDate` (string, optional) - ISO date
+
+* `status` (string, optional) - Filter by status
+* `fromDate` (string, optional) - ISO date (e.g., "2025-11-01")
+* `toDate` (string, optional) - ISO date
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/users/export/csv?status=active" \
   -H "X-Admin-API-Key: your_api_key_here" \
@@ -356,27 +373,29 @@ curl -X GET "https://api.notap.io/v1/admin/users/export/csv?status=active" \
 ```
 
 **Example Response:**
+
 ```csv
 UUID,Status,EnrolledAt,LastActivity,FactorsCount,VerificationCount
 a1b2c3d4-e5f6-7890-abcd-ef1234567890,active,2025-11-01T10:30:00Z,2025-11-18T08:45:00Z,6,42
 ```
 
----
+***
 
 ## Security Monitoring
 
 ### 1. Get Security Metrics
 
-**Endpoint:** `GET /v1/admin/security/metrics`
-**Rate Limit:** 100 requests / 15 minutes
+**Endpoint:** `GET /v1/admin/security/metrics` **Rate Limit:** 100 requests / 15 minutes
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/security/metrics" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -399,23 +418,26 @@ curl -X GET "https://api.notap.io/v1/admin/security/metrics" \
 }
 ```
 
----
+***
 
 ### 2. Get Fraud Alerts
 
 **Endpoint:** `GET /v1/admin/security/fraud-alerts`
 
 **Query Parameters:**
-- `status` (string) - `active`, `resolved`, `all`
-- `limit` (integer, optional)
+
+* `status` (string) - `active`, `resolved`, `all`
+* `limit` (integer, optional)
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/security/fraud-alerts?status=active&limit=10" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -435,7 +457,7 @@ curl -X GET "https://api.notap.io/v1/admin/security/fraud-alerts?status=active&l
 }
 ```
 
----
+***
 
 ## Analytics
 
@@ -444,15 +466,18 @@ curl -X GET "https://api.notap.io/v1/admin/security/fraud-alerts?status=active&l
 **Endpoint:** `GET /v1/admin/analytics/enrollment`
 
 **Query Parameters:**
-- `timeRange` (string) - `24h`, `7d`, `30d`, `90d`
+
+* `timeRange` (string) - `24h`, `7d`, `30d`, `90d`
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/analytics/enrollment?timeRange=7d" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -474,7 +499,7 @@ curl -X GET "https://api.notap.io/v1/admin/analytics/enrollment?timeRange=7d" \
 }
 ```
 
----
+***
 
 ## System Configuration
 
@@ -483,12 +508,14 @@ curl -X GET "https://api.notap.io/v1/admin/analytics/enrollment?timeRange=7d" \
 **Endpoint:** `GET /v1/admin/config`
 
 **Example Request:**
+
 ```bash
 curl -X GET "https://api.notap.io/v1/admin/config" \
   -H "X-Admin-API-Key: your_api_key_here"
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -509,14 +536,14 @@ curl -X GET "https://api.notap.io/v1/admin/config" \
 }
 ```
 
----
+***
 
 ### 2. Update Rate Limits
 
-**Endpoint:** `PUT /v1/admin/config/rate-limits`
-**Rate Limit:** 20 requests / 15 minutes (strict)
+**Endpoint:** `PUT /v1/admin/config/rate-limits` **Rate Limit:** 20 requests / 15 minutes (strict)
 
 **Request Body:**
+
 ```json
 {
   "enrollment": 15,
@@ -525,6 +552,7 @@ curl -X GET "https://api.notap.io/v1/admin/config" \
 ```
 
 **Example Request:**
+
 ```bash
 curl -X PUT "https://api.notap.io/v1/admin/config/rate-limits" \
   -H "X-Admin-API-Key: your_api_key_here" \
@@ -535,21 +563,22 @@ curl -X PUT "https://api.notap.io/v1/admin/config/rate-limits" \
   }'
 ```
 
----
+***
 
 ## Rate Limiting
 
 ### Rate Limit Tiers
 
-| Tier | Endpoints | Limit | Window |
-|------|-----------|-------|--------|
+| Tier         | Endpoints                        | Limit   | Window |
+| ------------ | -------------------------------- | ------- | ------ |
 | **Standard** | GET /users, /metrics, /analytics | 100 req | 15 min |
-| **Strict** | PUT/DELETE /users, /config | 20 req | 15 min |
-| **Export** | GET /users/export/csv | 10 req | 1 hour |
+| **Strict**   | PUT/DELETE /users, /config       | 20 req  | 15 min |
+| **Export**   | GET /users/export/csv            | 10 req  | 1 hour |
 
 ### Rate Limit Headers
 
 All responses include rate limit headers:
+
 ```http
 RateLimit-Limit: 100
 RateLimit-Remaining: 95
@@ -567,7 +596,7 @@ RateLimit-Reset: 1700305800
 }
 ```
 
----
+***
 
 ## Error Handling
 
@@ -586,19 +615,20 @@ RateLimit-Reset: 1700305800
 
 ### Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 403 | Invalid or missing API key |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
-| `USER_NOT_FOUND` | 404 | User UUID not found |
-| `INVALID_INPUT` | 400 | Invalid request parameters |
-| `SERVER_ERROR` | 500 | Internal server error |
+| Code                  | HTTP Status | Description                |
+| --------------------- | ----------- | -------------------------- |
+| `UNAUTHORIZED`        | 403         | Invalid or missing API key |
+| `RATE_LIMIT_EXCEEDED` | 429         | Too many requests          |
+| `USER_NOT_FOUND`      | 404         | User UUID not found        |
+| `INVALID_INPUT`       | 400         | Invalid request parameters |
+| `SERVER_ERROR`        | 500         | Internal server error      |
 
----
+***
 
 ## Best Practices
 
 ### 1. Always Use HTTPS
+
 ```bash
 # ✅ GOOD
 curl https://api.notap.io/v1/admin/users
@@ -608,6 +638,7 @@ curl http://api.notap.io/v1/admin/users
 ```
 
 ### 2. Implement Retry Logic
+
 ```javascript
 async function fetchWithRetry(url, options, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
@@ -630,6 +661,7 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 ```
 
 ### 3. Store API Keys Securely
+
 ```bash
 # Use environment variables
 export ADMIN_API_KEY="your_api_key"
@@ -639,15 +671,14 @@ export ADMIN_API_KEY="your_api_key"
 # ✅ GOOD: const apiKey = process.env.ADMIN_API_KEY
 ```
 
----
+***
 
 ## Support
 
-- **Email:** support@notap.io
-- **Documentation:** https://docs.notap.io
-- **Status Page:** https://status.notap.io
+* **Email:** support@notap.io
+* **Documentation:** https://docs.notap.io
+* **Status Page:** https://status.notap.io
 
----
+***
 
-**Last Updated:** 2025-11-18
-**API Version:** 1.0.0
+**Last Updated:** 2025-11-18 **API Version:** 1.0.0

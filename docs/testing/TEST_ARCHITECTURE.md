@@ -1,25 +1,27 @@
+---
+hidden: true
+---
+
 # Test Architecture - ZeroPay SDK
 
-**Document Version:** 1.0.0
-**Last Updated:** 2025-12-19
-**Status:** Production Ready
+**Document Version:** 1.0.0 **Last Updated:** 2025-12-19 **Status:** Production Ready
 
----
+***
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Testing Strategy](#testing-strategy)
-3. [Test Types and Tools](#test-types-and-tools)
-4. [Mocha Tests (Backend)](#mocha-tests-backend)
-5. [Bugster Tests (Web UI)](#bugster-tests-web-ui)
-6. [Kotlin Tests (SDK)](#kotlin-tests-sdk)
-7. [CI/CD Integration](#cicd-integration)
-8. [Running Tests Locally](#running-tests-locally)
-9. [Writing New Tests](#writing-new-tests)
-10. [Best Practices](#best-practices)
+1. [Overview](TEST_ARCHITECTURE.md#overview)
+2. [Testing Strategy](TEST_ARCHITECTURE.md#testing-strategy)
+3. [Test Types and Tools](TEST_ARCHITECTURE.md#test-types-and-tools)
+4. [Mocha Tests (Backend)](TEST_ARCHITECTURE.md#mocha-tests-backend)
+5. [Bugster Tests (Web UI)](TEST_ARCHITECTURE.md#bugster-tests-web-ui)
+6. [Kotlin Tests (SDK)](TEST_ARCHITECTURE.md#kotlin-tests-sdk)
+7. [CI/CD Integration](TEST_ARCHITECTURE.md#cicd-integration)
+8. [Running Tests Locally](TEST_ARCHITECTURE.md#running-tests-locally)
+9. [Writing New Tests](TEST_ARCHITECTURE.md#writing-new-tests)
+10. [Best Practices](TEST_ARCHITECTURE.md#best-practices)
 
----
+***
 
 ## Overview
 
@@ -49,19 +51,21 @@ ZeroPay uses a multi-layered testing strategy with different tools for different
                           └────────────────┘
 ```
 
----
+***
 
 ## Testing Strategy
 
 ### 1. Separation of Concerns
 
 **❌ WRONG - Mixing test types:**
+
 ```
 Bugster tests for backend APIs
 Mocha tests for web UI
 ```
 
 **✅ CORRECT - Clear separation:**
+
 ```
 Mocha → Backend APIs, services, business logic
 Bugster → Web UI user interactions, browser flows
@@ -83,23 +87,24 @@ JUnit → Kotlin multiplatform SDK logic
 ```
 
 **Distribution:**
-- Unit Tests: 70% (fast, isolated)
-- Integration Tests: 20% (moderate speed, dependencies)
-- E2E Tests: 10% (slow, full system)
 
----
+* Unit Tests: 70% (fast, isolated)
+* Integration Tests: 20% (moderate speed, dependencies)
+* E2E Tests: 10% (slow, full system)
+
+***
 
 ## Test Types and Tools
 
-| Test Type | Tool | Target | Location | Count |
-|-----------|------|--------|----------|-------|
-| **Backend Unit** | Mocha + Chai | Services, utils, validators | `backend/tests/` | 21 files |
-| **Backend Integration** | Mocha + Supertest | API routes, Redis, DB | `backend/tests/integration/` | 5 files |
-| **Backend E2E** | Mocha + Supertest | Complete workflows | `backend/tests/e2e/` | 6 files |
-| **Web UI E2E** | Bugster | User flows, browser | `.bugster/tests/` | 3 files |
-| **SDK Unit** | JUnit | Factors, crypto, KMP | `sdk/src/test/` | Multiple |
+| Test Type               | Tool              | Target                      | Location                     | Count    |
+| ----------------------- | ----------------- | --------------------------- | ---------------------------- | -------- |
+| **Backend Unit**        | Mocha + Chai      | Services, utils, validators | `backend/tests/`             | 21 files |
+| **Backend Integration** | Mocha + Supertest | API routes, Redis, DB       | `backend/tests/integration/` | 5 files  |
+| **Backend E2E**         | Mocha + Supertest | Complete workflows          | `backend/tests/e2e/`         | 6 files  |
+| **Web UI E2E**          | Bugster           | User flows, browser         | `.bugster/tests/`            | 3 files  |
+| **SDK Unit**            | JUnit             | Factors, crypto, KMP        | `sdk/src/test/`              | Multiple |
 
----
+***
 
 ## Mocha Tests (Backend)
 
@@ -132,6 +137,7 @@ backend/tests/
 ### Syntax (Mocha + Chai)
 
 **✅ CORRECT:**
+
 ```javascript
 const { expect } = require('chai');
 const supertest = require('supertest');
@@ -158,6 +164,7 @@ describe('Enrollment API', () => {
 ```
 
 **❌ WRONG - Jest syntax:**
+
 ```javascript
 // This will cause "beforeAll is not defined" error
 beforeAll(async () => { ... });
@@ -181,7 +188,7 @@ npm run test:crypto
 npx mocha tests/e2e/complete-flow.test.js --timeout 10000
 ```
 
----
+***
 
 ## Bugster Tests (Web UI)
 
@@ -200,6 +207,7 @@ npx mocha tests/e2e/complete-flow.test.js --timeout 10000
 ### YAML Format (Required)
 
 **✅ CORRECT:**
+
 ```yaml
 name: User completes enrollment with PIN and Pattern factors
 page: /
@@ -218,6 +226,7 @@ expected_result: User successfully enrolled with UUID displayed, confirmation me
 ```
 
 **❌ WRONG - API testing format:**
+
 ```yaml
 # This is for API testing, NOT Bugster
 setup:
@@ -245,7 +254,7 @@ bugster run --verbose --screenshots
 bugster run --verbose --headless --output report.json
 ```
 
----
+***
 
 ## Kotlin Tests (SDK)
 
@@ -279,13 +288,14 @@ sdk/src/
 ./gradlew :sdk:test :sdk:jacocoTestReport
 ```
 
----
+***
 
 ## CI/CD Integration
 
 ### GitHub Actions Workflows
 
 **1. ci-cd.yml - Main Pipeline**
+
 ```yaml
 jobs:
   lint:                    # Code quality
@@ -296,6 +306,7 @@ jobs:
 ```
 
 **2. bugster-tests.yml - Web UI**
+
 ```yaml
 jobs:
   web-ui-tests:           # Bugster tests (3 flows)
@@ -321,13 +332,14 @@ Manual:
   ✅ workflow_dispatch enabled on both
 ```
 
----
+***
 
 ## Running Tests Locally
 
 ### Prerequisites
 
 **Backend Tests:**
+
 ```bash
 # Required services
 docker run -d -p 6379:6379 redis:7-alpine
@@ -338,6 +350,7 @@ cd backend && npm install
 ```
 
 **Web UI Tests:**
+
 ```bash
 # Build online-web module
 ./gradlew :online-web:jsBrowserDevelopmentWebpack
@@ -368,7 +381,7 @@ bugster run --verbose --headless
 npm test && bugster run --headless && ./gradlew test
 ```
 
----
+***
 
 ## Writing New Tests
 
@@ -452,13 +465,14 @@ class MyProcessorTest {
 }
 ```
 
----
+***
 
 ## Best Practices
 
 ### 1. Test Isolation
 
 **✅ DO:**
+
 ```javascript
 describe('Feature', () => {
     let testUuid;
@@ -474,6 +488,7 @@ describe('Feature', () => {
 ```
 
 **❌ DON'T:**
+
 ```javascript
 const SHARED_UUID = 'test-uuid'; // Shared across tests - causes conflicts
 ```
@@ -481,6 +496,7 @@ const SHARED_UUID = 'test-uuid'; // Shared across tests - causes conflicts
 ### 2. Descriptive Test Names
 
 **✅ DO:**
+
 ```javascript
 it('should reject enrollment with less than 3 factors', async () => {
     // Test clearly states what it validates
@@ -488,6 +504,7 @@ it('should reject enrollment with less than 3 factors', async () => {
 ```
 
 **❌ DON'T:**
+
 ```javascript
 it('test 1', async () => {
     // Unclear what this tests
@@ -497,6 +514,7 @@ it('test 1', async () => {
 ### 3. Test Data Management
 
 **✅ DO:**
+
 ```javascript
 const validFactors = [
     { type: 'PIN', digest: '...' },
@@ -506,6 +524,7 @@ const validFactors = [
 ```
 
 **❌ DON'T:**
+
 ```javascript
 // Hardcoded real user UUIDs or production data
 const uuid = 'real-user-uuid-from-prod';
@@ -514,6 +533,7 @@ const uuid = 'real-user-uuid-from-prod';
 ### 4. Async/Await Consistency
 
 **✅ DO:**
+
 ```javascript
 it('should work', async () => {
     const result = await asyncOperation();
@@ -522,6 +542,7 @@ it('should work', async () => {
 ```
 
 **❌ DON'T:**
+
 ```javascript
 it('should work', async () => {
     asyncOperation(); // Missing await - test finishes before operation completes
@@ -531,6 +552,7 @@ it('should work', async () => {
 ### 5. Error Testing
 
 **✅ DO:**
+
 ```javascript
 it('should handle missing parameters', async () => {
     const response = await supertest(app)
@@ -542,57 +564,60 @@ it('should handle missing parameters', async () => {
 });
 ```
 
----
+***
 
 ## Troubleshooting
 
 ### Common Issues
 
 **1. "beforeAll is not defined"**
+
 ```
 Problem: Using Jest syntax in Mocha
 Solution: Replace beforeAll → before, afterAll → after, test() → it()
 ```
 
 **2. "Bugster test validation errors"**
+
 ```
 Problem: Using API test format instead of UI test format
 Solution: Use simple YAML with name/page/page_path/task/steps/expected_result
 ```
 
 **3. "Tests timeout"**
+
 ```
 Problem: Services (Redis, PostgreSQL) not running
 Solution: Start required services before running tests
 ```
 
 **4. "Module not found"**
+
 ```
 Problem: Missing dependencies
 Solution: Run npm install in backend directory
 ```
 
----
+***
 
 ## Test Coverage Goals
 
-| Module | Current | Target |
-|--------|---------|--------|
-| Backend Services | 75% | 80% |
-| Backend APIs | 85% | 90% |
-| SDK Processors | 70% | 85% |
-| Web UI Flows | 60% | 75% |
+| Module           | Current | Target |
+| ---------------- | ------- | ------ |
+| Backend Services | 75%     | 80%    |
+| Backend APIs     | 85%     | 90%    |
+| SDK Processors   | 70%     | 85%    |
+| Web UI Flows     | 60%     | 75%    |
 
----
+***
 
 ## See Also
 
-- [BUGSTER_INTEGRATION.md](../BUGSTER_INTEGRATION.md) - Bugster setup guide
-- [CI/CD Workflow](../../.github/workflows/ci-cd.yml) - Main pipeline
-- [Test Suite Summary](../../backend/tests/TEST_SUITE_SUMMARY.txt) - Test inventory
-- [LESSONS_LEARNED.md](../10-internal/LESSONS_LEARNED.md) - Testing lessons
+* [BUGSTER\_INTEGRATION.md](../BUGSTER_INTEGRATION.md) - Bugster setup guide
+* [CI/CD Workflow](../../.github/workflows/ci-cd.yml) - Main pipeline
+* [Test Suite Summary](../../backend/tests/TEST_SUITE_SUMMARY.txt) - Test inventory
+* [LESSONS\_LEARNED.md](../10-internal/LESSONS_LEARNED.md) - Testing lessons
 
----
+***
 
-**Last Updated:** 2025-12-19
-**Maintained By:** ZeroPay Development Team
+**Last Updated:** 2025-12-19 **Maintained By:** ZeroPay Development Team
