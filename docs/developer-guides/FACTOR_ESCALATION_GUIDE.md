@@ -1,10 +1,12 @@
+---
+hidden: true
+---
+
 # Factor Escalation Guide
 
-**Version:** 2.0.0
-**Date:** 2025-11-13
-**Feature:** Dynamic Factor Challenge & Escalation
+**Version:** 2.0.0 **Date:** 2025-11-13 **Feature:** Dynamic Factor Challenge & Escalation
 
----
+***
 
 ## Overview
 
@@ -12,12 +14,12 @@ NoTap's Factor Escalation feature provides intelligent, risk-based authenticatio
 
 ### Key Features
 
-- **Risk-Based Initial Challenge**: 2 factors (low risk) or 3 factors (high risk/amount)
-- **Single Factor Escalation**: Failed factor → adds 1 more factor (doesn't repeat failed one)
-- **Two-Strike Rate Limiting**: 2 challenge failures → 15-minute cooldown
-- **User-Friendly Messages**: Clear UI feedback on escalation
+* **Risk-Based Initial Challenge**: 2 factors (low risk) or 3 factors (high risk/amount)
+* **Single Factor Escalation**: Failed factor → adds 1 more factor (doesn't repeat failed one)
+* **Two-Strike Rate Limiting**: 2 challenge failures → 15-minute cooldown
+* **User-Friendly Messages**: Clear UI feedback on escalation
 
----
+***
 
 ## How It Works
 
@@ -49,16 +51,16 @@ NoTap's Factor Escalation feature provides intelligent, risk-based authenticatio
 └─────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Risk-Based Factor Calculation
 
-| Scenario | Transaction Amount | Risk Level | Factors Required |
-|----------|-------------------|------------|------------------|
-| **Low Risk** | < $30 | LOW | 2 |
-| **Medium Risk** | $30 - $99 | MEDIUM | 3 |
-| **High Amount** | ≥ $100 | Any | 3 |
-| **High Risk** | Any | HIGH | 3 |
+| Scenario        | Transaction Amount | Risk Level | Factors Required |
+| --------------- | ------------------ | ---------- | ---------------- |
+| **Low Risk**    | < $30              | LOW        | 2                |
+| **Medium Risk** | $30 - $99          | MEDIUM     | 3                |
+| **High Amount** | ≥ $100             | Any        | 3                |
+| **High Risk**   | Any                | HIGH       | 3                |
 
 ### Examples
 
@@ -76,7 +78,7 @@ getRequiredFactorCount(RiskLevel.LOW, 150.0) // Returns: 3
 getRequiredFactorCount(RiskLevel.HIGH, 10.0) // Returns: 3
 ```
 
----
+***
 
 ## Escalation Rules
 
@@ -89,24 +91,24 @@ getRequiredFactorCount(RiskLevel.HIGH, 10.0) // Returns: 3
 
 ### Escalation Behavior
 
-| Event | Action | Result |
-|-------|--------|--------|
-| **Factor Fails** | Remove failed factor, add 1 new factor | User must complete new factor set |
-| **Clear Progress** | Reset completed factors | Challenge restarts from scratch |
-| **Track Failures** | Add to `session.failedFactors` | Failed factor won't be retried |
-| **Increment Counter** | `session.escalationCount++` | Track escalation count |
+| Event                 | Action                                 | Result                            |
+| --------------------- | -------------------------------------- | --------------------------------- |
+| **Factor Fails**      | Remove failed factor, add 1 new factor | User must complete new factor set |
+| **Clear Progress**    | Reset completed factors                | Challenge restarts from scratch   |
+| **Track Failures**    | Add to `session.failedFactors`         | Failed factor won't be retried    |
+| **Increment Counter** | `session.escalationCount++`            | Track escalation count            |
 
 ### Rate Limiting
 
-| Challenge Attempts | Action |
-|-------------------|--------|
-| **1st failure** | Escalate (add 1 factor) |
-| **2nd failure** | Apply rate limiting → 15-minute cooldown |
-| **3rd-5th failures** | 15-minute cooldown continues |
-| **8th failure** | 4-hour cooldown |
-| **10+ failures** | Account frozen (fraud suspected) |
+| Challenge Attempts   | Action                                   |
+| -------------------- | ---------------------------------------- |
+| **1st failure**      | Escalate (add 1 factor)                  |
+| **2nd failure**      | Apply rate limiting → 15-minute cooldown |
+| **3rd-5th failures** | 15-minute cooldown continues             |
+| **8th failure**      | 4-hour cooldown                          |
+| **10+ failures**     | Account frozen (fraud suspected)         |
 
----
+***
 
 ## Implementation Guide
 
@@ -197,7 +199,7 @@ when (result) {
 }
 ```
 
----
+***
 
 ## UI/UX Best Practices
 
@@ -269,7 +271,7 @@ fun RateLimitMessage(remainingTime: Long) {
 }
 ```
 
----
+***
 
 ## Configuration
 
@@ -310,7 +312,7 @@ MerchantConfig.MAX_ESCALATIONS_PER_SESSION = 3
 MerchantConfig.MAX_CHALLENGE_ATTEMPTS = 3
 ```
 
----
+***
 
 ## Testing
 
@@ -318,39 +320,43 @@ MerchantConfig.MAX_CHALLENGE_ATTEMPTS = 3
 
 See `FactorEscalationTest.kt` for comprehensive test coverage:
 
-- Risk-based factor calculation
-- Escalation logic
-- Rate limiting
-- Available factor selection
-- Max escalations handling
-- Challenge attempt tracking
+* Risk-based factor calculation
+* Escalation logic
+* Rate limiting
+* Available factor selection
+* Max escalations handling
+* Challenge attempt tracking
 
 ### Manual Testing Scenarios
 
 #### Scenario 1: Low Risk Transaction
+
 1. Create session with $5 amount
 2. Verify 2 factors required
 3. Submit correct PIN → Success
 4. Submit correct Pattern → Success
 
 #### Scenario 2: Single Failure Escalation
+
 1. Create session with $5 amount (2 factors)
 2. Submit incorrect PIN → Escalated
 3. Verify 3 factors now required (Pattern + Emoji + Color)
 4. Submit all 3 correctly → Success
 
 #### Scenario 3: Rate Limiting
+
 1. Create session
 2. Submit incorrect PIN → Escalated (attempt 1)
 3. Submit incorrect Pattern → Rate limited (attempt 2)
 4. Verify error message shows 15-minute cooldown
 
 #### Scenario 4: High Risk Transaction
+
 1. Create session with $150 amount
 2. Verify 3 factors required from start
 3. Submit all 3 correctly → Success
 
----
+***
 
 ## Security Considerations
 
@@ -393,7 +399,7 @@ All sessions expire after 5 minutes:
 val expiresAt = System.currentTimeMillis() + (5 * 60 * 1000)
 ```
 
----
+***
 
 ## API Integration (Backend)
 
@@ -408,43 +414,44 @@ The backend verification router needs updates to support escalation:
 
 See `backend/routes/verificationRouter.js` for implementation.
 
----
+***
 
 ## Troubleshooting
 
 ### Issue: "No more factors available for escalation"
 
-**Cause**: User enrolled only 2 factors, both failed
-**Solution**: Encourage users to enroll at least 4-5 factors during enrollment
+**Cause**: User enrolled only 2 factors, both failed **Solution**: Encourage users to enroll at least 4-5 factors during enrollment
 
 ### Issue: Rate limiting triggers too quickly
 
-**Cause**: `MAX_CHALLENGE_ATTEMPTS = 2`
-**Solution**: Increase to 3 in `MerchantConfig.kt`
+**Cause**: `MAX_CHALLENGE_ATTEMPTS = 2` **Solution**: Increase to 3 in `MerchantConfig.kt`
 
 ### Issue: Escalation not happening
 
 **Check**:
+
 1. `ENABLE_FACTOR_ESCALATION = true`?
 2. User has more than 2 enrolled factors?
 3. `escalationCount < MAX_ESCALATIONS_PER_SESSION`?
 
----
+***
 
 ## Changelog
 
 **v2.0.0 (2025-11-13)**
-- ✅ Implemented risk-based factor calculation
-- ✅ Implemented single-factor escalation
-- ✅ Integrated with rate limiting
-- ✅ Added comprehensive unit tests
-- ✅ Created documentation
 
----
+* ✅ Implemented risk-based factor calculation
+* ✅ Implemented single-factor escalation
+* ✅ Integrated with rate limiting
+* ✅ Added comprehensive unit tests
+* ✅ Created documentation
+
+***
 
 ## Support
 
 For questions or issues:
-- Review test cases: `FactorEscalationTest.kt`
-- Check logs: Search for "Escalation #" in verification logs
-- Contact: NoTap security team
+
+* Review test cases: `FactorEscalationTest.kt`
+* Check logs: Search for "Escalation #" in verification logs
+* Contact: NoTap security team

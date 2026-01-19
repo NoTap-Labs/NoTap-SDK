@@ -2,7 +2,7 @@
 
 Common questions about NoTap SDK.
 
----
+***
 
 ## General
 
@@ -12,33 +12,35 @@ NoTap is a device-free, passwordless authentication system for payments. Users a
 
 ### How is NoTap different from other authentication methods?
 
-| Feature | NoTap | Traditional 2FA | Biometric |
-|---------|-------|----------------|-----------|
-| Works on any device | ✅ | ❌ | ❌ |
-| No SMS costs | ✅ | ❌ | ✅ |
-| No passwords | ✅ | ❌ | ✅ |
-| No special hardware | ✅ | ❌ | ❌ |
-| Privacy-preserving | ✅ | ❌ | ⚠️ |
-| Device loss recovery | ✅ | ❌ | ❌ |
+| Feature              | NoTap | Traditional 2FA | Biometric |
+| -------------------- | ----- | --------------- | --------- |
+| Works on any device  | ✅     | ❌               | ❌         |
+| No SMS costs         | ✅     | ❌               | ✅         |
+| No passwords         | ✅     | ❌               | ✅         |
+| No special hardware  | ✅     | ❌               | ❌         |
+| Privacy-preserving   | ✅     | ❌               | ⚠️        |
+| Device loss recovery | ✅     | ❌               | ❌         |
 
 ### Is NoTap PSD3 SCA compliant?
 
 Yes! NoTap exceeds PSD3 Strong Customer Authentication (SCA) requirements:
-- ✅ Minimum 6 factors (exceeds requirement)
-- ✅ Across 2+ categories (knowledge, biometric, behavioral, possession, location)
-- ✅ Dynamic linking with cryptographic proof
-- ✅ Transaction amount validation
+
+* ✅ Minimum 6 factors (exceeds requirement)
+* ✅ Across 2+ categories (knowledge, biometric, behavioral, possession, location)
+* ✅ Dynamic linking with cryptographic proof
+* ✅ Transaction amount validation
 
 ### Is NoTap GDPR compliant?
 
 Absolutely:
-- ✅ **Privacy by design** - Only cryptographic hashes stored, never raw biometric data
-- ✅ **Right to erasure** - One-click deletion of all user data
-- ✅ **Data portability** - Export user data as JSON
-- ✅ **Consent tracking** - Explicit consent with timestamps
-- ✅ **24-hour TTL** - Automatic data expiry
 
----
+* ✅ **Privacy by design** - Only cryptographic hashes stored, never raw biometric data
+* ✅ **Right to erasure** - One-click deletion of all user data
+* ✅ **Data portability** - Export user data as JSON
+* ✅ **Consent tracking** - Explicit consent with timestamps
+* ✅ **24-hour TTL** - Automatic data expiry
+
+***
 
 ## Technical
 
@@ -52,39 +54,41 @@ implementation("com.zeropay:enrollment:1.0.0")
 implementation("com.zeropay:merchant:1.0.0")
 ```
 
-**Why "zeropay" and not "notap"?**
-The package names use `zeropay` for API stability. This ensures zero breaking changes for all integrations. "NoTap" is the brand name, but the technical infrastructure uses `zeropay`.
+**Why "zeropay" and not "notap"?** The package names use `zeropay` for API stability. This ensures zero breaking changes for all integrations. "NoTap" is the brand name, but the technical infrastructure uses `zeropay`.
 
 ### What is a UUID?
 
 A UUID (Universally Unique Identifier) is a unique identifier generated during enrollment. It's the user's "identity" in the NoTap system.
 
 **Important:**
-- ✅ Save the UUID securely (encrypted storage)
-- ✅ The UUID is NOT device-specific (works on any device)
-- ✅ Users need their UUID to verify
-- ❌ Never share UUIDs publicly
+
+* ✅ Save the UUID securely (encrypted storage)
+* ✅ The UUID is NOT device-specific (works on any device)
+* ✅ Users need their UUID to verify
+* ❌ Never share UUIDs publicly
 
 ### Where is data stored?
 
-- **Device**: UUID stored locally in encrypted storage (KeyStore/Keychain)
-- **NoTap Cloud**: Encrypted factor digests (24-hour TTL)
-- **Your backend** (optional): UUID linked to user accounts
+* **Device**: UUID stored locally in encrypted storage (KeyStore/Keychain)
+* **NoTap Cloud**: Encrypted factor digests (24-hour TTL)
+* **Your backend** (optional): UUID linked to user accounts
 
 **We never store:**
-- ❌ Raw biometric data
-- ❌ Plaintext PINs or passwords
-- ❌ Personal identifying information
+
+* ❌ Raw biometric data
+* ❌ Plaintext PINs or passwords
+* ❌ Personal identifying information
 
 ### How secure is NoTap?
 
 NoTap uses bank-grade security:
-- **SHA-256** for all hashing
-- **AES-256-GCM** for encryption
-- **PBKDF2** with 100,000 iterations
-- **TLS 1.3** for all network traffic
-- **Constant-time operations** to prevent timing attacks
-- **Rate limiting** to prevent brute-force attacks
+
+* **SHA-256** for all hashing
+* **AES-256-GCM** for encryption
+* **PBKDF2** with 100,000 iterations
+* **TLS 1.3** for all network traffic
+* **Constant-time operations** to prevent timing attacks
+* **Rate limiting** to prevent brute-force attacks
 
 ### Can users authenticate from multiple devices?
 
@@ -97,7 +101,7 @@ NoTap uses bank-grade security:
 
 The factors (PIN, pattern, etc.) are memorable, so users can reproduce them on any device.
 
----
+***
 
 ## Integration
 
@@ -106,8 +110,9 @@ The factors (PIN, pattern, etc.) are memorable, so users can reproduce them on a
 **For basic usage:** No, the NoTap SDK handles everything.
 
 **For multi-device support:** Yes, you'll need to:
-- Link UUIDs to user accounts
-- Retrieve UUIDs when users log in on new devices
+
+* Link UUIDs to user accounts
+* Retrieve UUIDs when users log in on new devices
 
 ### Can I use NoTap in sandbox mode without an API key?
 
@@ -125,14 +130,15 @@ Sandbox mode works fully, but data is not persisted.
 ### What payment gateways are supported?
 
 NoTap integrates with 14+ payment gateways:
-- Stripe
-- Adyen
-- PayPal
-- Square
-- Braintree
-- PayU
-- Razorpay
-- And more...
+
+* Stripe
+* Adyen
+* PayPal
+* Square
+* Braintree
+* PayU
+* Razorpay
+* And more...
 
 NoTap provides the authentication - you handle the payment processing with your preferred gateway.
 
@@ -160,13 +166,14 @@ For complete customization, you can build your own UI using the SDK's headless A
 
 Biometric factors (face/fingerprint) require **Android 9.0 (API 28)** and above.
 
----
+***
 
 ## Enrollment
 
 ### How long does enrollment take?
 
 **5-10 minutes** for most users. The process involves:
+
 1. GDPR consent (30 seconds)
 2. Factor selection (1 minute)
 3. Completing 6+ factors (3-8 minutes)
@@ -191,23 +198,25 @@ Users need to re-enroll and get a new UUID. This is similar to losing a password
 
 **Recommendation:** Store UUIDs on your backend linked to user accounts.
 
----
+***
 
 ## Verification
 
 ### How long does verification take?
 
 **30-90 seconds** depending on:
-- Number of factors enrolled
-- User familiarity with factors
-- Network speed
+
+* Number of factors enrolled
+* User familiarity with factors
+* Network speed
 
 ### What if verification fails?
 
 Users get 3 attempts before cooldown. After 3 failures:
-- **1st cooldown:** 30 seconds
-- **2nd cooldown:** 2 minutes
-- **3rd cooldown:** 15 minutes
+
+* **1st cooldown:** 30 seconds
+* **2nd cooldown:** 2 minutes
+* **3rd cooldown:** 15 minutes
 
 This prevents brute-force attacks.
 
@@ -220,11 +229,12 @@ This prevents brute-force attacks.
 ### Does verification work offline?
 
 **Partially:**
-- Factor capture works offline
-- Verification requires network to compare with enrolled data
-- **Coming soon:** Offline verification mode
 
----
+* Factor capture works offline
+* Verification requires network to compare with enrolled data
+* **Coming soon:** Offline verification mode
+
+***
 
 ## Pricing
 
@@ -241,12 +251,13 @@ Unlike SMS-based 2FA, NoTap has **zero per-transaction costs**. You pay a flat m
 ### What's included in the free tier?
 
 **Sandbox:**
-- ✅ Unlimited enrollments
-- ✅ Unlimited verifications
-- ✅ All features
-- ❌ Data not persisted (24-hour TTL)
 
----
+* ✅ Unlimited enrollments
+* ✅ Unlimited verifications
+* ✅ All features
+* ❌ Data not persisted (24-hour TTL)
+
+***
 
 ## Troubleshooting
 
@@ -263,9 +274,10 @@ val config = ZeroPayConfig(
 ### "User not found" error
 
 The UUID doesn't exist in NoTap's system. Possible causes:
-- UUID expired (24-hour TTL in sandbox)
-- UUID was deleted (GDPR erasure)
-- User never enrolled
+
+* UUID expired (24-hour TTL in sandbox)
+* UUID was deleted (GDPR erasure)
+* User never enrolled
 
 **Solution:** Prompt user to re-enroll.
 
@@ -283,25 +295,27 @@ is VerificationError.RateLimitExceeded -> {
 ### Enrollment fails with "Storage failure"
 
 Check device permissions:
-- Ensure `INTERNET` permission in manifest
-- Check available storage space
-- Verify app not in battery saver mode
+
+* Ensure `INTERNET` permission in manifest
+* Check available storage space
+* Verify app not in battery saver mode
 
 ### Biometric factors not available
 
 Biometric factors require:
-- ✅ Android 9.0+ (API 28)
-- ✅ Device with biometric hardware
-- ✅ User enrolled biometrics in device settings
-- ✅ `USE_BIOMETRIC` permission in manifest
 
----
+* ✅ Android 9.0+ (API 28)
+* ✅ Device with biometric hardware
+* ✅ User enrolled biometrics in device settings
+* ✅ `USE_BIOMETRIC` permission in manifest
+
+***
 
 ## Migration & Updates
 
 ### How do I migrate from version 1.0 to 2.0?
 
-We maintain backward compatibility. See [CHANGELOG.md](../CHANGELOG.md) for migration guides.
+We maintain backward compatibility. See [CHANGELOG.md](/broken/pages/H46Z2DNuqhy03GNICol9) for migration guides.
 
 ### Will upgrading the SDK break existing enrollments?
 
@@ -309,33 +323,32 @@ We maintain backward compatibility. See [CHANGELOG.md](../CHANGELOG.md) for migr
 
 ### How often should I update the SDK?
 
-**Security updates:** Immediately
-**Feature updates:** At your discretion
-**Major versions:** Review changelog and test thoroughly
+**Security updates:** Immediately **Feature updates:** At your discretion **Major versions:** Review changelog and test thoroughly
 
----
+***
 
 ## Support
 
 ### How do I get help?
 
-- 📧 **Email:** support@notap.com
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
-- 🐛 **Bug Reports:** [GitHub Issues](https://github.com/keikworld/NoTap/issues)
-- 📖 **Documentation:** [https://docs.notap.com](https://docs.notap.com)
+* 📧 **Email:** support@notap.com
+* 💬 **Discussions:** [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
+* 🐛 **Bug Reports:** [GitHub Issues](https://github.com/keikworld/NoTap/issues)
+* 📖 **Documentation:** [https://docs.notap.com](https://docs.notap.com)
 
 ### Where can I find code examples?
 
 Check the [examples/](../examples/) directory in this repo for:
-- Android quick start
-- E-commerce integration
-- Web SDK integration
-- Blockchain payments
+
+* Android quick start
+* E-commerce integration
+* Web SDK integration
+* Blockchain payments
 
 ### Can I contribute to NoTap?
 
 Yes! See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
----
+***
 
-**Can't find your question? Ask on [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)!**
+**Can't find your question? Ask on** [**GitHub Discussions**](https://github.com/keikworld/NoTap/discussions)**!**
