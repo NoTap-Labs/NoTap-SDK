@@ -1,53 +1,52 @@
 # NoTap Web Integration - Quick Start Guide
 
-**Version:** 2.0
-**Last Updated:** 2025-12-03
-**Target Time:** 15 minutes to first enrollment
+**Version:** 2.0 **Last Updated:** 2025-12-03 **Target Time:** 15 minutes to first enrollment
 
----
+***
 
 ## Table of Contents
 
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Basic Setup (5 Minutes)](#basic-setup-5-minutes)
-4. [Framework Integration](#framework-integration)
-5. [Advanced Features](#advanced-features)
-6. [Troubleshooting](#troubleshooting)
-7. [Next Steps](#next-steps)
+1. [Prerequisites](WEB_QUICKSTART.md#prerequisites)
+2. [Installation](WEB_QUICKSTART.md#installation)
+3. [Basic Setup (5 Minutes)](WEB_QUICKSTART.md#basic-setup-5-minutes)
+4. [Framework Integration](WEB_QUICKSTART.md#framework-integration)
+5. [Advanced Features](WEB_QUICKSTART.md#advanced-features)
+6. [Troubleshooting](WEB_QUICKSTART.md#troubleshooting)
+7. [Next Steps](WEB_QUICKSTART.md#next-steps)
 
----
+***
 
 ## Prerequisites
 
 ### Required
 
-- ✅ **Node.js** 16+ and npm/yarn
-- ✅ **Modern browser** (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
-- ✅ **NoTap API Key** - Get one at [developer.notap.io](https://developer.notap.io)
+* ✅ **Node.js** 16+ and npm/yarn
+* ✅ **Modern browser** (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
+* ✅ **NoTap API Key** - Get one at [developer.notap.io](https://developer.notap.io)
 
 ### Optional
 
-- ⚡ **React** 18+ or **Vue** 3+ (for framework integration)
-- ⚡ **TypeScript** 4.5+ (for type safety)
+* ⚡ **React** 18+ or **Vue** 3+ (for framework integration)
+* ⚡ **TypeScript** 4.5+ (for type safety)
 
 ### Browser Compatibility
 
-| Browser | Minimum Version | Recommended |
-|---------|----------------|-------------|
-| **Chrome** | 90 | 120+ |
-| **Firefox** | 88 | 115+ |
-| **Safari** | 14 | 17+ |
-| **Edge** | 90 | 120+ |
-| **Opera** | 76 | 106+ |
+| Browser     | Minimum Version | Recommended |
+| ----------- | --------------- | ----------- |
+| **Chrome**  | 90              | 120+        |
+| **Firefox** | 88              | 115+        |
+| **Safari**  | 14              | 17+         |
+| **Edge**    | 90              | 120+        |
+| **Opera**   | 76              | 106+        |
 
 **Required APIs:**
-- Web Crypto API (for secure hashing)
-- Canvas API (for pattern/draw factors)
-- Web Audio API (for voice factor)
-- LocalStorage (for session management)
 
----
+* Web Crypto API (for secure hashing)
+* Canvas API (for pattern/draw factors)
+* Web Audio API (for voice factor)
+* LocalStorage (for session management)
+
+***
 
 ## Installation
 
@@ -83,7 +82,7 @@ console.log(NoTapSDK.version); // "2.0.5"
 console.log(NoTapSDK.isSupported()); // true (if browser compatible)
 ```
 
----
+***
 
 ## Basic Setup (5 Minutes)
 
@@ -171,7 +170,7 @@ notap.enroll({
 
 **That's it!** The enrollment UI will render in the container with all 6 factor canvases.
 
----
+***
 
 ## Framework Integration
 
@@ -267,7 +266,7 @@ export default EnrollmentPage;
 }
 ```
 
----
+***
 
 ### Vue 3 Integration
 
@@ -353,7 +352,7 @@ const handleProgress = (step, total) => {
 </style>
 ```
 
----
+***
 
 ### Vanilla JavaScript (No Framework)
 
@@ -470,7 +469,7 @@ const handleProgress = (step, total) => {
 </html>
 ```
 
----
+***
 
 ## Advanced Features
 
@@ -478,12 +477,12 @@ const handleProgress = (step, total) => {
 
 **Supported Name Services:**
 
-| Service | TLDs | Example |
-|---------|------|---------|
-| **ENS** | `.eth` | `alice.eth` |
-| **Unstoppable Domains** | `.crypto`, `.nft`, `.wallet`, `.dao`, `.x`, `.bitcoin`, `.blockchain`, `.zil`, `.888` | `bob.crypto` |
-| **BASE** | `.base.eth` | `carol.base.eth` |
-| **SNS** | `.sol`, `.notap.sol` | `dave.notap.sol` |
+| Service                 | TLDs                                                                                  | Example          |
+| ----------------------- | ------------------------------------------------------------------------------------- | ---------------- |
+| **ENS**                 | `.eth`                                                                                | `alice.eth`      |
+| **Unstoppable Domains** | `.crypto`, `.nft`, `.wallet`, `.dao`, `.x`, `.bitcoin`, `.blockchain`, `.zil`, `.888` | `bob.crypto`     |
+| **BASE**                | `.base.eth`                                                                           | `carol.base.eth` |
+| **SNS**                 | `.sol`, `.notap.sol`                                                                  | `dave.notap.sol` |
 
 **Code Example:**
 
@@ -528,7 +527,7 @@ notap.enroll({
 });
 ```
 
----
+***
 
 ### Custom Factor Selection
 
@@ -560,7 +559,7 @@ notap.enroll({
 });
 ```
 
----
+***
 
 ### Theming & Customization
 
@@ -595,7 +594,7 @@ notap.enroll({
 });
 ```
 
----
+***
 
 ### Internationalization (i18n)
 
@@ -616,7 +615,7 @@ notap.enroll({
 });
 ```
 
----
+***
 
 ### Session Persistence
 
@@ -642,7 +641,7 @@ window.addEventListener('load', () => {
 });
 ```
 
----
+***
 
 ## Troubleshooting
 
@@ -659,19 +658,17 @@ NoTapSDK.isSupported() returns false
 **Solutions:**
 
 1. **Check browser version:**
-   - Chrome < 90? Update to Chrome 120+
-   - Safari < 14? Update to Safari 17+
-
+   * Chrome < 90? Update to Chrome 120+
+   * Safari < 14? Update to Safari 17+
 2. **Enable required APIs:**
-   - Web Crypto: Always enabled in HTTPS
-   - Canvas: Check browser settings
-   - Web Audio: Allow microphone permission (for voice factor)
-
+   * Web Crypto: Always enabled in HTTPS
+   * Canvas: Check browser settings
+   * Web Audio: Allow microphone permission (for voice factor)
 3. **Use HTTPS:**
-   - NoTap requires HTTPS (not HTTP)
-   - Localhost: `http://localhost` is allowed for dev
+   * NoTap requires HTTPS (not HTTP)
+   * Localhost: `http://localhost` is allowed for dev
 
----
+***
 
 #### ❌ "API Key Invalid"
 
@@ -687,17 +684,15 @@ NoTapSDK.isSupported() returns false
 **Solutions:**
 
 1. **Check key format:**
-   - Sandbox: `sk_test_...` (24 chars)
-   - Production: `sk_live_...` (24 chars)
-
+   * Sandbox: `sk_test_...` (24 chars)
+   * Production: `sk_live_...` (24 chars)
 2. **Verify environment:**
-   - Using `sk_test_` with `environment: 'production'`? ❌
-   - Use `environment: 'sandbox'` for test keys
-
+   * Using `sk_test_` with `environment: 'production'`? ❌
+   * Use `environment: 'sandbox'` for test keys
 3. **Check key status:**
-   - Dashboard → API Keys → Ensure "Active"
+   * Dashboard → API Keys → Ensure "Active"
 
----
+***
 
 #### ❌ "Enrollment Failed - Minimum 3 Factors Required"
 
@@ -722,7 +717,7 @@ factors: ['pin', 'pattern', 'emoji']
 factors: ['pin', 'pattern', 'emoji', 'colors', 'rhythm', 'words']
 ```
 
----
+***
 
 #### ❌ "Canvas Not Rendering"
 
@@ -730,24 +725,24 @@ factors: ['pin', 'pattern', 'emoji', 'colors', 'rhythm', 'words']
 
 **Solutions:**
 
-1. **Check container exists:**
-   ```javascript
-   console.log(document.querySelector('#notap-enrollment')); // Not null?
-   ```
+1.  **Check container exists:**
 
-2. **Check container size:**
-   ```css
-   #notap-enrollment {
-     min-height: 400px; /* Ensure container has height */
-     width: 100%;
-   }
-   ```
+    ```javascript
+    console.log(document.querySelector('#notap-enrollment')); // Not null?
+    ```
+2.  **Check container size:**
 
+    ```css
+    #notap-enrollment {
+      min-height: 400px; /* Ensure container has height */
+      width: 100%;
+    }
+    ```
 3. **Check console for errors:**
-   - Open DevTools → Console
-   - Look for JavaScript errors
+   * Open DevTools → Console
+   * Look for JavaScript errors
 
----
+***
 
 #### ❌ "Voice Factor Not Working"
 
@@ -756,72 +751,69 @@ factors: ['pin', 'pattern', 'emoji', 'colors', 'rhythm', 'words']
 **Solutions:**
 
 1. **Grant microphone permission:**
-   - Browser prompts for permission
-   - Check site settings if blocked
-
+   * Browser prompts for permission
+   * Check site settings if blocked
 2. **Use HTTPS:**
-   - Voice factor requires HTTPS (security requirement)
-   - `http://localhost` allowed for dev
-
+   * Voice factor requires HTTPS (security requirement)
+   * `http://localhost` allowed for dev
 3. **Check browser compatibility:**
-   - Web Audio API required
-   - Chrome, Firefox, Safari 14+ supported
+   * Web Audio API required
+   * Chrome, Firefox, Safari 14+ supported
 
----
+***
 
 ## Next Steps
 
 ### After Enrollment
 
 1. **Implement Verification Flow**
-   - Guide: [Web Verification Quick Start](WEB_VERIFICATION_QUICKSTART.md)
-   - Verify users before allowing access
-
+   * Guide: [Web Verification Quick Start](WEB_VERIFICATION_QUICKSTART.md)
+   * Verify users before allowing access
 2. **Set Up Webhooks**
-   - Guide: [Developer Portal Guide](DEVELOPER_PORTAL_GUIDE.md#webhook-configuration)
-   - Receive real-time enrollment events
-
+   * Guide: [Developer Portal Guide](DEVELOPER_PORTAL_GUIDE.md#webhook-configuration)
+   * Receive real-time enrollment events
 3. **Add Blockchain Names**
-   - Guide: [Multi-Chain Name Service](MULTICHAIN_NAME_SERVICE_QUICKSTART.md)
-   - Let users link ENS, Unstoppable, SNS names
-
+   * Guide: [Multi-Chain Name Service](../blockchain-names-quickstart.md)
+   * Let users link ENS, Unstoppable, SNS names
 4. **Implement Management Portal**
-   - Guide: [Management Portal Integration](../02-user-guides/MANAGEMENT_PORTAL_GUIDE.md)
-   - Let users update factors, manage devices
-
+   * Guide: [Management Portal Integration](../02-user-guides/MANAGEMENT_PORTAL_GUIDE.md)
+   * Let users update factors, manage devices
 5. **Go to Production**
-   - Replace `sk_test_` with `sk_live_` API key
-   - Change `environment: 'sandbox'` to `'production'`
-   - Test thoroughly with real users
+   * Replace `sk_test_` with `sk_live_` API key
+   * Change `environment: 'sandbox'` to `'production'`
+   * Test thoroughly with real users
 
----
+***
 
 ### Resources
 
 **Documentation:**
-- [API Reference](https://api-docs.notap.io)
-- [Integration Guide](../03-developer-guides/INTEGRATION_GUIDE.md)
-- [Architecture Overview](../04-architecture/ARCHITECTURE.md)
+
+* [API Reference](https://api-docs.notap.io)
+* [Integration Guide](../03-developer-guides/INTEGRATION_GUIDE.md)
+* [Architecture Overview](../04-architecture/ARCHITECTURE.md)
 
 **Examples:**
-- [GitHub: NoTap SDK](https://github.com/keikworld/zero-pay-sdk)
-- [CodeSandbox: React Example](https://codesandbox.io/s/notap-react-example)
-- [CodeSandbox: Vue Example](https://codesandbox.io/s/notap-vue-example)
+
+* [GitHub: NoTap SDK](https://github.com/keikworld/zero-pay-sdk)
+* [CodeSandbox: React Example](https://codesandbox.io/s/notap-react-example)
+* [CodeSandbox: Vue Example](https://codesandbox.io/s/notap-vue-example)
 
 **Support:**
-- [Discord Community](https://discord.gg/notap)
-- [Email Support](mailto:support@notap.io)
-- [Status Page](https://status.notap.io)
 
----
+* [Discord Community](https://discord.gg/notap)
+* [Email Support](mailto:support@notap.io)
+* [Status Page](https://status.notap.io)
+
+***
 
 ## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.0 | 2025-12-03 | Added multi-chain blockchain names, custom theming, i18n support |
-| 1.0 | 2025-11-01 | Initial release |
+| Version | Date       | Changes                                                          |
+| ------- | ---------- | ---------------------------------------------------------------- |
+| 2.0     | 2025-12-03 | Added multi-chain blockchain names, custom theming, i18n support |
+| 1.0     | 2025-11-01 | Initial release                                                  |
 
----
+***
 
 **End of Web Quick Start Guide**
