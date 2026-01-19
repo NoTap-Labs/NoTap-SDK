@@ -2,25 +2,25 @@
 
 Complete API documentation for NoTap SDK.
 
----
+***
 
 ## Table of Contents
 
-- [Core SDK](#core-sdk)
-  - [ZeroPaySDK](#zeropaysdk)
-  - [ZeroPayConfig](#zeropayconfig)
-- [Enrollment Module](#enrollment-module)
-  - [EnrollmentManager](#enrollmentmanager)
-  - [EnrollmentConfig](#enrollmentconfig)
-  - [EnrollmentResult](#enrollmentresult)
-- [Merchant Module](#merchant-module)
-  - [VerificationManager](#verificationmanager)
-  - [VerificationConfig](#verificationconfig)
-  - [VerificationResult](#verificationresult)
-- [Authentication Factors](#authentication-factors)
-- [Error Handling](#error-handling)
+* [Core SDK](api-reference.md#core-sdk)
+  * [ZeroPaySDK](api-reference.md#zeropaysdk)
+  * [ZeroPayConfig](api-reference.md#zeropayconfig)
+* [Enrollment Module](api-reference.md#enrollment-module)
+  * [EnrollmentManager](api-reference.md#enrollmentmanager)
+  * [EnrollmentConfig](api-reference.md#enrollmentconfig)
+  * [EnrollmentResult](api-reference.md#enrollmentresult)
+* [Merchant Module](api-reference.md#merchant-module)
+  * [VerificationManager](api-reference.md#verificationmanager)
+  * [VerificationConfig](api-reference.md#verificationconfig)
+  * [VerificationResult](api-reference.md#verificationresult)
+* [Authentication Factors](api-reference.md#authentication-factors)
+* [Error Handling](api-reference.md#error-handling)
 
----
+***
 
 ## Core SDK
 
@@ -42,13 +42,16 @@ companion object {
 ```
 
 **Parameters:**
-- `context: Context` - Application context
-- `config: ZeroPayConfig` - SDK configuration
+
+* `context: Context` - Application context
+* `config: ZeroPayConfig` - SDK configuration
 
 **Returns:**
-- `ZeroPaySDK` - Initialized SDK instance
+
+* `ZeroPaySDK` - Initialized SDK instance
 
 **Example:**
+
 ```kotlin
 val sdk = ZeroPaySDK.initialize(
     context = applicationContext,
@@ -59,7 +62,7 @@ val sdk = ZeroPaySDK.initialize(
 )
 ```
 
----
+***
 
 ### ZeroPayConfig
 
@@ -78,15 +81,16 @@ data class ZeroPayConfig(
 ```
 
 **Properties:**
-- `apiKey: String?` - Your NoTap API key (null for sandbox)
-- `environment: Environment` - SANDBOX or PRODUCTION
-- `enableBiometrics: Boolean` - Enable face/fingerprint factors
-- `enableBlockchain: Boolean` - Enable blockchain wallet integration
-- `logLevel: LogLevel` - DEBUG, INFO, WARN, ERROR
-- `timeout: Long` - Network timeout in milliseconds
-- `retryAttempts: Int` - Number of retry attempts for failed requests
 
----
+* `apiKey: String?` - Your NoTap API key (null for sandbox)
+* `environment: Environment` - SANDBOX or PRODUCTION
+* `enableBiometrics: Boolean` - Enable face/fingerprint factors
+* `enableBlockchain: Boolean` - Enable blockchain wallet integration
+* `logLevel: LogLevel` - DEBUG, INFO, WARN, ERROR
+* `timeout: Long` - Network timeout in milliseconds
+* `retryAttempts: Int` - Number of retry attempts for failed requests
+
+***
 
 ## Enrollment Module
 
@@ -117,11 +121,13 @@ fun startEnrollment(
 ```
 
 **Parameters:**
-- `onSuccess: (EnrollmentResult) -> Unit` - Callback when enrollment succeeds
-- `onError: (EnrollmentError) -> Unit` - Callback when enrollment fails
-- `onCancelled: () -> Unit` - Callback when user cancels (optional)
+
+* `onSuccess: (EnrollmentResult) -> Unit` - Callback when enrollment succeeds
+* `onError: (EnrollmentError) -> Unit` - Callback when enrollment fails
+* `onCancelled: () -> Unit` - Callback when user cancels (optional)
 
 **Example:**
+
 ```kotlin
 enrollmentManager.startEnrollment(
     onSuccess = { result ->
@@ -137,7 +143,7 @@ enrollmentManager.startEnrollment(
 )
 ```
 
----
+***
 
 ### EnrollmentConfig
 
@@ -155,14 +161,15 @@ data class EnrollmentConfig(
 ```
 
 **Properties:**
-- `minimumFactors: Int` - Minimum number of factors required (default: 6)
-- `minimumCategories: Int` - Minimum number of factor categories (default: 2)
-- `requireBiometric: Boolean` - Require at least one biometric factor
-- `allowWeakPasswords: Boolean` - Allow simple/weak passwords (not recommended)
-- `consentRequired: Boolean` - Require GDPR consent
-- `showFactorSuggestions: Boolean` - Show suggested factors to user
 
----
+* `minimumFactors: Int` - Minimum number of factors required (default: 6)
+* `minimumCategories: Int` - Minimum number of factor categories (default: 2)
+* `requireBiometric: Boolean` - Require at least one biometric factor
+* `allowWeakPasswords: Boolean` - Allow simple/weak passwords (not recommended)
+* `consentRequired: Boolean` - Require GDPR consent
+* `showFactorSuggestions: Boolean` - Show suggested factors to user
+
+***
 
 ### EnrollmentResult
 
@@ -179,13 +186,14 @@ data class EnrollmentResult(
 ```
 
 **Properties:**
-- `uuid: String` - Unique user identifier (save this!)
-- `alias: String` - Human-readable alias (e.g., "BluePhoenix42")
-- `enrolledFactors: List<Factor>` - Factors the user enrolled
-- `categories: Set<FactorCategory>` - Categories covered
-- `timestamp: Long` - Enrollment timestamp (Unix epoch)
 
----
+* `uuid: String` - Unique user identifier (save this!)
+* `alias: String` - Human-readable alias (e.g., "BluePhoenix42")
+* `enrolledFactors: List<Factor>` - Factors the user enrolled
+* `categories: Set<FactorCategory>` - Categories covered
+* `timestamp: Long` - Enrollment timestamp (Unix epoch)
+
+***
 
 ## Merchant Module
 
@@ -218,13 +226,15 @@ fun startVerification(
 ```
 
 **Parameters:**
-- `uuid: String` - User's UUID from enrollment
-- `amount: Double` - Payment amount
-- `currency: String` - Currency code (ISO 4217)
-- `onSuccess: (VerificationResult) -> Unit` - Success callback
-- `onError: (VerificationError) -> Unit` - Error callback
+
+* `uuid: String` - User's UUID from enrollment
+* `amount: Double` - Payment amount
+* `currency: String` - Currency code (ISO 4217)
+* `onSuccess: (VerificationResult) -> Unit` - Success callback
+* `onError: (VerificationError) -> Unit` - Error callback
 
 **Example:**
+
 ```kotlin
 verificationManager.startVerification(
     uuid = userUUID,
@@ -241,7 +251,7 @@ verificationManager.startVerification(
 )
 ```
 
----
+***
 
 ### VerificationConfig
 
@@ -257,12 +267,13 @@ data class VerificationConfig(
 ```
 
 **Properties:**
-- `timeout: Long` - Verification timeout (milliseconds)
-- `requireProof: Boolean` - Generate zero-knowledge proof
-- `minimumConfidence: Double` - Minimum confidence score (0.0-1.0)
-- `allowPartialMatch: Boolean` - Allow verification with fewer factors
 
----
+* `timeout: Long` - Verification timeout (milliseconds)
+* `requireProof: Boolean` - Generate zero-knowledge proof
+* `minimumConfidence: Double` - Minimum confidence score (0.0-1.0)
+* `allowPartialMatch: Boolean` - Allow verification with fewer factors
+
+***
 
 ### VerificationResult
 
@@ -280,14 +291,15 @@ data class VerificationResult(
 ```
 
 **Properties:**
-- `verified: Boolean` - Whether verification succeeded
-- `confidence: Double` - Confidence score (0.0-1.0)
-- `zkProof: String?` - Zero-knowledge proof (if requested)
-- `matchedFactors: Int` - Number of factors matched
-- `totalFactors: Int` - Total factors enrolled
-- `timestamp: Long` - Verification timestamp
 
----
+* `verified: Boolean` - Whether verification succeeded
+* `confidence: Double` - Confidence score (0.0-1.0)
+* `zkProof: String?` - Zero-knowledge proof (if requested)
+* `matchedFactors: Int` - Number of factors matched
+* `totalFactors: Int` - Total factors enrolled
+* `timestamp: Long` - Verification timestamp
+
+***
 
 ## Authentication Factors
 
@@ -306,6 +318,7 @@ enum class FactorCategory {
 ### Available Factors
 
 #### Knowledge Factors
+
 ```kotlin
 enum class Factor {
     PIN,          // 4-12 digit PIN
@@ -318,6 +331,7 @@ enum class Factor {
 ```
 
 #### Biometric Factors
+
 ```kotlin
     FACE,         // Face recognition
     FINGERPRINT,  // Fingerprint scan
@@ -325,6 +339,7 @@ enum class Factor {
 ```
 
 #### Behavioral Factors
+
 ```kotlin
     RHYTHM_TAP,   // Rhythmic tapping pattern
     MOUSE_DRAW,   // Mouse/touchscreen drawing
@@ -333,11 +348,13 @@ enum class Factor {
 ```
 
 #### Possession Factors
+
 ```kotlin
     NFC,          // NFC tag/card
 ```
 
 #### Location Factors
+
 ```kotlin
     BALANCE,      // Device tilt/balance gesture
 ```
@@ -355,7 +372,7 @@ println(factor.category)     // FactorCategory.KNOWLEDGE
 println(factor.isAvailable(context))  // true/false
 ```
 
----
+***
 
 ## Error Handling
 
@@ -408,7 +425,7 @@ enrollmentManager.startEnrollment(
 )
 ```
 
----
+***
 
 ## Web SDK API
 
@@ -451,7 +468,7 @@ if (result.verified) {
 }
 ```
 
----
+***
 
 ## Advanced Features
 
@@ -495,15 +512,15 @@ walletManager.linkPhantomWallet(
 )
 ```
 
----
+***
 
 ## Rate Limiting
 
 NoTap implements multi-layer rate limiting:
 
-- **Global**: 1000 requests/minute (all users)
-- **Per IP**: 100 requests/minute
-- **Per User**: 50 requests/minute
+* **Global**: 1000 requests/minute (all users)
+* **Per IP**: 100 requests/minute
+* **Per User**: 50 requests/minute
 
 When rate limited, the error includes `retryAfter` in milliseconds:
 
@@ -514,7 +531,7 @@ is EnrollmentError.RateLimitExceeded -> {
 }
 ```
 
----
+***
 
 ## GDPR Compliance
 
@@ -547,17 +564,16 @@ sdk.exportUserData(
 )
 ```
 
----
+***
 
 ## Support
 
 Need help with the API?
 
-- 📧 Email: api-support@notap.com
-- 💬 Discussions: [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
-- 📖 More examples: [Integration Guide](integration-guide.md)
+* 📧 Email: api-support@notap.com
+* 💬 Discussions: [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
+* 📖 More examples: [Integration Guide](/broken/pages/PbuP36zsQV2DenLcwsGH)
 
----
+***
 
-**API Version: 1.0.0**
-**Last Updated: 2025-11-06**
+**API Version: 1.0.0** **Last Updated: 2025-11-06**

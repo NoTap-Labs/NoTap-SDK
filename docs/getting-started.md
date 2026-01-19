@@ -2,28 +2,30 @@
 
 This guide will help you integrate NoTap authentication into your application in under 30 minutes.
 
----
+***
 
 ## Prerequisites
 
 ### For Android Development
-- Android Studio Hedgehog (2023.1.1) or later
-- Minimum SDK: Android 7.0 (API 24)
-- Target SDK: Android 14 (API 34)
-- Kotlin 1.9+
-- Gradle 8.0+
+
+* Android Studio Hedgehog (2023.1.1) or later
+* Minimum SDK: Android 7.0 (API 24)
+* Target SDK: Android 14 (API 34)
+* Kotlin 1.9+
+* Gradle 8.0+
 
 ### For Web Development
-- Node.js 18+ (for npm packages)
-- Modern browser (Chrome 90+, Firefox 88+, Safari 14+)
+
+* Node.js 18+ (for npm packages)
+* Modern browser (Chrome 90+, Firefox 88+, Safari 14+)
 
 ### API Keys
-You'll need a NoTap API key. Get yours at:
-👉 **[https://notap.com/signup](https://notap.com/signup)** _(coming soon)_
+
+You'll need a NoTap API key. Get yours at: 👉 [**https://notap.com/signup**](https://notap.com/signup) _(coming soon)_
 
 For development/testing, you can use the sandbox environment without an API key.
 
----
+***
 
 ## Android Integration
 
@@ -260,7 +262,7 @@ class CheckoutActivity : ComponentActivity() {
 }
 ```
 
----
+***
 
 ## Web Integration
 
@@ -355,7 +357,7 @@ checkoutButton.addEventListener('click', async () => {
 });
 ```
 
----
+***
 
 ## Testing in Sandbox Mode
 
@@ -383,30 +385,30 @@ NoTap.initialize({
 
 In sandbox mode, you can use these test values:
 
-- **Test UUID**: `test-user-12345678-1234-1234-1234-123456789abc`
-- **Test Amount**: Any positive number
-- **Test Factors**: All factors work in sandbox (PIN: any 4-6 digits, Pattern: any valid pattern)
+* **Test UUID**: `test-user-12345678-1234-1234-1234-123456789abc`
+* **Test Amount**: Any positive number
+* **Test Factors**: All factors work in sandbox (PIN: any 4-6 digits, Pattern: any valid pattern)
 
----
+***
 
 ## Next Steps
 
 Now that you have NoTap integrated:
 
-1. **[Explore the Integration Guide](integration-guide.md)** - Deep dive into advanced features
-2. **[Check the API Reference](api-reference.md)** - Complete API documentation
-3. **[Review Example Apps](../examples/)** - See full implementation examples
-4. **[Read the FAQ](faq.md)** - Common questions answered
+1. [**Explore the Integration Guide**](/broken/pages/PbuP36zsQV2DenLcwsGH) - Deep dive into advanced features
+2. [**Check the API Reference**](api-reference.md) - Complete API documentation
+3. [**Review Example Apps**](../examples/) - See full implementation examples
+4. [**Read the FAQ**](faq.md) - Common questions answered
 
----
+***
 
 ## Need Help?
 
-- 📧 Email: support@notap.com
-- 💬 Discussions: [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
-- 🐛 Issues: [GitHub Issues](https://github.com/keikworld/NoTap/issues)
-- 📖 Docs: [https://docs.notap.com](https://docs.notap.com)
+* 📧 Email: support@notap.com
+* 💬 Discussions: [GitHub Discussions](https://github.com/keikworld/NoTap/discussions)
+* 🐛 Issues: [GitHub Issues](https://github.com/keikworld/NoTap/issues)
+* 📖 Docs: [https://docs.notap.com](https://docs.notap.com)
 
----
+***
 
 **Happy coding! 🚀**

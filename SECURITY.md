@@ -138,7 +138,7 @@ NoTap complies with:
 ### Documentation
 
 * [**Security Analysis**](docs/security-analysis.md) - Detailed threat model
-* [**Integration Guide**](docs/integration-guide.md) - Secure integration patterns
+* [**Integration Guide**](/broken/pages/PbuP36zsQV2DenLcwsGH) - Secure integration patterns
 * [**API Reference**](docs/api-reference.md) - Security considerations per endpoint
 
 ### External Resources
