@@ -22,6 +22,42 @@ This document captures Kotlin/JS patterns discovered while fixing 30+ compilatio
 8. [Promise API](#promise-api)
 9. [DOM API Casting](#dom-api-casting)
 10. [JavaScript Name Conflicts](#javascript-name-conflicts)
+## 11. Security: innerHTML vs kotlinx.html DSL
+
+### ✅ CORRECT Pattern
+
+Use `textContent` for simple text or `append { }` for HTML structure:
+
+```kotlin
+// For text only
+val display = document.getElementById("display") as? HTMLDivElement
+display?.textContent = "Safe Text Content"
+
+// For HTML structure
+display?.innerHTML = "" // Clear first
+display?.append {
+    div(classes = "card") {
+        h3 { +"Safe Header" }
+        p { +"Dynamic data: $userControlledData" } // Auto-escaped
+    }
+}
+```
+
+### ❌ WRONG Pattern
+
+Using `innerHTML` with string templates:
+
+```kotlin
+// DON'T DO THIS - XSS VULNERABILITY
+display.innerHTML = "<div class='error'>❌ ${error.message}</div>"
+```
+
+**Reason:** `innerHTML` is insecure as it executes scripts found in strings. `kotlinx.html` DSL and `textContent` automatically escape content, providing built-in protection against Cross-Site Scripting (XSS).
+
+**Applies To:**
+- All factor canvases
+- All portal pages
+- Any component rendering dynamic data from APIs or user input
 
 ---
 

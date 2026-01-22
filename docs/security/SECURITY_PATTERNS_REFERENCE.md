@@ -13,6 +13,7 @@ This document contains all mandatory security patterns for NoTap development. Fo
 | Constant-Time Comparison | ALL digest/secret comparisons | Prevents timing attacks |
 | Memory Wiping | After using sensitive data | `finally { data.fill(0) }` |
 | CSPRNG | ALL security-related randomness | Never use `Math.random()` |
+| XSS Prevention | Web UI Rendering | Use `append { }` DSL, never `innerHTML` |
 | Double Encryption | Long-lived secrets (30-day) | PBKDF2 + KMS layers |
 | AES-256-GCM | Symmetric encryption | Never use ECB/CBC |
 
