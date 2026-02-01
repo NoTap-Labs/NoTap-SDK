@@ -148,13 +148,14 @@ All errors follow this format:
 
 ## Rate Limits by Endpoint
 
-| Endpoint Category | Rate Limit | Window |
-|-------------------|------------|--------|
-| Enrollment | 10 requests | 15 minutes |
-| Verification | 30 requests | 1 minute |
-| Admin | 100 requests | 1 minute |
-| Webhook | 60 requests | 1 minute |
-| Crypto payments | 5 requests | 1 minute |
+| Endpoint Category | Rate Limit | Window | Notes |
+|-------------------|------------|--------|-------|
+| Enrollment | 10 requests | 15 minutes | Per user |
+| Verification | 30 requests | 1 minute | Per session |
+| Admin | 100 requests | 1 minute | Per admin user |
+| Webhook | 60 requests | 1 minute | Per webhook endpoint |
+| Crypto payments | 5 requests | 1 minute | Per transaction |
+| **Password Reset** | **3 requests** | **1 hour** | **Per email (DoS prevention)** |
 
 ---
 

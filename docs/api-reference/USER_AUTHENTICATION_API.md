@@ -276,6 +276,13 @@ Verify email address with token.
 
 Request password reset email.
 
+**Rate Limit:** 3 requests per hour per email (429 if exceeded)
+
+**Security Features:**
+- Constant-time response (prevents user enumeration via timing attacks)
+- Consistent error messages (no information leakage)
+- Rate limiting per user (DoS prevention)
+
 **Request:**
 ```json
 {
@@ -290,6 +297,16 @@ Request password reset email.
   "message": "Password reset email sent"
 }
 ```
+
+**Response (429 - Rate Limit Exceeded):**
+```json
+{
+  "error": "Too many password reset requests. Please try again later.",
+  "retryAfter": 3600
+}
+```
+
+**Note:** Response time is consistent (~150-200ms) whether email exists or not, preventing user enumeration attacks.
 
 ### POST `/v1/auth/user/reset-password`
 

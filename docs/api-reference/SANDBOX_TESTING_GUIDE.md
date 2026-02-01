@@ -843,6 +843,115 @@ Use the test data from the enrollment response to verify.
 
 ---
 
+## Penetration Testing Setup
+
+### Automated Setup (Recommended)
+
+For running the penetration testing suite, use the automatic setup endpoint:
+
+```bash
+# One-click setup for all pentest requirements
+curl -X POST https://api.notap.io/v1/sandbox/pentest-setup \
+  -H "Content-Type: application/json"
+
+# Response includes test credentials and JWT tokens
+{
+  "success": true,
+  "message": "Pentest environment configured",
+  "config": {
+    "primary_test_user": {
+      "uuid": "00000000-0000-4000-a000-000000000002",
+      "alias": "tiger-1234",
+      "pin": "1234",
+      "api_key": "zpay_test_sk_00000..."
+    },
+    "admin_api_key": "test-admin-api-key-...",
+    "test_password": "TestPassword123!"
+  }
+}
+```
+
+### Seed All IDOR Test Accounts
+
+```bash
+# Create 7 test accounts for IDOR/access control testing
+curl -X POST https://api.notap.io/v1/sandbox/seed-enrollments \
+  -H "Content-Type: application/json"
+
+# Returns:
+# - Primary test user (UUID: 00000000-0000-4000-a000-000000000002, PIN: 1234)
+# - IDOR victim user (UUID: 11111111-1111-4111-a111-111111111111, PIN: 5678)
+# - IDOR attacker user (UUID: 22222222-2222-4222-a222-222222222222, PIN: 9012)
+# - Merchant victim/attacker
+# - Admin victim/attacker
+```
+
+### Manual CLI Setup
+
+```bash
+# Run the standalone setup script
+cd pentest
+./scripts/setup-sandbox.sh --target https://api.notap.io
+
+# This will:
+# 1. Create test enrollments in Redis
+# 2. Fetch JWT tokens for all user types
+# 3. Update config.sandbox.env with credentials
+# 4. Verify public routes are accessible
+```
+
+### Pre-configured Test Accounts for Pentesting
+
+All test accounts are pre-configured in `backend/config/sandboxConfig.js`:
+
+| Account | UUID | PIN | Purpose |
+|---------|------|-----|---------|
+| Primary User | `00000000-0000-4000-a000-000000000002` | 1234 | General testing |
+| User Victim | `11111111-1111-4111-a111-111111111111` | 5678 | IDOR victim |
+| User Attacker | `22222222-2222-4222-a222-222222222222` | 9012 | IDOR attacker |
+| Merchant Victim | `cccccccc-cccc-4ccc-accc-cccccccccccc` | 3456 | Merchant IDOR |
+| Merchant Attacker | `dddddddd-dddd-4ddd-addd-dddddddddddd` | 7890 | Merchant IDOR |
+| Admin Victim | `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa` | 1357 | Admin IDOR |
+| Admin Attacker | `bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb` | 2468 | Admin IDOR |
+
+### Running the Full Pentest Suite
+
+```bash
+cd pentest
+
+# Automatic setup + run all tests
+./scripts/run-all-tests.sh --skip-shannon
+
+# The script will:
+# 1. Call /v1/sandbox/pentest-setup automatically
+# 2. Create test data in Redis
+# 3. Run all 14 penetration tests
+# 4. Generate JSON/HTML reports in pentest/reports/
+```
+
+### Public Routes (No Authentication Required)
+
+The following public endpoints are whitelisted and don't require nonce/timestamp headers:
+
+```bash
+# Get supported blockchain names
+curl https://api.notap.io/v1/names/supported
+
+# Check health of name service
+curl https://api.notap.io/v1/names/health
+
+# Get name validation configuration
+curl https://api.notap.io/v1/names/validation-config
+
+# Get sandbox configuration
+curl https://api.notap.io/v1/sandbox/config
+
+# List available JWT tokens
+curl https://api.notap.io/v1/sandbox/tokens
+```
+
+---
+
 **Need Help?** Check `/v1/sandbox/config` for current settings or `/v1/sandbox/status` for available features.
 
 ---

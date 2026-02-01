@@ -574,6 +574,106 @@ Solution: Run npm install in backend directory
 
 ---
 
+## Penetration Testing Setup (New - 2026-01-31)
+
+### Overview
+
+Penetration testing is an automated security testing suite that validates the system against OWASP Top 10 vulnerabilities:
+
+```
+┌──────────────────────────────────────┐
+│    Penetration Testing Suite         │
+├──────────────────────────────────────┤
+│  Tool: Python scripts + payloads     │
+│  Location: pentest/                  │
+│  Coverage: 14 security tests         │
+│  Reports: JSON, HTML, Markdown       │
+│  Auto-Setup: Yes (via sandbox API)   │
+└──────────────────────────────────────┘
+```
+
+### Quick Start
+
+**Automatic Setup (Recommended):**
+```bash
+cd pentest
+./scripts/run-all-tests.sh --skip-shannon
+```
+
+The script automatically:
+1. Calls `POST /v1/sandbox/pentest-setup` to configure test environment
+2. Creates test enrollments in Redis (7 test accounts for IDOR testing)
+3. Generates JWT tokens for all user types
+4. Runs all 14 penetration tests
+5. Generates reports in `pentest/reports/`
+
+**Manual Setup:**
+```bash
+# Option 1: Use setup script
+./scripts/setup-sandbox.sh --target https://api.notap.io
+
+# Option 2: Call API directly
+curl -X POST https://api.notap.io/v1/sandbox/pentest-setup \
+  -H "Content-Type: application/json"
+```
+
+### Test Accounts (Pre-configured)
+
+All test accounts are automatically created with proper IDOR pairs for access control testing:
+
+| Role | Victim UUID | Attacker UUID | Purpose |
+|------|-------------|---------------|---------|
+| User | `11111111-1111-4111-a111-111111111111` | `22222222-2222-4222-a222-222222222222` | User IDOR |
+| Merchant | `cccccccc-cccc-4ccc-accc-cccccccccccc` | `dddddddd-dddd-4ddd-addd-dddddddddddd` | Merchant IDOR |
+| Admin | `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa` | `bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb` | Admin IDOR |
+
+### Security Tests Covered
+
+| Test | Type | Status |
+|------|------|--------|
+| SQL Injection | Input Validation | ✅ PASS |
+| XSS Attack | Input Sanitization | ✅ PASS |
+| SSRF Attack | URL Validation | ⏳ Pending |
+| Brute Force | Rate Limiting | ✅ PASS |
+| Replay Attack | Nonce/Timestamp | ⏳ Partial |
+| Race Condition | Distributed Locks | ✅ PASS |
+| IDOR Testing | Access Control | ✅ Included |
+| And 7 more... | Various | 14 Total |
+
+### Public Routes (No Auth Required)
+
+The following endpoints are whitelisted and don't require replay protection validation:
+
+```bash
+curl https://api.notap.io/v1/names/supported          # Name resolution supported chains
+curl https://api.notap.io/v1/names/health              # Health check
+curl https://api.notap.io/v1/sandbox/config            # Sandbox configuration
+curl https://api.notap.io/v1/sandbox/tokens            # Available test tokens
+```
+
+### Configuration
+
+Pre-configured in `pentest/config.sandbox.env`:
+- ✅ TEST_USER_UUID_1 (Primary test user)
+- ✅ TEST_API_KEY (Developer API key)
+- ✅ ADMIN_API_KEY (Admin API key)
+- ✅ All IDOR test account UUIDs
+
+### Reports
+
+After running tests, check:
+- `pentest/reports/*.json` - Machine-readable results
+- `pentest/reports/*.html` - Human-readable reports
+- `test-analysis-reports/2026-01-31/` - Detailed analysis
+
+### See Also
+
+For automated test failure analysis:
+- Run: `./scripts/analyze-tests.sh --pentest`
+- Generates: Comprehensive vulnerability summary with fixes
+
+---
+
 ## Test Coverage Goals
 
 | Module | Current | Target |
@@ -582,6 +682,7 @@ Solution: Run npm install in backend directory
 | Backend APIs | 85% | 90% |
 | SDK Processors | 70% | 85% |
 | Web UI Flows | 60% | 75% |
+| Security Tests | 14/14 | 14/14 ✅ |
 
 ---
 

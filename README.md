@@ -458,19 +458,18 @@ Stripe, Adyen, Square, Tilopay, MercadoPago — with parallel session creation (
 - **Direct API:** RESTful + SDKs
 - **White-Label:** Enterprise tier only
 
-### Pricing (by User Enrollment)
+### Pricing (Pay per Verification)
 
 **Merchant Plans:**
-- **Sandbox:** Free (500 test users)
-- **Startup:** $299/month (1,000 enrolled users)
-- **Growth:** $999/month (10,000 enrolled users)
-- **Scale:** $4,999/month (100,000 enrolled users)
-- **Enterprise:** $25,000+/month (unlimited, custom)
+- **Sandbox:** Free (500 verifications/month)
+- **Startup:** $49/month (10,000 verifications/month)
+- **Pro:** $299/month (100,000 verifications/month)
+- **Business:** $1,299/month (1,000,000 verifications/month)
+- **Enterprise:** Custom (Unlimited)
 
 **Consumer Plans:**
 - **Free:** $0 forever (unlimited authentications)
-- **Plus:** $9.99/year (all 15 factors)
-- **Crypto:** $29.99/year (ZK privacy, daily key rotation)
+- **Plus:** $2.99/month (Cloud Backup, Advanced Security)
 
 See [Pricing Tiers Summary](documentation/08-business/PRICING_TIERS_SUMMARY.md) for details.
 
@@ -590,7 +589,6 @@ Licensed under Apache License 2.0 - see [LICENSE](LICENSE).
     <a href="https://github.com/keikworld/zero-pay-sdk">GitHub</a>
   </p>
 </div>
-
 
 ---
 
