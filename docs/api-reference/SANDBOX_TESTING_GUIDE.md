@@ -71,12 +71,13 @@ curl "https://api.notap.io/v1/demo-analytics/funnel?apiKey=test-demo-analytics-k
 6. [Test Payment Cards](#test-payment-cards)
 7. [Demo Analytics Testing](#demo-analytics-testing)
 8. [PSP API Keys](#psp-api-keys)
-9. [Wallet Testing](#wallet-testing)
-10. [Crypto Payments](#crypto-payments)
-11. [ZK Proof Testing](#zk-proof-testing)
-12. [Environment Configuration](#environment-configuration)
-13. [API Reference](#api-reference)
-14. [Troubleshooting](#troubleshooting)
+9. [Partner Command Center](#partner-command-center)
+10. [Wallet Testing](#wallet-testing)
+11. [Crypto Payments](#crypto-payments)
+12. [ZK Proof Testing](#zk-proof-testing)
+13. [Environment Configuration](#environment-configuration)
+14. [API Reference](#api-reference)
+15. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -522,6 +523,165 @@ curl -X POST https://api.notap.io/v1/psp/session/create \
   "expiresAt": "2025-12-28T13:00:00Z",
   "requiredFactors": ["PIN", "PATTERN"]
 }
+```
+
+---
+
+## Partner Command Center
+
+The Partner Command Center enables PSPs (Payment Service Providers) and Aggregators to programmatically onboard and manage sub-merchants.
+
+### Test Partners (PSPs)
+
+| Partner | ID | API Key Prefix | Email |
+|---------|-----|----------------|-------|
+| **Alpha PSP** | `partner-aaaa-0000-0000-000000000001` | `pk_live_partner_alpha` | admin@alpha-psp.test |
+| **Beta PSP** | `partner-bbbb-0000-0000-000000000002` | `pk_live_partner_beta` | admin@beta-psp.test |
+
+### Test Partner API Keys
+
+```bash
+# Partner Alpha (Primary test partner)
+pk_live_partner_alpha_test_0000000000000000000001
+
+# Partner Beta (For IDOR testing)
+pk_live_partner_beta_test_0000000000000000000002
+```
+
+> **Single Source of Truth:** Partner credentials are defined in `backend/config/sandboxConfig.js` under `TEST_PARTNERS`
+
+### Test Sub-Merchants
+
+| Sub-Merchant | Partner | ID | Email |
+|--------------|---------|-----|-------|
+| Coffee Shop Alpha-1 | Alpha PSP | `submerchant-aaaa-1111-0000-000000000001` | coffee1@alpha-merchants.test |
+| Burger Joint Alpha-2 | Alpha PSP | `submerchant-aaaa-2222-0000-000000000002` | burger@alpha-merchants.test |
+| Retail Store Beta-1 | Beta PSP | `submerchant-bbbb-1111-0000-000000000001` | retail@beta-merchants.test |
+
+> **Single Source of Truth:** Sub-merchant data is in `backend/config/sandboxConfig.js` under `TEST_PARTNER_SUBMERCHANTS`
+
+### Partner Authentication
+
+Partners use a special authentication pattern with two headers:
+
+```bash
+Authorization: Bearer pk_live_partner_alpha_test_0000000000000000000001
+X-Merchant-ID: submerchant-aaaa-1111-0000-000000000001
+```
+
+The `X-Merchant-ID` header specifies which sub-merchant the partner is acting "on behalf of" (masquerade).
+
+### Create Sub-Merchant (Headless Onboarding)
+
+```bash
+curl -X POST https://api.notap.io/v1/partners/merchants \
+  -H "Authorization: Bearer pk_live_partner_alpha_test_0000000000000000000001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "New Coffee Shop",
+    "email": "new@coffee.test",
+    "webhook_url": "https://webhook.site/test-hook"
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "merchant_id": "submerchant-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "api_key": "sk_live_newmerchant_xxx...",
+  "dashboard_url": "https://dashboard.notap.io/login?partner_sso=..."
+}
+```
+
+### List Sub-Merchants
+
+```bash
+curl https://api.notap.io/v1/partners/merchants \
+  -H "Authorization: Bearer pk_live_partner_alpha_test_0000000000000000000001"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "merchant_uuid": "submerchant-aaaa-1111-0000-000000000001",
+      "business_name": "Coffee Shop Alpha-1",
+      "email": "coffee1@alpha-merchants.test",
+      "subscription_status": "active",
+      "plan_code": "merchant_sandbox"
+    }
+  ],
+  "page": 1,
+  "limit": 50
+}
+```
+
+### Partner Masquerade (Act on Behalf of Sub-Merchant)
+
+Partners can initiate verifications for their sub-merchants:
+
+```bash
+curl -X POST https://api.notap.io/v1/verification/initiate \
+  -H "Authorization: Bearer pk_live_partner_alpha_test_0000000000000000000001" \
+  -H "X-Merchant-ID: submerchant-aaaa-1111-0000-000000000001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_uuid": "test-user-success-001",
+    "transaction_amount": 25.00
+  }'
+```
+
+**Security:** Partners can ONLY masquerade as merchants they own. Attempting to use another partner's merchant ID returns `403 Forbidden`.
+
+### Configure Global Webhook
+
+```bash
+curl -X POST https://api.notap.io/v1/partners/webhooks \
+  -H "Authorization: Bearer pk_live_partner_alpha_test_0000000000000000000001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://webhook.site/partner-global",
+    "secret": "whsec_test_secret_123"
+  }'
+```
+
+### Partner IDOR Security Testing
+
+The sandbox includes two partners specifically for testing cross-partner access control:
+
+```bash
+# Partner Alpha tries to access Partner Beta's merchant (should fail)
+curl -X POST https://api.notap.io/v1/verification/initiate \
+  -H "Authorization: Bearer pk_live_partner_alpha_test_0000000000000000000001" \
+  -H "X-Merchant-ID: submerchant-bbbb-1111-0000-000000000001" \
+  -H "Content-Type: application/json" \
+  -d '{"user_uuid": "test-user", "transaction_amount": 10}'
+
+# Expected response: 403 Forbidden
+{
+  "success": false,
+  "error": "Access Denied: Partner does not manage this merchant"
+}
+```
+
+### Pentest: Partner Command Center
+
+Run the dedicated Partner security pentest:
+
+```bash
+cd pentest
+python3 tests/31-partner-command-center.py --config config.sandbox.env
+
+# Tests:
+# 1. Partner IDOR (cross-partner merchant access)
+# 2. Masquerade without ownership
+# 3. Invalid partner key format
+# 4. Missing X-Merchant-ID header
+# 5. Webhook URL injection (SSRF)
+# 6. Brute force detection
 ```
 
 ---
