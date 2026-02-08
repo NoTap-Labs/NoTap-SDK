@@ -145,7 +145,7 @@ val x = 5 // Set x to 5
 zeropay-android/
 ├── sdk/                          # Core SDK (Kotlin Multiplatform)
 │   ├── commonMain/              # Platform-agnostic code
-│   │   ├── Factor.kt            # 15 factor enum with metadata (923 lines)
+│   │   ├── Factor.kt            # 15 factor enum with metadata (PSD3 compliant)
 │   │   ├── RateLimiter.kt       # Multi-layer rate limiting
 │   │   ├── crypto/              # SHA-256, PBKDF2, constant-time ops
 │   │   │   ├── CryptoUtils.kt
@@ -153,7 +153,7 @@ zeropay-android/
 │   │   │   ├── KeyDerivation.kt
 │   │   │   └── DoubleLayerEncryption.kt
 │   │   ├── factors/             # Factor implementations (15 total)
-│   │   │   ├── processors/      # PinProcessor, ColorProcessor, etc.
+│   │   │   ├── processors/      # PinProcessor, ColorProcessor, etc. (PSD3 categories)
 │   │   │   └── validation/      # Input validation logic
 │   │   ├── security/            # Security primitives
 │   │   │   ├── SecureMemory.kt
@@ -164,7 +164,7 @@ zeropay-android/
 │   │   │   ├── SolanaClient.kt
 │   │   │   ├── WalletLinkingManager.kt
 │   │   │   └── SolanaPayUrlGenerator.kt
-│   │   ├── gateway/             # 14 payment gateway abstractions
+│   │   ├── gateway/             # Payment gateway abstractions
 │   │   │   ├── impl/            # StripeGateway, AdyenGateway, etc.
 │   │   │   ├── GatewayProvider.kt
 │   │   │   └── PaymentHandoffManager.kt
@@ -174,10 +174,10 @@ zeropay-android/
 │   │   └── zksnark/             # ZK-SNARK preparation layer
 │   │
 │   ├── androidMain/             # Android-specific code
-│   │   ├── factors/             # 15 Compose UI canvases
-│   │   │   ├── PinCanvas.kt
-│   │   │   ├── PatternCanvas.kt
-│   │   │   ├── BiometricCanvas.kt
+│   │   ├── factors/             # 15 Compose UI canvases (enrollment)
+│   │   │   ├── PinEnrollmentCanvas.kt
+│   │   │   ├── PatternEnrollmentCanvas.kt
+│   │   │   ├── EmojiEnrollmentCanvas.kt
 │   │   │   └── ... (12 more)
 │   │   ├── storage/             # KeyStore, EncryptedSharedPreferences
 │   │   │   ├── KeyStoreManager.kt

@@ -269,8 +269,17 @@ In your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    // ZeroPay SDK
+    // ZeroPay SDK (core module)
     implementation(project(":sdk"))
+
+    // Enrollment module (for enrollment flows)
+    implementation(project(":enrollment"))
+
+    // Online Web module (for web support)
+    implementation(project(":online-web"))
+
+    // PSP SDK (for payment service providers)
+    implementation(project(":psp-sdk"))
 
     // Or from Maven (future)
     // implementation("com.zeropay:sdk:1.0.0")
@@ -330,12 +339,9 @@ In your `Application` class:
 package com.yourapp
 
 import android.app.Application
-import com.zeropay.sdk.ZeroPay
+import com.zeropay.sdk.EnrollmentClient
+import com.zeropay.sdk.VerificationClient
 import com.zeropay.sdk.api.ApiConfig
-import com.zeropay.sdk.api.EnrollmentClient
-import com.zeropay.sdk.api.VerificationClient
-import com.zeropay.sdk.api.BlockchainClient
-import com.zeropay.sdk.network.OkHttpClientImpl
 
 class MyApplication : Application() {
 
@@ -346,8 +352,7 @@ class MyApplication : Application() {
         lateinit var verificationClient: VerificationClient
             private set
 
-        lateinit var blockchainClient: BlockchainClient
-            private set
+
     }
 
     override fun onCreate() {
@@ -359,22 +364,9 @@ class MyApplication : Application() {
         // Validate configuration
         apiConfig.validate()
 
-        // Initialize HTTP client
-        val httpClient = OkHttpClientImpl(apiConfig)
-
         // Initialize API clients
-        enrollmentClient = EnrollmentClient(httpClient, apiConfig)
-        verificationClient = VerificationClient(httpClient, apiConfig)
-        blockchainClient = BlockchainClient(httpClient, apiConfig)
-
-        // Initialize ZeroPay SDK
-        ZeroPay.initialize(
-            context = this,
-            config = ZeroPay.Config(
-                prewarmCache = true,
-                enableDebugLogging = BuildConfig.DEBUG
-            )
-        )
+        enrollmentClient = EnrollmentClient(apiConfig)
+        verificationClient = VerificationClient(apiConfig)
     }
 }
 ```

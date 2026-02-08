@@ -1,8 +1,8 @@
 # NoTap Android SDK - Integration Guide
 
-**Version:** 2.0
-**Last Updated:** 2025-12-03
-**Minimum Android Version:** API 24 (Android 7.0)
+**Version:** 1.0.0
+**Last Updated:** 2025-02-08
+**Minimum Android Version:** API 26 (Android 8.0)
 **Target Time:** 30 minutes to first enrollment
 
 ---
@@ -98,7 +98,10 @@ Add NoTap SDK to your app-level `build.gradle.kts`:
 // build.gradle.kts (App level)
 dependencies {
     // NoTap SDK (Kotlin Multiplatform)
-    implementation("com.zeropay:sdk:2.0.5")
+    implementation(project(":sdk"))
+
+    // Enrollment module
+    implementation(project(":enrollment"))
 
     // Required dependencies
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -191,31 +194,41 @@ Create an Application class and initialize NoTap SDK:
 package com.example.myapp
 
 import android.app.Application
-import com.zeropay.sdk.NoTapSDK
-import com.zeropay.sdk.config.NoTapConfig
-import com.zeropay.sdk.config.Environment
+import com.zeropay.sdk.EnrollmentClient
+import com.zeropay.sdk.VerificationClient
+import com.zeropay.sdk.api.ApiConfig
 
 class App : Application() {
 
     companion object {
-        lateinit var noTapSDK: NoTapSDK
+        lateinit var enrollmentClient: EnrollmentClient
+            private set
+        lateinit var verificationClient: VerificationClient
             private set
     }
 
     override fun onCreate() {
         super.onCreate()
 
-        // Initialize NoTap SDK
-        val config = NoTapConfig(
-            apiKey = "sk_test_your_api_key_here", // From developer.notap.io
-            environment = Environment.SANDBOX, // Use PRODUCTION for live
-            enableLogging = BuildConfig.DEBUG // Enable logs in debug builds
-        )
+        // Initialize API configuration
+        val apiConfig = if (BuildConfig.DEBUG) {
+            ApiConfig.development(
+                baseUrl = "http://10.0.2.2:3000", // Android emulator localhost
+                enableLogging = true
+            )
+        } else {
+            ApiConfig.production(
+                baseUrl = "https://api.zeropay.com",
+                certificatePins = listOf(
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", // Replace with actual pin
+                    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="  // Backup pin
+                )
+            )
+        }
 
-        noTapSDK = NoTapSDK(
-            context = this,
-            config = config
-        )
+        // Initialize clients
+        enrollmentClient = EnrollmentClient(apiConfig)
+        verificationClient = VerificationClient(apiConfig)
     }
 }
 ```
@@ -245,8 +258,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
-import com.zeropay.sdk.ui.enrollment.EnrollmentFlow
-import com.zeropay.sdk.model.Factor
+import com.zeropay.sdk.Factor
+import com.zeropay.enrollment.EnrollmentManager
 
 class EnrollmentActivity : ComponentActivity() {
 
@@ -255,47 +268,36 @@ class EnrollmentActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                EnrollmentFlow(
-                    sdk = App.noTapSDK,
+                // Use EnrollmentManager from enrollment module
+                val enrollmentManager = EnrollmentManager(App.enrollmentClient)
 
-                    // Minimum 3 factors required (6+ recommended)
+                // Enrollment UI implementation
+                EnrollmentScreen(
+                    enrollmentManager = enrollmentManager,
                     availableFactors = listOf(
                         Factor.PIN,
                         Factor.PATTERN,
                         Factor.EMOJI,
-                        Factor.COLORS,
-                        Factor.RHYTHM,
+                        Factor.COLOUR,
+                        Factor.RHYTHM_TAP,
                         Factor.WORDS,
                         Factor.IMAGE_TAP,
                         Factor.MOUSE_DRAW
                     ),
 
-                    // Optional: Blockchain name integration
-                    enableBlockchainNames = true,
-
-                    // Callbacks
-                    onSuccess = { result ->
+                    onEnrollmentComplete = { result ->
                         println("✅ Enrollment successful!")
-                        println("UUID: ${result.uuid}")
+                        println("UUID: ${result.userUuid}")
                         println("Alias: ${result.alias}")
-                        println("Factors: ${result.factors}")
-
+                        
                         // Save UUID to your database
-                        saveUserToDatabase(result.uuid, result.alias)
-
-                        // Navigate to success screen
+                        saveUserToDatabase(result.userUuid, result.alias)
                         finish()
                     },
 
                     onError = { error ->
                         println("❌ Enrollment failed: ${error.message}")
-                        // Show error dialog
                         showErrorDialog(error.message)
-                    },
-
-                    onCancel = {
-                        println("User cancelled enrollment")
-                        finish()
                     }
                 )
             }
