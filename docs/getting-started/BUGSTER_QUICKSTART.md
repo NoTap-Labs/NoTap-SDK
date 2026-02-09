@@ -16,18 +16,20 @@ npm --version   # Should be >= 9.0.0
 npm install -g bugster-cli
 ```
 
-## 3. Get Bugster API Key
+## 3. Bugster Configuration
 
-1. Visit https://bugster.dev/
-2. Sign up for a free account
-3. Navigate to Dashboard → API Keys
-4. Copy your API key
-
-## 4. Initialize Bugster
+Bugster is configured for local testing without external API keys:
 
 ```bash
 cd /path/to/zero-pay-sdk
-bugster init
+bugster init --local
+```
+
+## 4. Test Configuration
+
+```bash
+# Verify Bugster setup
+bugster test --dry-run
 ```
 
 When prompted:

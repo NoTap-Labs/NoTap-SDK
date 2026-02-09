@@ -97,7 +97,8 @@ npm run dev
 | Service | Container Name | Port | Purpose |
 |---------|---------------|------|---------|
 | PostgreSQL | notap-postgres | 5432 | Main database |
-| Redis | notap-redis | 6379 | Cache & sessions |
+| Redis (Dev) | notap-redis | 6379 | Cache & sessions (no TLS) |
+| Redis (Prod) | notap-redis-tls | 6380 | Cache & sessions (TLS) |
 | pgAdmin | notap-pgadmin | 5050 | DB GUI (optional) |
 | Redis Commander | notap-redis-commander | 8081 | Redis GUI (optional) |
 
@@ -118,14 +119,17 @@ npm run dev
 ### Start Services
 
 ```bash
-# Start PostgreSQL and Redis only
-docker compose up -d postgres redis
+# Development mode (PostgreSQL + Redis without TLS)
+docker compose --profile dev up -d postgres redis-dev
 
-# Start all services including backend
-docker compose up -d
+# Production mode (PostgreSQL + Redis with TLS)
+docker compose --profile prod up -d postgres redis-prod
 
 # Start with optional GUI tools
-docker compose --profile tools up -d
+docker compose --profile tools up -d pgadmin redis-commander
+
+# Start everything (backend included)
+docker compose --profile with-backend up -d
 ```
 
 ### Stop Services
@@ -159,8 +163,11 @@ docker compose ps
 # PostgreSQL health
 docker exec notap-postgres pg_isready -U notap
 
-# Redis health
+# Redis health (dev mode)
 docker exec notap-redis redis-cli -a notap_redis_dev_2024 ping
+
+# Redis health (prod mode with TLS)
+docker exec notap-redis-tls redis-cli -p 6380 --tls --cert /tls/redis.crt --key /tls/redis.key --cacert /tls/ca.crt -a notap_redis_dev_2024 ping
 ```
 
 ---
@@ -298,9 +305,20 @@ npm run db:seed
 
 ### Connect to Redis
 
+**Development Mode (no TLS):**
 ```bash
 # Using Docker
 docker exec -it notap-redis redis-cli -a notap_redis_dev_2024
+
+# Test connection
+PING
+# Response: PONG
+```
+
+**Production Mode (with TLS):**
+```bash
+# Using Docker
+docker exec -it notap-redis-tls redis-cli -p 6380 --tls --cert /tls/redis.crt --key /tls/redis.key --cacert /tls/ca.crt -a notap_redis_dev_2024
 
 # Test connection
 PING
@@ -330,7 +348,7 @@ FLUSHALL
 ### pgAdmin (Database GUI)
 
 ```bash
-# Start pgAdmin
+# Start pgAdmin (requires tools profile)
 docker compose --profile tools up -d pgadmin
 ```
 
