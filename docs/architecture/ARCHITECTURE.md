@@ -2,7 +2,7 @@
 
 **Purpose**: Comprehensive system architecture, module structure, and data flow documentation
 
-**Last Updated**: 2025-12-03
+**Last Updated**: 2026-02-09
 
 **NEW in v2.0:**
 - Web Platform Architecture (online-web module deep dive)
@@ -37,22 +37,23 @@
 
 ### Core Modules
 
-| Module | Type | Purpose | Status |
-|--------|------|---------|--------|
-| **sdk** | KMP | Core factors, crypto, API clients | ✅ Complete |
-| **enrollment** | Android | User enrollment (5-step wizard, 14 factors) | ✅ Complete |
-| **merchant** | Android | Verification flow (4 screens, 14 canvases) | ✅ Complete |
-| **online-web** | Kotlin/JS | Web verification (10 canvases) | ✅ Complete |
-| **psp-sdk** | KMP | PSP integration SDK | ✅ Complete |
-| **backend** | Node.js | API server (16 routers) | ✅ Complete |
+| Module | Type | Purpose | Status | Files | LOC |
+|--------|------|---------|--------|------|-----|
+| **sdk** | KMP | Core factors, crypto, API clients | ✅ Complete | 223 files, 19,000+ LOC |
+| **enrollment** | Android | User enrollment (5-step wizard, 15 factors) | ✅ Complete | 45 files |
+| **merchant** | Android | Verification flow (4 screens, 15 canvases) | ✅ Complete | 38 files |
+| **online-web** | Kotlin/JS | Web enrollment + verification (10 canvases) | ✅ Complete | 45 files, 13,000+ LOC |
+| **psp-sdk** | KMP | PSP integration SDK | ✅ Complete | 19 files |
+| **backend** | Node.js | API server (43 routers) | ✅ Complete | 43 route files, 47 test files |
+| **app** | Android | Demo application | ✅ Complete | 15 files |
 
 ### Core Security Features
 
 - **Double Encryption**: Key derivation (PBKDF2) + KMS wrapping
-- **Zero-Knowledge Proofs**: ZK-SNARK proof generation for privacy
-- **Multi-Factor Auth**: 12 core + 2 biometric factors across 5 categories
+- **Zero-Knowledge Proofs**: ZK-SNARK proof generation for privacy (NoTap Seal V1 implemented)
+- **Multi-Factor Auth**: 13 core + 2 biometric factors across 5 categories (15 total factors)
 - **PSD3 SCA Compliance**: Minimum 3 factors, 2+ categories (6+ recommended)
-- **GDPR Compliance**: 24-hour TTL, right to erasure, consent tracking
+- **GDPR Compliance**: 24-hour TTL, right to erasure, consent tracking, cryptographic erasure for blockchain
 - **Constant-Time Operations**: Timing attack prevention
 - **Memory Wiping**: Sensitive data cleared after use
 
