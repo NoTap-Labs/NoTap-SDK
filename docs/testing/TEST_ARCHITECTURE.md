@@ -168,18 +168,34 @@ expect(value).toBe(expected);
 
 ### Running Mocha Tests
 
+> **Full local setup guide:** `documentation/07-testing/LOCAL_TEST_INFRASTRUCTURE.md`
+
 ```bash
-# All tests
-cd backend && npm test
+cd backend
 
-# Specific test suite
-npm run test:e2e
+# Unit tests (fast, no external deps — 140 tests in ~2s)
+npm test
+
+# Service/router tests (needs mock Redis — auto-configured)
+npm run test:services
+
+# Integration tests
 npm run test:integration
-npm run test:crypto
 
-# Single file
-npx mocha tests/e2e/complete-flow.test.js --timeout 10000
+# E2E tests (needs running server or Railway)
+npm run test:e2e
+
+# Everything (slow on WSL/NTFS)
+npm run test:all
+
+# Against Railway test server
+npm run test:railway
+
+# Single file (bypass .mocharc.json)
+npx mocha tests/unit/sealSigning.test.js --timeout 10000 --no-config
 ```
+
+**Note:** `npm test` uses an in-memory Redis adapter (`MOCK_REDIS=true`) so no Redis or PostgreSQL install is needed. See `LOCAL_TEST_INFRASTRUCTURE.md` for details.
 
 ---
 
