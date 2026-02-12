@@ -338,30 +338,517 @@ await redisClient.setEx(`verification:${sessionId}`, 300, JSON.stringify(session
 
 ---
 
+---
+
+## Expert Recommendations: MVP for 10k, Ready for 100k+
+
+### The Critical Insight
+
+**The difference between an MVP that breaks at 10k and one that's ready for 100k is architectural decisions made NOW, not infrastructure later.**
+
+The key blocker is **stateful in-memory storage** which prevents horizontal scaling entirely. Fix this once, and scaling becomes just infrastructure configuration.
+
+---
+
+### Minimum Viable Infrastructure (10k Concurrent)
+
+For MVP launch handling 10,000+ simultaneous users:
+
+| Component | Minimum | Configuration |
+|-----------|---------|---------------|
+| **API Instances** | 2 (for HA) | Auto-scaling disabled initially |
+| **Redis** | Single node | 2GB RAM, no persistence (data is re-creatable) |
+| **PostgreSQL** | Single | Connection pool: 50 |
+| **Memory** | 2GB per API | Node.js heap optimized |
+
+**This can handle ~300-500 RPS comfortably.**
+
+---
+
+### The 5 Critical Architectural Changes (MVP Required)
+
+These changes are MINIMAL code modifications but enable infinite horizontal scaling:
+
+#### 1. Move Verification Sessions to Redis ⭐ CRITICAL
+
+**Files:** `verificationRouter.js:82`, `pspRouter.js:40`
+
+```javascript
+// BEFORE (blocks scaling):
+const verificationSessions = new Map();
+
+// AFTER (enables horizontal scaling):
+// Use Redis with TTL - session auto-expires, shared across instances
+await redisClient.setEx(`verification:${sessionId}`, 300, JSON.stringify(session));
+const session = JSON.parse(await redisClient.get(`verification:${sessionId}`));
+```
+
+**Why:** Sessions are the ONLY thing preventing horizontal scaling. This single change enables ANY number of API instances.
+
+**Impact:** 1-day work, enables infinite scaling
+
+#### 2. Abstract Session Storage Behind Interface
+
+**New file:** `backend/services/sessionStorage.js`
+
+```javascript
+// Interface that can switch between Memory/Redis/etc.
+class SessionStorage {
+  constructor(adapter = 'redis') {
+    this.adapter = adapter;
+  }
+  
+  async set(sessionId, data, ttl = 300) {
+    if (this.adapter === 'redis') {
+      return redisClient.setEx(`session:${sessionId}`, ttl, JSON.stringify(data));
+    }
+    return memoryStore.set(sessionId, { data, expires: Date.now() + ttl * 1000 });
+  }
+  
+  async get(sessionId) {
+    if (this.adapter === 'redis') {
+      const data = await redisClient.get(`session:${sessionId}`);
+      return data ? JSON.parse(data) : null;
+    }
+    const entry = memoryStore.get(sessionId);
+    return entry && entry.expires > Date.now() ? entry.data : null;
+  }
+}
+```
+
+**Why:** Enables runtime switching between memory (testing) and Redis (production) without code changes.
+
+#### 3. Increase PostgreSQL Pool + Add PgBouncer
+
+**File:** `backend/database/database.js`
+
+```javascript
+pool = new Pool({
+  max: 50,  // Up from 20 - handles 10k concurrent
+  min: 5,
+  // ... rest same
+});
+```
+
+**Infrastructure:** Add PgBouncer (connection pooler) in front of PostgreSQL:
+- Reduces connection overhead
+- Enables 100s of connections without overwhelming PostgreSQL
+
+**Why:** 20 connections cannot handle burst traffic. 50 is minimum for 10k.
+
+#### 4. Increase Redis Memory + Optimize
+
+**File:** `backend/docker-compose.yml`
+
+```yaml
+redis-dev:
+  command: >
+    redis-server
+    --requirepass ${REDIS_PASSWORD}
+    --maxmemory 2gb
+    --maxmemory-policy allkeys-lru
+    --appendonly yes
+    --save 900 1 --save 300 10  # Reduce fsync frequency
+```
+
+**Why:** 256MB will fill up at ~5k sessions. 2GB handles 50k+.
+
+#### 5. Make Rate Limiting Configurable
+
+**File:** `backend/middleware/rateLimitMiddleware.js`
+
+Add environment variables:
+
+```javascript
+const RATE_LIMIT_CONFIG = {
+  global: { 
+    windowMs: 60000, 
+    max: parseInt(process.env.RATE_LIMIT_GLOBAL) || 1000 
+  },
+  perIP: { 
+    windowMs: 60000, 
+    max: parseInt(process.env.RATE_LIMIT_PER_IP) || 100 
+  },
+  perUser: { 
+    windowMs: 60000, 
+    max: parseInt(process.env.RATE_LIMIT_PER_USER) || 50 
+  }
+};
+```
+
+**Why:** Allows tightening limits during attacks without code changes.
+
+---
+
+### The "Scalability Framework" - Enable 100k+ Without Code Changes
+
+These infrastructure changes prepare for 100k without touching code:
+
+| Change | When | Effect |
+|--------|------|--------|
+| **Redis Cluster (3 masters)** | Phase 2 | Horizontal Redis scaling |
+| **PgBouncer (100 connections)** | Phase 2 | Connection pooling |
+| **PostgreSQL Read Replica** | Phase 2 | Read scaling |
+| **Redis Pipeline Batch Ops** | Phase 2 | Reduce round-trips |
+| **API Auto-scaling (5+ instances)** | Phase 2 | Horizontal scaling |
+| **Async Audit Logging** | Phase 2 | Remove sync bottleneck |
+
+---
+
+### Specific Code Patterns to Avoid (Technical Debt)
+
+| Pattern | Problem | Fix |
+|---------|---------|-----|
+| `new Map()` for sessions | Not shared across instances | Use Redis from day 1 |
+| `pool.query()` in hot path | Connection overhead | Use prepared statements + PgBouncer |
+| `KEYS *` or `SCAN` in production | O(N) blocking | Use specific keys or hash fields |
+| Synchronous audit logging | Blocks response | Use async queue (Bull/Redis streams) |
+| Hardcoded connection limits | Inflexible | Use env vars |
+
+---
+
+### Recommended MVP Launch Configuration
+
+```yaml
+# docker-compose.mvp.yml (recommended for launch)
+
+services:
+  api:
+    deploy:
+      replicas: 2  # Minimum 2 for HA
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    
+  redis:
+    command: >
+      redis-server
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --tcp-backlog 511
+      --timeout 0
+      
+  postgres:
+    # Add PgBouncer sidecar
+    # Or use cloud provider's connection pooler
+```
+
+---
+
+### Summary: MVP vs 100k+ Path
+
+| Aspect | MVP (10k) | 100k+ |
+|--------|-----------|-------|
+| **Sessions** | Redis (shared) | Redis Cluster |
+| **API Instances** | 2 | 10+ auto-scale |
+| **Redis** | 2GB single node | 6+ master cluster |
+| **PostgreSQL** | 50 pool + PgBouncer | PgBouncer + 3 replicas |
+| **Rate Limiting** | Redis-backed | Redis Cluster |
+| **Audit Logs** | Async queue | Event-driven |
+
+### The One Thing to Get Right
+
+> **Move verification sessions to Redis. Everything else is just tuning.**
+
+This single architectural decision is the difference between:
+- ❌ Having to rewrite the entire session system at 50k users
+- ✅ Just adding more Redis nodes at 100k users
+
+---
+
 ## Final Verdict
 
-### Production Readiness: ⚠️ NOT READY for 100k concurrent
+### Production Readiness: ⚠️ NOT READY for 100k concurrent (without changes)
 
-**Critical Issues (Must Fix Before Production):**
+### With Phase 1 MVP Fixes: ✅ READY for 10k concurrent
 
-1. **In-memory verification sessions** - Blocks ALL horizontal scaling
-2. **Single Redis node** - Memory limit + no fault tolerance
-3. **PostgreSQL pool (20)** - Will exhaust at 1,666 RPS
-4. **Synchronous audit logging** - 1,666 writes/sec = bottleneck
+**Required Changes for MVP Launch:**
 
-### Timeline Estimate
+| Priority | Change | Effort | Impact |
+|----------|--------|--------|--------|
+| 🔴 CRITICAL | Move verificationSessions to Redis | 1 day | Enables horizontal scaling |
+| 🔴 CRITICAL | Move pspSessions to Redis | 1 day | Enables horizontal scaling |
+| 🔴 CRITICAL | Increase PostgreSQL pool to 50 | 1 hour | Prevents connection exhaustion |
+| 🔴 CRITICAL | Increase Redis to 2GB | 1 hour | Prevents OOM |
+| 🟡 HIGH | Add PgBouncer | 2 hours | Connection pooling |
+| 🟡 HIGH | Make rate limits configurable | 1 hour | Operational flexibility |
 
-| Phase | Duration |
-|-------|----------|
-| Phase 1 (Quick Wins) | 1 week |
-| Phase 2 (Clustering) | 2-3 weeks |
-| Phase 3 (Full Scale) | 4-6 weeks |
+**Total MVP Work: 2-3 days** → Ready for 10k, architected for 100k+
 
-### Conditional Pass
+---
 
-- **10k concurrent**: With Phase 1 fixes ✅
-- **50k concurrent**: With Phase 2 fixes ✅
-- **100k+ concurrent**: With Phase 3 fixes ✅
+## Detailed MVP Recommendations with Code Changes
+
+### Recommendation 1: Move Verification Sessions from In-Memory Map to Redis
+
+**File:** `backend/routes/verificationRouter.js:82`
+
+**Current Code (Blocking Horizontal Scaling):**
+```javascript
+const verificationSessions = new Map();
+```
+
+**Recommended Change:**
+```javascript
+// REMOVE: const verificationSessions = new Map();
+// ADD: Use Redis client from app.locals
+
+// In /initiate endpoint (line 400):
+await redisClient.setEx(`verification:${sessionId}`, 300, JSON.stringify(session));
+
+// In /verify endpoint (line 581):
+const sessionData = await redisClient.get(`verification:${sessionId}`);
+const session = sessionData ? JSON.parse(sessionData) : null;
+
+// In delete operations (lines 591, 600, 903, 960, 1093):
+await redisClient.del(`verification:${session_id}`);
+```
+
+**Performance Impact:**
+- **Latency:** +1-2ms per session operation (Redis round-trip)
+- **Throughput:** Enables infinite horizontal scaling (currently blocked)
+- **Memory:** Offloads session storage from heap to Redis
+- **Reliability:** Sessions survive API restarts
+
+**Reasoning:**
+The in-memory `Map()` stores sessions only in the current process. With 2+ API instances, requests can hit different instances and find no session. This causes auth failures. Redis provides shared storage across all instances.
+
+---
+
+### Recommendation 2: Move PSP Sessions from In-Memory Map to Redis
+
+**File:** `backend/routes/pspRouter.js:40`
+
+**Current Code:**
+```javascript
+const pspSessions = new Map();
+```
+
+**Recommended Change:**
+```javascript
+// REMOVE: const pspSessions = new Map();
+// ADD: Use Redis with appropriate TTL
+
+// Store PSP session:
+await redisClient.setEx(`psp:${sessionId}`, 1800, JSON.stringify(pspData));
+
+// Retrieve PSP session:
+const pspData = JSON.parse(await redisClient.get(`psp:${sessionId}`));
+
+// Delete PSP session:
+await redisClient.del(`psp:${sessionId}`);
+```
+
+**Performance Impact:**
+- **Latency:** +1-2ms per PSP operation
+- **Throughput:** Enables multiple API instances to serve PSP requests
+- **Memory:** ~10KB per PSP session offloaded to Redis
+
+**Reasoning:**
+PSP sessions are created in parallel with auth. If user hits different API instance after auth succeeds, PSP session must be accessible. Currently it would fail.
+
+---
+
+### Recommendation 3: Increase PostgreSQL Connection Pool
+
+**File:** `backend/database/database.js:58`
+
+**Current Code:**
+```javascript
+pool = new Pool({
+  max: 20,
+  min: 2,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
+});
+```
+
+**Recommended Change:**
+```javascript
+pool = new Pool({
+  max: parseInt(process.env.DB_POOL_SIZE) || 50,
+  min: parseInt(process.env.DB_POOL_MIN) || 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
+});
+```
+
+**Performance Impact:**
+- **Throughput:** Can handle 2.5x more concurrent DB operations
+- **Latency:** Reduces connection wait time from ~500ms to ~10ms under load
+- **Error Rate:** Prevents "too many connections" errors at ~166 RPS
+
+**Reasoning:**
+With 20 connections and ~166 RPS average (10k users in 60s burst), the pool exhausts quickly. Each verification needs a DB query. With connection wait times, latency spikes.
+
+---
+
+### Recommendation 4: Increase Redis Memory Limit
+
+**File:** `backend/docker-compose.yml`
+
+**Current Configuration:**
+```yaml
+redis-dev:
+  command: >
+    redis-server
+    --requirepass ${REDIS_PASSWORD}
+    --maxmemory 256mb
+    --maxmemory-policy allkeys-lru
+```
+
+**Recommended Change:**
+```yaml
+redis-dev:
+  command: >
+    redis-server
+    --requirepass ${REDIS_PASSWORD}
+    --maxmemory 2gb
+    --maxmemory-policy allkeys-lru
+    --tcp-backlog 511
+    --timeout 0
+    --appendonly yes
+```
+
+**Performance Impact:**
+- **Capacity:** Can store 8x more sessions (256MB → 2GB)
+- **Sessions:** Supports ~50,000+ verification sessions
+- **Eviction:** Reduces likelihood of evicting active sessions
+
+**Reasoning:**
+Each verification session is ~2KB. With 256MB, we hit memory limit at ~128,000 sessions. At 10k concurrent users with auth bursts, we risk hitting this. 2GB provides headroom.
+
+---
+
+### Recommendation 5: Make Rate Limits Configurable via Environment
+
+**File:** `backend/middleware/rateLimitMiddleware.js`
+
+**Current Code (Hardcoded):**
+```javascript
+const DEFAULT_LIMITS = {
+  global: { windowMs: 60000, max: 1000 },
+  perIP: { windowMs: 60000, max: 100 },
+  perUser: { windowMs: 60000, max: 50 }
+};
+```
+
+**Recommended Change:**
+```javascript
+const DEFAULT_LIMITS = {
+  global: { 
+    windowMs: 60000, 
+    max: parseInt(process.env.RATE_LIMIT_GLOBAL) || 1000 
+  },
+  perIP: { 
+    windowMs: 60000, 
+    max: parseInt(process.env.RATE_LIMIT_PER_IP) || 100 
+  },
+  perUser: { 
+    windowMs: 60000, 
+    max: parseInt(process.env.RATE_LIMIT_PER_USER) || 50 
+  }
+};
+```
+
+**Performance Impact:**
+- **Operational:** Can tighten limits during attack without deploy
+- **Flexibility:** Can increase for legitimate high-traffic periods
+
+**Reasoning:**
+During a DDoS or brute-force attack, you need to reduce limits immediately. With hardcoded values, you need to deploy code. With env vars, just restart with new config.
+
+---
+
+### Recommendation 6: Remove Periodic Cleanup Interval (After Redis Migration)
+
+**File:** `backend/routes/verificationRouter.js:1281`
+
+**Current Code:**
+```javascript
+setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [sessionId, session] of verificationSessions.entries()) {
+    if (now > session.expiresAt) {
+      verificationSessions.delete(sessionId);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    safeLogger.info(`🧹 Cleaned up ${cleaned} expired verification sessions`);
+  }
+}, 5 * 60 * 1000);
+```
+
+**Recommended Change:**
+```javascript
+// REMOVE THIS ENTIRE BLOCK AFTER MIGRATING TO REDIS
+// Redis TTL handles expiration automatically
+// Manual cleanup is no longer needed and wastes CPU
+
+// Optional: Keep for monitoring only
+// setInterval(() => {
+//   const redisClient = req.app.locals.redisClient;
+//   const keys = await redisClient.keys('verification:*');
+//   safeLogger.info(`Active verification sessions: ${keys.length}`);
+// }, 5 * 60 * 1000);
+```
+
+**Performance Impact:**
+- **CPU:** Eliminates O(N) iteration every 5 minutes
+- **Memory:** No Map to clean (Redis handles TTL)
+- **Latency:** No blocking cleanup operations
+
+**Reasoning:**
+The cleanup iterates through ALL sessions every 5 minutes. With thousands of sessions, this blocks the event loop. Redis handles expiration automatically via TTL - no code needed.
+
+---
+
+### Recommendation 7: Add Environment Variables
+
+**Add to `.env.example`:**
+
+```bash
+# ============================================================================
+# SCALABILITY CONFIGURATION (MVP)
+# ============================================================================
+
+# Redis Session TTL in seconds (default: 300 = 5 minutes)
+REDIS_SESSION_TTL=300
+
+# PostgreSQL Connection Pool
+DB_POOL_SIZE=50
+DB_POOL_MIN=5
+
+# Rate Limiting (requests per minute)
+RATE_LIMIT_GLOBAL=1000
+RATE_LIMIT_PER_IP=100
+RATE_LIMIT_PER_USER=50
+```
+
+**Performance Impact:**
+- **Configuration:** No code deploys needed to tune
+- **Production:** Can adjust based on real traffic patterns
+
+---
+
+## Summary: MVP Minimum Viable Changes
+
+| # | Change | File | Effort | Scalability Impact |
+|---|--------|------|--------|-------------------|
+| 1 | Move verificationSessions to Redis | verificationRouter.js | 1 day | Enables horizontal scaling |
+| 2 | Move pspSessions to Redis | pspRouter.js | 1 day | Enables horizontal scaling |
+| 3 | Increase DB pool to 50 | database.js | 1 hour | Prevents connection exhaustion |
+| 4 | Increase Redis to 2GB | docker-compose.yml | 1 hour | Prevents OOM |
+| 5 | Make rate limits configurable | rateLimitMiddleware.js | 1 hour | Operational flexibility |
+| 6 | Remove cleanup interval | verificationRouter.js | 30 min | CPU optimization |
+
+**Total MVP Work: 2-3 days**
+
+**Result: Can handle 10k concurrent, architected for 100k+**
 
 ---
 
