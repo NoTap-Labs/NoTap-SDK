@@ -42,7 +42,7 @@ private fun isMockLocationEnabled(context: Context): Boolean
 ---
 
 #### 2. SecurityPolicy Framework (NEW FILE)
-**File:** `sdk/src/commonMain/kotlin/com/zeropay/sdk/security/SecurityPolicy.kt`
+**File:** `sdk/src/androidMain/kotlin/com/zeropay/sdk/security/SecurityPolicy.kt`
 
 **Features:**
 - ✅ Graduated response system (5 action levels)
