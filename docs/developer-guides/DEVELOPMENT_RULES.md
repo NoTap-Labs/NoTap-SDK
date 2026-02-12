@@ -48,7 +48,41 @@ SDK is single source of truth. Both enrollment and merchant use SDK functions.
 
 ---
 
-## 6. Test-Driven Development & Test Maintenance (CRITICAL)
+## 6. Logging (CRITICAL - Security)
+
+**NEVER use `console.log`, `console.error`, or `console.warn` in backend code.**
+
+- ❌ `console.log('User logged in', uuid)` - Exposes PII in logs
+- ❌ `console.error('Failed:', err)` - Inconsistent error handling
+- ✅ Use `logger` from `./utils/logger` for all logging
+- ✅ `logger.info('User logged in', { uuid: uuid.slice(0, 8) })` - Structured
+- ✅ `logger.error('Failed to authenticate', { error: err.message })` - Safe
+- ✅ `logger.debug('Request details', { body: req.body })` - Disabled in prod
+
+### Why:
+- `logger.debug()` is DISABLED in production (NODE_ENV=production)
+- `console.*` always outputs, exposing UUIDs, IPs, tokens to logs
+- Structured logging enables log analysis without PII exposure
+
+### Migration:
+```bash
+# Use the automated script:
+./scripts/replace-console-log.sh <file>
+
+# Or manually replace:
+const logger = require('./utils/logger');
+console.log('...') → logger.info/debug('...')
+console.error('...') → logger.error('...')
+console.warn('...') → logger.warn('...')
+```
+
+### Legacy exceptions (tests only):
+- Test files (`*.test.js`) may use `console.*` for test output
+- Standalone CLI scripts may use `console.*` for user output
+
+---
+
+## 7. Test-Driven Development & Test Maintenance (CRITICAL)
 
 **Every code change MUST update ALL related tests IMMEDIATELY.**
 
