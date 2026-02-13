@@ -82,6 +82,38 @@ console.warn('...') → logger.warn('...')
 
 ---
 
+## 7. No Inline Tests (CRITICAL)
+
+**NEVER include test code inside production source files.**
+
+- ❌ `if (require.main === module) { ... tests ... }` - Inline test block
+- ❌ `module.exports = { validate, _test: { ... } }` - Test helpers in production
+- ✅ Tests go in `backend/tests/<ModuleName>.test.js`
+- ✅ Run tests with: `npm test`
+
+### Why:
+- Bloats production code
+- Makes code harder to review
+- Mixes concerns (production vs testing)
+- Violates single responsibility principle
+
+### How to detect:
+```bash
+# Find inline test blocks
+grep -r "require.main === module" backend/
+grep -r "if \(require.main" backend/
+
+# Find test helpers in production
+grep -r "_test:" backend/
+```
+
+### If found:
+1. Create proper test file in `backend/tests/`
+2. Move test logic to the new test file
+3. Remove inline test block from source file
+
+---
+
 ## 7. Test-Driven Development & Test Maintenance (CRITICAL)
 
 **Every code change MUST update ALL related tests IMMEDIATELY.**
