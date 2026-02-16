@@ -491,3 +491,72 @@ Every commit that changes code MUST also update:
 - NEVER create .md files in repository root (only README.md, CLAUDE.md, LICENSE allowed)
 - All documentation → `documentation/[XX-folder]/` with UPPER_SNAKE_CASE naming
 - Full routing rules: `documentation/10-internal/DOCUMENTATION_ROUTING_RULES.md`
+
+---
+
+## 12. Scalability & Modular Development (CRITICAL)
+
+**ALWAYS build with scaling in mind. The system must support plug-and-play infrastructure providers.**
+
+### Provider Abstraction (MANDATORY for New Code)
+
+**When adding new infrastructure dependencies, ALWAYS use the abstraction layer:**
+
+| Use This | Not This |
+|----------|----------|
+| `req.app.locals.cacheService` | Direct `redisClient` calls |
+| `ICacheService` interface | Provider-specific Redis commands |
+| `IDatabaseService` interface | Direct `pg` Pool calls |
+| `ServiceFactory.createCacheService()` | `new RedisCacheService()` |
+
+### Why:
+- Switch cache providers (Redis → KeyDB → Memcached) without code changes
+- Switch database providers (PostgreSQL → MySQL → CockroachDB) without code changes
+- Enable horizontal scaling (sessions in shared Redis, not in-memory Maps)
+
+### How to Use Cache Service:
+
+```javascript
+// ❌ FORBIDDEN - Direct Redis, hard to swap
+const redisClient = req.app.locals.redisClient;
+await redisClient.setEx(`session:${id}`, 300, data);
+
+// ✅ REQUIRED - Use abstraction layer
+const cacheService = req.app.locals.cacheService;
+await cacheService.setSession(id, data, 300);
+```
+
+### Session Storage Rules:
+
+- ❌ `const sessions = new Map()` — Not shared across API instances
+- ✅ `cacheService.setSession()` — Stored in Redis, shared across instances
+
+### New Provider Adapters:
+
+When adding support for a new provider:
+1. Create adapter in `backend/services/cache/` or `backend/services/database/`
+2. Implement `ICacheService` or `IDatabaseService` interface
+3. Add to `ServiceFactory.js`
+4. Document in `documentation/04-architecture/PROVIDER_ABSTRACTION.md`
+
+### Environment Variables Pattern:
+
+```bash
+# Provider switching (already implemented)
+CACHE_PROVIDER=redis    # redis, memory, keydb, memcached
+DB_PROVIDER=postgresql  # postgresql, mysql, cockroachdb
+```
+
+### Scaling Checklist (Before EVERY Commit)
+
+- [ ] Are new sessions stored in cacheService (not Map)?
+- [ ] Are database queries using abstraction (not direct pg)?
+- [ ] Is connection pool configurable via env vars?
+- [ ] Are rate limits configurable?
+- [ ] Can this provider be swapped without code changes?
+
+### Key Files:
+- `backend/services/ServiceFactory.js` - Provider creation
+- `backend/services/cache/ICacheService.js` - Cache interface
+- `backend/services/database/IDatabaseService.js` - Database interface
+- `documentation/04-architecture/PROVIDER_ABSTRACTION.md` - Full guide

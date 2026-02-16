@@ -858,3 +858,301 @@ RATE_LIMIT_PER_USER=50
 - [Security Audit](../05-security/SECURITY_AUDIT.md)
 - [Development Rules](../03-developer-guides/DEVELOPMENT_RULES.md)
 - [Testing Architecture](../07-testing/TEST_ARCHITECTURE.md)
+- [Provider Abstraction](./PROVIDER_ABSTRACTION.md)
+
+---
+
+# APPENDIX: Infrastructure Scaling (Phase 2+)
+
+> This section documents infrastructure requirements for 50k-100k+ concurrent users.
+
+---
+
+## Phase 2: Redis Cluster
+
+### When Required
+
+- **50k+ concurrent users**
+- **High availability** required (tolerate node failures)
+- **Memory needs** exceed single Redis instance
+
+### Configuration
+
+```yaml
+# docker-compose.redis-cluster.yml
+version: '3.8'
+
+services:
+  redis-node-1:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7001:7001"
+    volumes:
+      - redis1:/data
+
+  redis-node-2:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7002:7002"
+    volumes:
+      - redis2:/data
+
+  redis-node-3:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7003:7003"
+    volumes:
+      - redis3:/data
+
+volumes:
+  redis1:
+  redis2:
+  redis3:
+```
+
+### Environment Variables
+
+```bash
+# Redis Cluster
+REDIS_CLUSTER_ENABLED=true
+REDIS_CLUSTER_NODES=redis-node-1:7001,redis-node-2:7002,redis-node-3:7003
+```
+
+### Code Changes
+
+Update `ServiceFactory.js` to detect cluster mode:
+
+```javascript
+if (process.env.REDIS_CLUSTER_ENABLED === 'true') {
+  const cluster = new Redis.Cluster([
+    { host: 'redis-node-1', port: 7001 },
+    { host: 'redis-node-2', port: 7002 },
+    { host: 'redis-node-3', port: 7003 }
+  ]);
+  return new RedisClusterCacheService(cluster);
+}
+```
+
+---
+
+## Phase 2: PgBouncer
+
+### When Required
+
+- **Database connection exhaustion** at high load
+- **100+ concurrent requests** hitting database
+- **Cost reduction** (fewer PostgreSQL connections)
+
+### Configuration
+
+```yaml
+# docker-compose.pgbouncer.yml
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 25
+      MIN_POOL_SIZE: 5
+    ports:
+      - "6432:5432"
+```
+
+### Pool Modes
+
+| Mode | Use Case | Trade-off |
+|------|----------|-----------|
+| `session` | Legacy apps, prepared statements | More connections |
+| `transaction` | **Recommended** for NoTap | Best for connection pooling |
+| `statement` | Rarely needed | Most aggressive, breaks some apps |
+
+### Environment Variables
+
+```bash
+# PgBouncer
+PGBOUNCER_HOST=localhost
+PGBOUNCER_PORT=6432
+PGBOUNCER_POOL_MODE=transaction
+
+# Application connects to PgBouncer instead of PostgreSQL
+DATABASE_URL=postgresql://user:pass@pgbouncer:6432/zeropay
+```
+
+---
+
+## Phase 2: PostgreSQL Read Replica
+
+### When Required
+
+- **Read-heavy workload** (verification checks vs writes)
+- **50k+ concurrent users**
+- **Geographic distribution** (replicas in multiple regions)
+
+### Architecture
+
+```
+                    ┌──────────────┐
+                    │   Primary    │
+                    │ PostgreSQL   │
+                    │   :5432      │
+                    └──────┬───────┘
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+       ┌──────▼──────┐          ┌──────▼──────┐
+       │   Read      │          │   Read      │
+       │  Replica 1 │          │  Replica 2  │
+       │   :5432     │          │   :5433     │
+       └─────────────┘          └─────────────┘
+```
+
+### Implementation
+
+The application already has `PgReadReplicaService`:
+
+```javascript
+const { PgReadReplicaService } = require('./services/database/PgReadReplicaService');
+
+const replicaService = new PgReadReplicaService(database.pool, {
+  replicaUrl: process.env.DB_REPLICA_URL
+});
+
+// Reads go to replica (faster)
+const user = await replicaService.read('SELECT * FROM users WHERE uuid = $1', [uuid]);
+
+// Writes go to primary (required)
+await replicaService.write('UPDATE users SET last_login = NOW() WHERE uuid = $1', [uuid]);
+```
+
+### Environment Variables
+
+```bash
+# PostgreSQL Read Replica
+DB_REPLICA_URL=postgresql://user:pass@replica-host:5432/zeropay
+DB_REPLICA_POOL_MAX=10
+DB_REPLICA_POOL_MIN=2
+```
+
+---
+
+## Phase 2: Async Audit Logging
+
+### When Required
+
+- **High transaction volume** (1000+ verifications/minute)
+- **Database load** from synchronous audit inserts
+- **Compliance** requires guaranteed audit logging
+
+### Implementation
+
+The application already has `AsyncAuditService`:
+
+```javascript
+const { AsyncAuditService } = require('./services/AsyncAuditService');
+
+const auditService = new AsyncAuditService(cacheService, dbService, {
+  bufferSize: 100,        // Flush when buffer reaches 100
+  flushInterval: 5000     // Or every 5 seconds
+});
+
+// Non-blocking - returns immediately
+await auditService.log({
+  uuid: userUuid,
+  action: 'VERIFICATION_COMPLETE',
+  ipAddress: req.ip,
+  details: { factors: ['PIN', 'EMOJI'], success: true }
+});
+```
+
+### Environment Variables
+
+```bash
+# Async Audit
+AUDIT_BUFFER_SIZE=100
+AUDIT_FLUSH_INTERVAL=5000
+```
+
+---
+
+## Phase 3: Horizontal API Scaling
+
+### Load Balancer Setup
+
+```yaml
+# docker-compose.traefik.yml
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.network=backend"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    networks:
+      - backend
+
+  api-1:
+    build: .
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - DATABASE_URL=postgres://user:pass@pgbouncer:6432/zeropay
+    networks:
+      - backend
+
+  api-2:
+    build: .
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - DATABASE_URL=postgres://user:pass@pgbouncer:6432/zeropay
+    networks:
+      - backend
+```
+
+### Session Affinity
+
+With Redis-backed sessions, API instances can be stateless:
+- Any API instance can handle any request
+- Sessions stored in shared Redis
+- Add/remove instances without configuration
+
+---
+
+## Infrastructure Checklist
+
+| Phase | Users | Components | Effort |
+|-------|-------|-----------|--------|
+| MVP | 10k | Single Redis, Single PG | ✅ Done |
+| Phase 2 | 50k | Redis Cluster, PgBouncer, Read Replica | 2-3 days |
+| Phase 3 | 100k+ | Load Balancer, Multiple API Instances | 1 week |
+
+---
+
+## Monitoring Metrics
+
+### Key Metrics to Track
+
+| Metric | Alert Threshold | Action |
+|--------|----------------|--------|
+| Redis memory | > 80% | Scale to cluster or optimize |
+| DB connections | > 80% | Add PgBouncer |
+| API response time | > 500ms | Profile and optimize |
+| Session not found | > 1% | Check Redis connectivity |
+
+### Recommended Tools
+
+- **Redis**: `redis-cli INFO memory`
+- **PostgreSQL**: `SELECT * FROM pg_stat_activity`
+- **API**: Prometheus + Grafana
+
