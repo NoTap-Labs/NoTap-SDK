@@ -1,6 +1,6 @@
 # Security Patterns Reference
 
-**Last Updated:** 2026-02-09
+**Last Updated:** 2026-02-20
 
 This document contains all mandatory security patterns for NoTap development. Following these patterns is NON-NEGOTIABLE.
 
@@ -24,16 +24,28 @@ This document contains all mandatory security patterns for NoTap development. Fo
 **Purpose:** Prevent timing attacks that can leak secret data bit-by-bit.
 
 ```kotlin
-// ✅ CORRECT
+// ✅ CORRECT - True constant-time with NO early returns
 fun constantTimeEquals(a: ByteArray, b: ByteArray): Boolean {
-    if (a.size != b.size) return false
+    val sizeMatch = a.size == b.size  // Compare without branching
+    var result = 0
+    val minLength = minOf(a.size, b.size)
+    // Always iterate — do NOT exit early
+    for (i in 0 until minLength) {
+        result = result or (a[i].toInt() xor b[i].toInt())
+    }
+    return sizeMatch && result == 0  // Single final comparison
+}
+
+// ❌ WRONG - Timing attack vulnerability (early return on size mismatch)
+fun insecureEquals(a: ByteArray, b: ByteArray): Boolean {
+    if (a.size != b.size) return false  // LEAKS SIZE VIA TIMING
     var result = 0
     for (i in a.indices) result = result or (a[i].toInt() xor b[i].toInt())
     return result == 0
 }
 
-// ❌ WRONG - Timing attack vulnerability
-if (digest1.contentEquals(digest2)) { ... }
+// ❌ WRONG - Timing attack vulnerability (short-circuit on first byte)
+if (digest1.contentEquals(digest2)) { ... }  // Early exit on first mismatch
 ```
 
 **When to use:**
