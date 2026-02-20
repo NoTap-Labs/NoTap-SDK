@@ -80,6 +80,21 @@ console.warn('...') → logger.warn('...')
 - Test files (`*.test.js`) may use `console.*` for test output
 - Standalone CLI scripts may use `console.*` for user output
 
+### Avoiding False Positives in Compliance Scans
+
+**Descriptive logging is safe**, but avoid sensitive keywords when possible:
+- ✅ `logger.error('Authentication failed:', error);` (generic, safe)
+- ⚠️ `logger.error('Password reset error:', error);` (triggers agent but safe — not logging actual password)
+- ❌ `logger.error('Password:', password);` (actual leak — FORBIDDEN)
+
+**If flagged by pre-push agent:**
+1. Verify you're NOT logging actual secret values
+2. If it's just descriptive text (endpoint name, error context), it's a false positive
+3. Consider rewording to avoid triggers: "reset-password" → "credential reset", "API key" → "API credential"
+4. NEVER log actual values: passwords, tokens, secrets, API keys, digests, biometrics
+
+**The rule:** Log context, never content. Log "authentication failed" not "password=abc123".
+
 ---
 
 ## 7. No Inline Tests (CRITICAL)
@@ -641,3 +656,201 @@ await cacheService.setSession(sessionId, data, 300);
 - `backend/services/cache/HybridCacheService.js` - Hybrid Redis + PostgreSQL
 - `backend/services/ServiceFactory.js` - Provider factory
 - `documentation/04-architecture/REDIS_HYBRID_ARCHITECTURE.md` - Full guide
+
+---
+
+## 14. Redis Data Retention (CRITICAL - GDPR Compliance)
+
+**NEVER call .set() without expiry — ALL data must have TTL.**
+
+**Rule:** Every Redis key containing user data MUST have an expiration (TTL). No exceptions.
+
+- ❌ `redis.set(key, value)` — GDPR violation (no expiration)
+- ✅ `redis.setEx(key, ttlSeconds, value)` — Compliant
+- ✅ `redis.set(key, value, 'EX', ttlSeconds)` — Compliant
+
+### Why (Legal Requirement):
+
+- **GDPR Article 5(1)(e) "Storage Limitation"** — Data must be deleted when no longer needed
+- **CCPA Section 1798.105** — Right to deletion
+- **PIPEDA Principle 4.5** — Retention limits required
+- Personal data cannot persist indefinitely in cache
+
+**Violation consequences:**
+- Pre-push agent BLOCKS deployment
+- GDPR fines up to €20M or 4% revenue
+- Legal liability for data breaches
+
+### Default TTLs (Use as Guidelines):
+
+| Data Type | TTL | Env Var | Reason |
+|-----------|-----|---------|--------|
+| **Session data** | 300-900s (5-15 min) | `SESSION_TTL` | Active use only |
+| **Factor digests** | 86400s (24 hours) | N/A | Daily rotation |
+| **Audit logs** | 7776000s (90 days) | `AUDIT_LOG_RETENTION_DAYS` | Compliance requirement |
+| **Verification sessions** | 300s (5 min) | `VERIFICATION_SESSION_TTL` | Transaction window |
+| **Rate limit counters** | 3600s (1 hour) | N/A | Rolling window |
+| **Nonces** | 300s (5 min) | `NONCE_TTL` | Replay protection |
+
+### Code Pattern (Defensive):
+
+```javascript
+// ✅ CORRECT - TTL is required
+async function cacheUserData(key, data, ttlSeconds) {
+  if (!ttlSeconds || ttlSeconds <= 0) {
+    throw new Error('TTL required for GDPR compliance — all cached data must have expiration');
+  }
+  await redis.setEx(key, ttlSeconds, data);
+}
+
+// ✅ CORRECT - With default TTL
+const DEFAULT_SESSION_TTL = 900; // 15 minutes
+await redis.setEx(`session:${id}`, DEFAULT_SESSION_TTL, sessionData);
+
+// ❌ WRONG - No TTL (will throw error in HybridCacheService/RedisCacheService)
+await redis.set(`session:${id}`, sessionData);  // GDPR violation
+```
+
+### Migration from .set() to .setEx():
+
+```bash
+# Find all .set() calls without TTL
+grep -rn "\.set(" backend/services backend/routes | grep -v "setEx\|'EX'\|'PX'"
+
+# Pattern replacement:
+# Before: await redis.set(key, value);
+# After:  await redis.setEx(key, appropriateTTL, value);
+```
+
+### Detection & Enforcement:
+
+**Pre-push agent checks:**
+```bash
+# Agent 3 (verify-compliance.sh) scans for:
+grep -rE "(redisClient|redis)\.set\(" backend/ | grep -vE "'EX'|'PX'|ttl"
+```
+
+**Blocked if found:**
+- ⛔ Push rejected with GDPR violation warning
+- Must fix before merge
+
+### See Also:
+
+- `documentation/05-security/PRIVACY_IMPLEMENTATION.md` — Full GDPR guide
+- `backend/services/cache/HybridCacheService.js:235` — TTL enforcement implementation
+- `backend/services/cache/RedisCacheService.js:75` — TTL enforcement implementation
+
+---
+
+## 15. Constant-Time Security Functions (CRITICAL - Timing Attacks)
+
+**NEVER create private copies of security functions.**
+
+**Rule:** Security-critical functions MUST have a single canonical implementation. Duplication leads to vulnerable copies, inconsistency, and maintenance burden.
+
+- ❌ `fun privateConstantTimeEquals() { ... }` — Duplication, likely vulnerable
+- ✅ `import com.zeropay.sdk.crypto.ConstantTime` — Canonical source
+
+### Canonical Security Functions (NEVER duplicate):
+
+| Function | Location | Purpose |
+|----------|----------|---------|
+| **ConstantTime.equals()** | `sdk/src/commonMain/kotlin/com/zeropay/sdk/crypto/ConstantTime.kt` | All secret comparisons |
+| **CryptoUtils.generateRandomBytes()** | `sdk/src/commonMain/kotlin/com/zeropay/sdk/crypto/CryptoUtils.kt` | All randomness |
+| **CryptoUtils.shuffleSecure()** | `sdk/src/commonMain/kotlin/com/zeropay/sdk/crypto/CryptoUtils.kt` | Sensitive array shuffling |
+| **CryptoUtils.generateNonce()** | `sdk/src/commonMain/kotlin/com/zeropay/sdk/crypto/CryptoUtils.kt` | Nonce generation |
+| **constantTimeCompare()** (Backend) | `backend/utils/constantTimeCompare.js` | All string/token comparisons (Node.js) |
+
+### Why Single Source of Truth:
+
+1. **Security consistency** — One fix applies everywhere, no vulnerable copies
+2. **Audit efficiency** — Security review in one place
+3. **No drift** — Can't accidentally reintroduce vulnerabilities
+4. **Documentation clarity** — Clear canonical reference in SECURITY_PATTERNS_REFERENCE.md
+5. **Testing** — One implementation = thorough testing, not scattered edge cases
+
+### What NOT to Do:
+
+```kotlin
+// ❌ WRONG - Private vulnerable copy
+object MyFactor {
+    // This will likely be vulnerable (early return on size, etc.)
+    private fun constantTimeEquals(a: ByteArray, b: ByteArray): Boolean {
+        if (a.size != b.size) return false  // Timing leak!
+        var result = 0
+        for (i in a.indices) result = result or (a[i].toInt() xor b[i].toInt())
+        return result == 0
+    }
+
+    fun verify(input: String, storedDigest: ByteArray): Boolean {
+        val computed = digest(input)
+        return constantTimeEquals(computed, storedDigest)  // Using private copy
+    }
+}
+```
+
+### What TO Do:
+
+```kotlin
+// ✅ CORRECT - Import canonical implementation
+import com.zeropay.sdk.crypto.ConstantTime
+
+object MyFactor {
+    fun verify(input: String, storedDigest: ByteArray): Boolean {
+        val computed = digest(input)
+        return ConstantTime.equals(computed, storedDigest)  // Canonical source
+    }
+}
+```
+
+### Detection (Pre-Commit):
+
+```bash
+# Find private timing-safe functions (potential duplication)
+grep -rn "fun.*TimeEquals\|fun.*constantTime" sdk/src --include="*.kt"
+
+# Find hardcoded comparisons on secrets (vulnerable pattern)
+grep -rn "\.contentEquals\|===" sdk/src --include="*.kt" | grep -i "digest\|secret\|token"
+
+# Backend (JavaScript)
+grep -rn "===.*apiKey\|!==.*apiKey" backend/ --include="*.js"
+```
+
+### Migration Pattern:
+
+**Before:**
+```kotlin
+// Each factor had its own copy (4 files duplicating same logic)
+private fun constantTimeEquals(a: ByteArray, b: ByteArray): Boolean { ... }
+```
+
+**After:**
+```kotlin
+// All factors import from canonical location (1 audited implementation)
+import com.zeropay.sdk.crypto.ConstantTime
+// Use: ConstantTime.equals(a, b)
+```
+
+### Deprecated Locations:
+
+- ❌ `sdk/src/commonMain/kotlin/com/zeropay/sdk/security/ConstantTime.kt` — Old location, now `@Deprecated`
+- ✅ `sdk/src/commonMain/kotlin/com/zeropay/sdk/crypto/ConstantTime.kt` — New canonical location
+
+**Compiler enforces migration:** Deprecated annotation guides developers to new location.
+
+### Pre-Push Verification:
+
+**Agent 1 (verify-patterns.sh) checks:**
+- No private `constantTime*` functions
+- No `contentEquals()` on digest variables
+- No `===` on secret/token/key variables
+
+**Blocked if found:**
+- ⛔ Push rejected with security pattern violation
+- Must migrate to canonical implementation
+
+### See Also:
+
+- `documentation/05-security/SECURITY_PATTERNS_REFERENCE.md` — Constant-time implementation details
+- `documentation/10-internal/LESSONS_LEARNED.md` — Lesson 51: Constant-Time Unification
+- `documentation/05-security/SECURITY_AUDIT.md` — Part 10: Dead Code Removal (4 files fixed)
