@@ -1,36 +1,35 @@
 # Test Debt Registry
 
-**Last Updated:** 2026-02-18
-**Branch:** `fix/critical-security-consistency-20260218`
-**Status:** 481/496 tests passing (15 failures)
+**Last Updated:** 2026-02-20
+**Status:** 488/496 tests passing (8 flaky timing failures)
 
 ---
 
 ## Summary
 
-| Category | Count | Severity | Action Required |
-|----------|-------|----------|-----------------|
-| Timing Tests | 10 | LOW | Flaky by nature - consider skipping or increasing tolerance |
-| Emoji Tests | 3 | MEDIUM | Emoji parsing edge cases |
-| Processor Tests | 2 | MEDIUM | Additional validation requirements |
+| Category | Count | Severity | Status |
+|----------|-------|----------|--------|
+| Timing Tests | 8-11 (flaky) | LOW | Inherently non-deterministic — pass/fail varies per run |
+| ~~Emoji Tests~~ | ~~3~~ | ~~MEDIUM~~ | **FIXED** (2026-02-20) — splitEmojis bug + test data |
+| ~~Processor Tests~~ | ~~2~~ | ~~MEDIUM~~ | **FIXED** (2026-02-20) — JSON→semicolon format |
+| ~~ColourFactor Tests~~ | ~~2~~ | ~~MEDIUM~~ | **FIXED** (2026-02-20) — MIN_SELECTIONS=4 |
 
 ---
 
-## 1. Timing Tests (10 failures)
+## Timing Tests (8-11 flaky failures)
 
 These tests verify constant-time behavior but are inherently flaky due to:
 - CPU scheduling variance
 - JVM warmup effects
 - Garbage collection pauses
+- WSL2/NTFS overhead
 - Environment-specific timing
 
-### Failed Tests
+### Affected Tests
 
 | Test | File | Issue |
 |------|------|-------|
 | `testSecurity_ConstantTimeVerification` | RhythmTapFactorTest.kt | Timing variance |
-| `testFullAuthenticationFlow_ThreeFactors` | ZeroPaySDKTest.kt | Timing variance |
-| `testFullAuthenticationFlow_TwoFactors` | ZeroPaySDKTest.kt | Timing variance |
 | `testPinFactor_TimingAttackResistance` | ZeroPaySDKTest.kt | Timing variance |
 | `testEmojiVerify_ConstantTime` | EmojiAndColourFactorTest.kt | Timing variance |
 | `testColourVerify_ConstantTime` | EmojiAndColourFactorTest.kt | Timing variance |
@@ -38,6 +37,11 @@ These tests verify constant-time behavior but are inherently flaky due to:
 | `testVerify_ConstantTime_TimingIndependent` | PinFactorTest.kt | Timing variance |
 | `testIsValidPin_ConstantTime_NoEarlyReturn` | PinFactorTest.kt | Timing variance |
 | `testVerify_ConstantTime_TimingIndependent` | WordsFactorTest.kt | Timing variance |
+| `testVerify_ConstantTime_TimingIndependent` | MouseFactorTest.kt | Timing variance |
+| `testVerify_ConstantTime_TimingIndependent` | VoiceFactorTest.kt | Timing variance |
+| `constant-time comparison should *` (x2) | SecurityComprehensiveTest.kt | Timing variance |
+
+**Note:** These fluctuate between 8-11 failures per run. The underlying constant-time code is correct — the tests are measuring JVM timing which is non-deterministic.
 
 ### Recommended Fix
 
@@ -56,56 +60,35 @@ fun testConstantTime() { ... }
 
 ---
 
-## 2. Emoji Tests (3 failures)
+## Fixed Issues (2026-02-20)
 
-Emoji parsing has edge cases with multi-codepoint characters.
+### Emoji Tests (3 failures → 0)
 
-### Failed Tests
+**Root cause:** `EmojiProcessor.splitEmojis()` had a bug at line 268 — when it encountered a consecutive emoji codepoint, it joined it to the current emoji instead of treating it as separate. So `"😀😃😄"` was parsed as 2 emojis instead of 3.
 
-| Test | File | Issue |
-|------|------|-------|
-| `Emoji should accept valid emoji sequence` | FactorValidationTest.kt:167 | Assertion fails |
-| `Emoji should reject too many emojis` | FactorValidationTest.kt:179 | Assertion fails |
-| `Emoji should handle edge case counts` | FactorValidationTest.kt:208 | Assertion fails |
+**Fix:** Removed the `else if (isEmojiCodePoint(nextCodePoint))` branch that incorrectly joined consecutive emojis. Now only ZWJ sequences and modifiers are joined to compound emojis.
 
-### Investigation Needed
+### Processor Tests (2 failures → 0)
 
-1. Check if test emoji strings are valid Unicode
-2. Verify EmojiProcessor.parseEmojis() handles all emoji formats
-3. Test with actual emoji characters vs Unicode escapes
+**Root cause:** Tests passed JSON format (`[{"x":0.1,"y":0.2,"t":0}]`) but `MouseProcessor` and `StylusProcessor` expect semicolon-separated format (`0.1,0.2,0;0.15,0.25,100`).
 
----
+**Fix:** Updated test data in `FactorValidationTest.kt` to use the correct semicolon format.
 
-## 3. Processor Tests (2 failures)
+### ColourFactor Integration Tests (2 failures → 0)
 
-Additional validation requirements not met by test data.
+**Root cause:** `testFullAuthenticationFlow_TwoFactors` and `testFullAuthenticationFlow_ThreeFactors` in `ZeroPaySDKTest.kt` used `listOf(0, 1)` (2 colors) but `ColourFactor.digest()` requires `MIN_SELECTIONS = 4`. These were misclassified as "timing tests" in the original TEST_DEBT.md.
 
-### Failed Tests
-
-| Test | File | Issue |
-|------|------|-------|
-| `MouseProcessor should accept valid mouse pattern` | FactorValidationTest.kt | Validation fails |
-| `StylusProcessor should accept valid stroke data` | FactorValidationTest.kt | Validation fails |
-
-### Investigation Needed
-
-1. Check MIN_PATH_LENGTH requirement
-2. Verify pressure variance calculation for StylusProcessor
-3. Ensure timestamps and coordinates meet all validation rules
+**Fix:** Updated test data to `listOf(0, 1, 2, 3)`.
 
 ---
 
 ## Action Items
 
-### Priority 1 (Before Merge)
-- [ ] Investigate emoji parsing issues
-- [ ] Fix processor validation tests
-
-### Priority 2 (Post-Merge)
-- [ ] Implement statistical timing test approach
+### Priority 1 (Next)
+- [ ] Implement statistical timing test approach (run N iterations, check distribution)
 - [ ] Add timing test category for optional CI skip
 
-### Priority 3 (Technical Debt)
+### Priority 2 (Technical Debt)
 - [ ] Refactor timing tests to use distribution analysis
 - [ ] Add integration tests that verify constant-time behavior statistically
 
@@ -113,9 +96,6 @@ Additional validation requirements not met by test data.
 
 ## Related Files
 
-- `sdk/src/test/kotlin/com/zeropay/sdk/factors/FactorValidationTest.kt`
-- `sdk/src/test/kotlin/com/zeropay/sdk/factors/EmojiFactor AndColourFactorTest.kt`
-- `sdk/src/test/kotlin/com/zeropay/sdk/ZeroPaySDKTest.kt`
-- `sdk/src/commonMain/kotlin/com/zeropay/sdk/factors/processors/EmojiProcessor.kt`
-- `sdk/src/commonMain/kotlin/com/zeropay/sdk/factors/processors/MouseProcessor.kt`
-- `sdk/src/commonMain/kotlin/com/zeropay/sdk/factors/processors/StylusProcessor.kt`
+- `sdk/src/commonMain/kotlin/com/zeropay/sdk/factors/processors/EmojiProcessor.kt` — splitEmojis fix
+- `sdk/src/test/kotlin/com/zeropay/sdk/factors/FactorValidationTest.kt` — Mouse/Stylus format fix
+- `sdk/src/test/kotlin/com/zeropay/sdk/ZeroPaySDKTest.kt` — ColourFactor MIN_SELECTIONS fix
