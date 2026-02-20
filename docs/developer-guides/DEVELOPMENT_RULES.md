@@ -558,5 +558,86 @@ DB_PROVIDER=postgresql  # postgresql, mysql, cockroachdb
 ### Key Files:
 - `backend/services/ServiceFactory.js` - Provider creation
 - `backend/services/cache/ICacheService.js` - Cache interface
+- `backend/services/cache/RedisCacheService.js` - Redis adapter
+- `backend/services/cache/MemoryCacheService.js` - Memory adapter
+- `backend/services/cache/HybridCacheService.js` - Hybrid Redis + PostgreSQL fallback
 - `backend/services/database/IDatabaseService.js` - Database interface
 - `documentation/04-architecture/PROVIDER_ABSTRACTION.md` - Full guide
+- `documentation/04-architecture/REDIS_HYBRID_ARCHITECTURE.md` - Redis hybrid guide
+
+---
+
+## 13. Scalability & High Availability (MANDATORY)
+
+> **Purpose:** Build with scalability in mind from day one. Never create single points of failure.
+
+### Core Principles
+
+| Principle | Description | Implementation |
+|----------|-------------|----------------|
+| **Always Use Abstraction** | Never use direct Redis/DB calls | Use `cacheService` and `dbService` |
+| **Graceful Degradation** | System must work when dependencies fail | PostgreSQL fallback when Redis down |
+| **Horizontal Scaling** | Stateless API instances | Sessions in Redis, not in-memory Maps |
+| **Non-Blocking** | Operations should not block each other | Async operations, connection pools |
+
+### The Hybrid Approach (REQUIRED for Production)
+
+**Use `CACHE_PROVIDER=redis-hybrid` for production:**
+
+```bash
+# .env for production
+CACHE_PROVIDER=redis-hybrid
+POSTGRES_FALLBACK_ENABLED=true
+FALLBACK_RETRY_ATTEMPTS=3
+```
+
+**How it works:**
+1. Try Redis first (fast)
+2. If Redis fails, retry 3 times with exponential backoff
+3. If still failing, fallback to PostgreSQL
+4. Re-populate Redis when recovered
+
+### Direct Redis/DB Access (FORBIDDEN)
+
+```javascript
+// ❌ FORBIDDEN - No fallback, no scalability
+const redisClient = req.app.locals.redisClient;
+const data = await redisClient.get(`enrollment:${uuid}`);
+
+// ✅ REQUIRED - Automatic fallback
+const cacheService = req.app.locals.cacheService;
+const data = await cacheService.get(`enrollment:${uuid}`);
+```
+
+### Session Storage Rules
+
+```javascript
+// ❌ FORBIDDEN - Not shared across instances
+const sessions = new Map();
+
+// ✅ REQUIRED - Shared across all API instances
+await cacheService.setSession(sessionId, data, 300);
+```
+
+### Scaling Checklist (Before EVERY Commit)
+
+- [ ] New sessions use `cacheService.setSession()` not `Map`
+- [ ] No direct `redisClient` calls in routes (use cacheService)
+- [ ] Database queries use `dbService` abstraction
+- [ ] Operations are non-blocking (async/await)
+- [ ] Connection pools are configurable via env vars
+- [ ] Graceful degradation when dependencies fail
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CACHE_PROVIDER` | `redis` | `redis`, `redis-hybrid`, `memory` |
+| `POSTGRES_FALLBACK_ENABLED` | `true` | Enable PostgreSQL fallback |
+| `FALLBACK_RETRY_ATTEMPTS` | `3` | Redis retries before fallback |
+
+### Key Files
+
+- `backend/services/cache/HybridCacheService.js` - Hybrid Redis + PostgreSQL
+- `backend/services/ServiceFactory.js` - Provider factory
+- `documentation/04-architecture/REDIS_HYBRID_ARCHITECTURE.md` - Full guide

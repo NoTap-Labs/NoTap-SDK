@@ -1,8 +1,9 @@
 # ZeroPay Scalability & Concurrency Architecture Review
 
 > **Target:** 100,000+ Concurrent Authentication Sessions
-> **Status:** Analysis Complete
-> **Date:** 2026-02-12
+> **Status:** Updated - Sessions Now Redis-Backed
+> **Last Updated:** 2026-02-18
+> **Original Analysis:** 2026-02-12
 
 ---
 
@@ -12,9 +13,17 @@
 |--------|--------------|------------------------|---------|
 | **Redis** | Single-node, 256MB | Needs clustering | ⚠️ CRITICAL |
 | **PostgreSQL** | Pool: 20 connections | Needs PgBouncer + read replicas | ⚠️ CRITICAL |
-| **Sessions** | In-memory Map | Must move to Redis | ⚠️ CRITICAL |
+| **Sessions** | ~~In-memory Map~~ → Redis-backed via cacheService | ✅ DONE | ✅ FIXED |
 | **Rate Limiting** | O(N) SCAN iteration | Needs optimized counters | ⚠️ CRITICAL |
 | **API Layer** | Single instance | Horizontal scaling ready | ✅ GOOD |
+
+### Recent Fixes (2026-02-18)
+
+| Issue | Status | Fix |
+|-------|--------|-----|
+| In-memory verificationSessions | ✅ FIXED | Now uses `cacheService` (Redis-backed) |
+| In-memory pspSessions | ✅ FIXED | Now uses `cacheService` (Redis-backed) |
+| Direct Redis access | ✅ FIXED | All routes use `cacheService` abstraction |
 
 ---
 
@@ -32,8 +41,8 @@ Replay Protection (Redis) - 1-2 Redis ops
 [INITIATE]
   ├─ Redis: GET enrollment:{uuid} (encrypted digests) ✅
   ├─ Select random factors
-  ├─ Create in-memory session (Map) ⚠️
-  └─ PSP parallel (optional) → Redis
+  ├─ Create session via cacheService → Redis ✅ (FIXED)
+  └─ PSP parallel (optional) → Redis ✅ (FIXED)
     ↓
 [VERIFY]
   ├─ Redis: GET enrollment:{uuid} 
@@ -178,25 +187,32 @@ This is IMPOSSIBLE - connections will exhaust immediately.
 
 ## 6. State Management Analysis
 
-### CRITICAL ISSUE: In-Memory Sessions
+### ✅ FIXED: Sessions Now Redis-Backed
 
+**Previous Issue:**
+```javascript
+// verificationRouter.js:82 (DEPRECATED)
+// const verificationSessions = new Map();  // ← CRITICAL SCALABILITY BUG
+```
+
+**Current Implementation:**
 ```javascript
 // verificationRouter.js:82
-const verificationSessions = new Map();  // ← CRITICAL SCALABILITY BUG
+// const verificationSessions = new Map(); // DEPRECATED - using cacheService instead
+
+// Sessions now stored via cacheService abstraction (Redis-backed)
+await cacheService.setSession(sessionId, session, 300);
 ```
 
-**Problems:**
-1. Sessions stored in single process memory
-2. Not shared across API instances
-3. Lost on instance restart
-4. Cannot scale horizontally
+**Fix Applied:** Sessions now use `cacheService` abstraction which provides:
+1. ✅ Redis-backed storage (shared across instances)
+2. ✅ Automatic TTL management
+3. ✅ PostgreSQL fallback (HybridCacheService)
+4. ✅ Horizontal scaling enabled
 
-**Required Fix:** Move to Redis with TTL
-
-```javascript
-// Should be:
-await redisClient.setEx(`verification:${sessionId}`, 300, JSON.stringify(session));
-```
+**Files Fixed:**
+- `verificationRouter.js:86` - verificationSessions deprecated
+- `pspRouter.js:42` - pspSessions deprecated
 
 ---
 
@@ -205,7 +221,7 @@ await redisClient.setEx(`verification:${sessionId}`, 300, JSON.stringify(session
 ### Current Architecture
 
 - Single Express server instance
-- In-memory session storage (blocks horizontal scaling)
+- ~~In-memory session storage (blocks horizontal scaling)~~ → ✅ Redis-backed via cacheService
 - Single Redis node (blocks scaling)
 - Single PostgreSQL (read/write)
 
@@ -213,28 +229,29 @@ await redisClient.setEx(`verification:${sessionId}`, 300, JSON.stringify(session
 
 | Component | Status |
 |-----------|--------|
-| API layer | ✅ Ready (stateless except sessions) |
+| API layer | ✅ Ready (stateless) |
 | Rate limiting | ✅ Ready (Redis-backed) |
-| Session tokens | ✅ Ready (Redis-backed when fixed) |
-| Verification sessions | ❌ Blocks scaling |
-| Redis node | ❌ Blocks scaling |
-| PostgreSQL | ❌ Blocks scaling |
+| Session tokens | ✅ Ready (Redis-backed) |
+| Verification sessions | ✅ Ready (Redis-backed via cacheService) |
+| PSP sessions | ✅ Ready (Redis-backed via cacheService) |
+| Redis node | ⚠️ Single node (needs clustering for HA) |
+| PostgreSQL | ⚠️ Pool = 20 (needs increase + PgBouncer) |
 
 ---
 
 ## 8. Bottleneck Identification
 
-### Ranked Bottlenecks
+### Ranked Bottlenecks (Updated 2026-02-18)
 
-| # | Bottleneck | Location | Severity | Impact |
-|---|------------|----------|----------|--------|
-| 1 | **In-memory sessions** | verificationRouter.js:82 | 🔴 CRITICAL | Blocks horizontal scaling entirely |
-| 2 | **Single Redis node** | docker-compose.yml | 🔴 CRITICAL | No fault tolerance, memory limit |
-| 3 | **PostgreSQL pool = 20** | database.js:58 | 🔴 CRITICAL | Connection exhaustion at scale |
-| 4 | **Sync audit logging** | database.js:351 | 🔴 CRITICAL | 1,666 writes/sec will block |
-| 5 | **Rate limit SCAN** | rateLimitMiddleware.js:721 | 🟡 HIGH | O(N) iteration problematic |
-| 6 | **No PgBouncer** | Infrastructure | 🟡 HIGH | Connection overhead |
-| 7 | **CPU crypto ops** | Double decryption | 🟡 HIGH | PBKDF2 is CPU-intensive |
+| # | Bottleneck | Location | Severity | Impact | Status |
+|---|------------|----------|----------|--------|--------|
+| 1 | ~~In-memory sessions~~ | ~~verificationRouter.js:82~~ | ~~🔴 CRITICAL~~ | ~~Blocks horizontal scaling~~ | ✅ FIXED |
+| 2 | **Single Redis node** | docker-compose.yml | 🔴 CRITICAL | No fault tolerance, memory limit | OPEN |
+| 3 | **PostgreSQL pool = 20** | database.js:58 | 🔴 CRITICAL | Connection exhaustion at scale | OPEN |
+| 4 | **Sync audit logging** | database.js:351 | 🟡 HIGH | 1,666 writes/sec will block | OPEN |
+| 5 | **Rate limit SCAN** | rateLimitMiddleware.js:721 | 🟡 HIGH | O(N) iteration problematic | OPEN |
+| 6 | **No PgBouncer** | Infrastructure | 🟡 HIGH | Connection overhead | OPEN |
+| 7 | **CPU crypto ops** | Double decryption | 🟡 MEDIUM | PBKDF2 is CPU-intensive | ACCEPTED |
 
 ---
 

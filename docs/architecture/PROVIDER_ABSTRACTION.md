@@ -295,4 +295,314 @@ Before every commit, verify:
 ## Related Documentation
 
 - [SCALABILITY_ANALYSIS.md](./SCALABILITY_ANALYSIS.md) - Performance analysis and recommendations
+- [REDIS_HYBRID_ARCHITECTURE.md](./REDIS_HYBRID_ARCHITECTURE.md) - Redis Cluster + PostgreSQL fallback
 - [DEVELOPMENT_RULES.md](../03-developer-guides/DEVELOPMENT_RULES.md) - Section 12: Scalability Rules
+
+---
+
+# Redis Hybrid Architecture Guide
+
+> **Purpose:** High-availability Redis with horizontal scaling and automatic failover.
+
+---
+
+## Overview
+
+The hybrid Redis architecture provides:
+- **Horizontal Scaling**: Redis Cluster for 100k+ users
+- **Automatic Failover**: Sentinel-based automatic failover
+- **Graceful Degradation**: PostgreSQL fallback when Redis is unavailable
+- **Pluggable Design**: Add new providers without code changes
+
+---
+
+## Architecture Comparison
+
+| Configuration | Users | Failover | Complexity | Use Case |
+|--------------|-------|----------|------------|----------|
+| Single Redis | 10k | ❌ | Low | Dev/Test |
+| Redis + Sentinel | 50k | ✅ | Medium | Small Prod |
+| Redis Cluster | 100k+ | ⚠️ | High | Large Prod |
+| **Cluster + Sentinel** | **100k+** | ✅ | High | **Production** |
+
+---
+
+## Hybrid Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    API Request                                   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Cache Service Layer                            │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  HybridCacheService (Primary)                           │    │
+│  │  1. Try Redis Cluster (fast)                           │    │
+│  │  2. If Redis fails → Try PostgreSQL fallback           │    │
+│  │  3. Re-populate Redis when recovered                   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+    ┌──────────┐    ┌──────────────┐  ┌──────────┐
+    │  Redis   │    │ PostgreSQL   │  │  Cache   │
+    │ Cluster  │───▶│  Fallback    │◀─│  Miss    │
+    │(Primary) │    │  (Secondary) │  │          │
+    └──────────┘    └──────────────┘  └──────────┘
+```
+
+---
+
+## Environment Variables
+
+### Redis Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS_CLUSTER_ENABLED` | `false` | Enable Redis Cluster mode |
+| `REDIS_CLUSTER_NODES` | - | Comma-separated cluster nodes |
+| `REDIS_SENTINEL_ENABLED` | `false` | Enable Sentinel failover |
+| `REDIS_SENTINEL_MASTER` | `mymaster` | Sentinel master name |
+| `REDIS_SENTINEL_NODES` | - | Comma-separated sentinel nodes |
+
+### Fallback Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_FALLBACK_ENABLED` | `true` | Enable PostgreSQL fallback |
+| `POSTGRES_FALLBACK_CACHE` | `true` | Cache to PostgreSQL on Redis miss |
+| `FALLBACK_RETRY_ATTEMPTS` | `3` | Retry Redis before fallback |
+
+---
+
+## Usage
+
+### Using Hybrid Cache Service
+
+```javascript
+// ✅ RECOMMENDED - Uses hybrid with fallback
+const cacheService = req.app.locals.cacheService;
+
+// Automatic: Try Redis first, fallback to PostgreSQL
+const session = await cacheService.getSession(sessionId);
+
+// Automatic: Write to both Redis and PostgreSQL
+await cacheService.setSession(sessionId, data, 300);
+```
+
+### Direct Redis (When Needed)
+
+```javascript
+// For operations that MUST use Redis (e.g., rate limiting)
+const redisClient = req.app.locals.redisClient;
+await redisClient.incr(`rate:${ip}`);
+```
+
+---
+
+## Implementation
+
+### ServiceFactory Configuration
+
+```javascript
+// In ServiceFactory.js
+static createCacheService(redisClient = null, options = {}) {
+  const provider = process.env.CACHE_PROVIDER || 'redis';
+  
+  switch (provider) {
+    case 'redis':
+      // Check for cluster or sentinel mode
+      if (process.env.REDIS_CLUSTER_ENABLED === 'true') {
+        return new RedisClusterCacheService(redisClient, options);
+      }
+      if (process.env.REDIS_SENTINEL_ENABLED === 'true') {
+        return new RedisSentinelCacheService(redisClient, options);
+      }
+      return new RedisCacheService(redisClient);
+    
+    case 'redis-hybrid':
+      // Hybrid: Redis + PostgreSQL fallback
+      return new HybridCacheService(redisClient, options);
+    
+    case 'memory':
+      return new MemoryCacheService();
+  }
+}
+```
+
+### HybridCacheService Pattern
+
+```javascript
+class HybridCacheService {
+  constructor(redisClient, options = {}) {
+    this.redis = redisClient;
+    this.dbService = options.dbService; // PostgreSQL service
+    this.retryAttempts = options.retryAttempts || 3;
+    this.fallbackEnabled = options.fallbackEnabled !== false;
+  }
+
+  async getSession(sessionId) {
+    // Try Redis first
+    for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
+      try {
+        const cached = await this.redis.get(`session:${sessionId}`);
+        if (cached) return JSON.parse(cached);
+        break; // Key doesn't exist, not an error
+      } catch (redisError) {
+        logger.warn(`Redis attempt ${attempt} failed: ${redisError.message}`);
+        if (attempt === this.retryAttempts) {
+          // All retries failed, trigger fallback
+          break;
+        }
+        await this.sleep(100 * attempt); // Exponential backoff
+      }
+    }
+
+    // Fallback to PostgreSQL
+    if (this.fallbackEnabled && this.dbService) {
+      logger.info('Redis unavailable, falling back to PostgreSQL');
+      try {
+        const session = await this.dbService.getSession(sessionId);
+        // Re-populate Redis for next time (best effort)
+        if (session) {
+          this.redis.setEx(`session:${sessionId}`, 300, JSON.stringify(session))
+            .catch(() => {}); // Best effort
+        }
+        return session;
+      } catch (dbError) {
+        logger.error('PostgreSQL fallback also failed', dbError);
+        throw new Error('Session unavailable');
+      }
+    }
+
+    return null;
+  }
+
+  async setSession(sessionId, data, ttlSeconds) {
+    // Always try Redis first
+    try {
+      await this.redis.setEx(`session:${sessionId}`, ttlSeconds, JSON.stringify(data));
+    } catch (error) {
+      logger.warn('Redis set failed', error.message);
+    }
+
+    // Optionally persist to PostgreSQL
+    if (this.fallbackEnabled && this.dbService) {
+      try {
+        await this.dbService.upsertSession(sessionId, data, ttlSeconds);
+      } catch (error) {
+        logger.warn('PostgreSQL fallback write failed', error.message);
+      }
+    }
+  }
+
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+```
+
+---
+
+## Redis Cluster Setup
+
+### Docker Compose (Development)
+
+```yaml
+# docker-compose.yml
+redis-cluster:
+  image: redis:7-alpine
+  command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf
+  ports:
+    - "7000-7005:7000-7005"
+  volumes:
+    - redis-cluster-data:/data
+
+volumes:
+  redis-cluster-data:
+```
+
+### Production Topology
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Load Balancer                       │
+└──────────────────────┬──────────────────────────────┘
+                       │
+    ┌─────────────────┼─────────────────┐
+    ▼                 ▼                 ▼
+┌────────┐       ┌────────┐       ┌────────┐
+│ API 1  │       │ API 2  │       │ API 3  │
+└────┬───┘       └────┬───┘       └────┬───┘
+     │                │                 │
+     └────────────────┼────────────────┘
+                      ▼
+         ┌────────────────────────┐
+         │   Redis Cluster (3+)    │
+         │  (with Sentinel for      │
+         │   automatic failover)    │
+         └────────────────────────┘
+```
+
+---
+
+## Compliance Considerations
+
+Using PostgreSQL as fallback is **NOT** a compliance violation:
+
+| Requirement | How We Handle It |
+|-------------|-----------------|
+| **Data Minimization** | Only store encrypted digests (same as Redis) |
+| **Encryption** | Data is AES-256 encrypted before storage |
+| **Retention** | PostgreSQL respects same TTL/retention logic |
+| **Anonymization** | Cache keys use SHA-256(uuid), not raw IDs |
+
+---
+
+## Testing
+
+### Test Failover
+
+```bash
+# Simulate Redis failure
+REDIS_URL=invalid npm run dev
+
+# Should fallback to PostgreSQL
+# Check logs for "Redis unavailable, falling back to PostgreSQL"
+```
+
+### Test Cluster
+
+```bash
+# Enable cluster mode
+REDIS_CLUSTER_ENABLED=true
+REDIS_CLUSTER_NODES=redis-1:7000,redis-2:7000,redis-3:7000
+npm run dev
+```
+
+---
+
+## Monitoring
+
+### Key Metrics
+
+| Metric | Alert If |
+|--------|----------|
+| Redis hit rate | < 95% |
+| Fallback to PostgreSQL | > 5% of requests |
+| Redis latency | > 10ms |
+| PostgreSQL fallback latency | > 100ms |
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/cache/HybridCacheService.js` | Hybrid Redis + PostgreSQL |
+| `backend/services/cache/RedisClusterCacheService.js` | Redis Cluster adapter |
+| `backend/services/cache/RedisSentinelCacheService.js` | Redis Sentinel adapter |
+| `backend/services/ServiceFactory.js` | Provider factory |
