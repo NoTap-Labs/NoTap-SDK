@@ -1,7 +1,7 @@
 # NoTap Management Portal - User Guide
 
-**Version:** 2.0
-**Last Updated:** 2025-12-03
+**Version:** 3.0
+**Last Updated:** 2026-02-22
 **Status:** Production Ready
 
 ---
@@ -11,13 +11,14 @@
 1. [Overview](#overview)
 2. [Getting Started](#getting-started)
 3. [Authentication & Access](#authentication--access)
-4. [Factor Management](#factor-management)
-5. [Device Management](#device-management)
-6. [Blockchain Name Management](#blockchain-name-management)
-7. [Security Settings](#security-settings)
-8. [Privacy & GDPR](#privacy--gdpr)
-9. [Troubleshooting](#troubleshooting)
-10. [FAQ](#faq)
+4. [Account Recovery](#account-recovery)
+5. [Factor Management](#factor-management)
+6. [Device Management](#device-management)
+7. [Blockchain Name Management](#blockchain-name-management)
+8. [Security Settings](#security-settings)
+9. [Privacy & GDPR](#privacy--gdpr)
+10. [Troubleshooting](#troubleshooting)
+11. [FAQ](#faq)
 
 ---
 
@@ -27,6 +28,9 @@ The **NoTap Management Portal** is a self-service platform that allows end users
 
 ### Key Features
 
+- ✅ **Tiered Authentication** - Only 60-80% of factors required (not all)
+- ✅ **Account Recovery** - 8 one-time recovery codes for lockout prevention
+- ✅ **Grace Period** - Reduced factor threshold for 7 days after recovery
 - ✅ **Factor Management** - Add, update, remove, and test authentication factors
 - ✅ **Device Management** - View and manage trusted devices
 - ✅ **Blockchain Names** - Link blockchain identities (ENS, Unstoppable, SNS, BASE)
@@ -37,7 +41,7 @@ The **NoTap Management Portal** is a self-service platform that allows end users
 ### Access Requirements
 
 - **UUID or Alias**: Your NoTap identifier (e.g., `abc-123-def-456` or `tiger-4829`)
-- **Minimum Factors**: At least 2 enrolled factors for step-up authentication
+- **Minimum Factors**: At least 3 enrolled factors for management access
 - **Browser**: Modern browser with JavaScript enabled
 - **Connection**: Secure HTTPS connection required
 
@@ -59,28 +63,37 @@ You can use any of these identifiers:
 | **Alias** | `tiger-4829` | Enrollment confirmation or enrollment app |
 | **Blockchain Name** | `alice.eth`, `bob.notap.sol` | Your wallet or enrollment receipt |
 
-**Step 2: Step-Up Authentication**
+**Step 2: Tiered Authentication (New in v3.0)**
 
-For security, you'll need to verify 2 authentication factors before accessing your account:
+The system automatically selects a **random subset** of your enrolled factors. You do NOT need to remember all of them:
+
+- **Viewing** your account (READ operations): ~60% of your enrolled factors
+- **Changing** your account (WRITE operations): ~80% of your enrolled factors
+- **Minimum**: 3 factors regardless of enrolled count
 
 ```
 ┌─────────────────────────────────────┐
-│  Step-Up Authentication Required   │
+│  Authentication Required            │
 ├─────────────────────────────────────┤
 │                                     │
-│  Please verify 2 factors to access  │
-│  your account settings:             │
+│  Complete 5 of 8 enrolled factors   │
+│  to access management portal:       │
 │                                     │
-│  Factor 1: [PIN        ▼]          │
-│  Factor 2: [Pattern    ▼]          │
+│  1. PIN                             │
+│  2. Pattern                         │
+│  3. Emoji Sequence                  │
+│  4. Color Sequence                  │
+│  5. Rhythm Tap                      │
 │                                     │
-│         [ Continue ]                │
+│  [  Start  ]    [  Cancel  ]        │
 └─────────────────────────────────────┘
 ```
 
 **Step 3: Complete Factor Challenges**
 
-You'll be prompted to complete the selected factors (e.g., enter your PIN, draw your pattern).
+You'll be guided through each selected factor one by one, with a progress bar showing your progress (e.g., "Factor 2 of 5").
+
+**Can't remember your factors?** See [Account Recovery](#account-recovery) below.
 
 ---
 
@@ -90,8 +103,8 @@ You'll be prompted to complete the selected factors (e.g., enter your PIN, draw 
 
 1. **Navigate** to `https://manage.notap.io`
 2. **Enter** your UUID, Alias, or Blockchain Name
-3. **Select** 2 factors you remember from enrollment
-4. **Complete** the factor challenges
+3. **System selects** a random subset of your factors (you don't choose)
+4. **Complete** the factor challenges one by one
 5. **Access** your management portal dashboard
 
 ### Session Management
@@ -126,6 +139,111 @@ Active interaction automatically extends your session. A warning appears 2 minut
 - 🟢 **Primary** - No step-up required
 - 🟡 **Trusted** - Remembered for 30 days
 - 🔴 **Untrusted** - Step-up required every time
+
+---
+
+## Account Recovery
+
+### Recovery Codes (New in v3.0)
+
+During enrollment, you receive **8 one-time recovery codes**. These are your safety net if you ever forget your authentication factors.
+
+**Format:** `XXXX-XXXX` (e.g., `XKCD-7291`)
+
+```
+┌─────────────────────────────────────┐
+│  Your Recovery Codes                │
+├─────────────────────────────────────┤
+│                                     │
+│  1. XKCD-7291    5. MLPW-3847      │
+│  2. HGFT-5623    6. QRST-9182      │
+│  3. BVNM-8934    7. YWKZ-6273      │
+│  4. DJKL-4156    8. CPFX-7419      │
+│                                     │
+│  [ Copy All Codes ]                 │
+│                                     │
+│  ☐ I have saved my recovery codes   │
+│    in a secure location             │
+│                                     │
+│  [ Continue ] (disabled until box   │
+│    is checked)                      │
+└─────────────────────────────────────┘
+```
+
+**IMPORTANT:**
+- These codes are shown **only once** during enrollment
+- Each code can be used **only once**
+- Store them in a **secure location** (password manager, safe, printed copy)
+- Do NOT store them on your phone (if your phone is lost, you lose the codes too)
+
+### Using a Recovery Code
+
+If you cannot remember enough factors to access the management portal:
+
+1. **Click** "Forgot Factors? Use Recovery Code" on the login screen
+2. **Enter** your UUID
+3. **Enter** one of your recovery codes
+4. **Receive** a re-enrollment token (valid for 1 hour)
+5. **Re-enroll** with new factors using the token
+6. **New recovery codes** are generated during re-enrollment
+
+```
+┌─────────────────────────────────────┐
+│  Account Recovery                   │
+├─────────────────────────────────────┤
+│                                     │
+│  UUID:                              │
+│  [abc-123-def-456               ]   │
+│                                     │
+│  Recovery Code:                     │
+│  [XKCD-7291                    ]   │
+│                                     │
+│  [ Recover Account ]                │
+│                                     │
+│  Rate limit: 3 attempts per hour    │
+└─────────────────────────────────────┘
+```
+
+### Grace Period
+
+After recovering your account, you enter a **7-day grace period** with reduced authentication requirements:
+
+| Operation | Normal | Grace Period |
+|-----------|--------|-------------|
+| **Read** (view account) | 60% of factors | 40% of factors |
+| **Write** (delete, export) | 80% of factors | 60% of factors |
+
+This gives you time to settle in with your new factors.
+
+### Checking Recovery Code Status
+
+**Dashboard → Security → Recovery Codes**
+
+See how many recovery codes you have remaining:
+
+```
+┌─────────────────────────────────────┐
+│  Recovery Code Status               │
+├─────────────────────────────────────┤
+│                                     │
+│  Remaining codes: 6 of 8            │
+│  ████████████░░░░ 75%               │
+│                                     │
+│  [ Regenerate Codes ]               │
+│  (Invalidates remaining codes and   │
+│   generates 8 new ones)             │
+└─────────────────────────────────────┘
+```
+
+### Regenerating Recovery Codes
+
+If you're running low on codes or suspect they've been compromised:
+
+1. **Navigate** to Security → Recovery Codes
+2. **Click** "Regenerate Codes"
+3. **Authenticate** with WRITE-level access (80% of factors)
+4. **Save** your 8 new codes securely
+5. **Old codes** are immediately invalidated
 
 ---
 
@@ -713,14 +831,15 @@ More factors = higher security, but harder to remember.
 
 ---
 
-**Q: What happens if I forget all my factors?**
+**Q: What happens if I forget some or all of my factors?**
 
-**A:** Unfortunately, NoTap uses zero-knowledge architecture - we cannot recover your factors. You'll need to:
-1. Contact the merchant who enrolled you
-2. Re-enroll with new factors
-3. Your old UUID becomes invalid
+**A:** NoTap now has a tiered recovery system:
 
-**Prevention:** Test your factors regularly in the Management Portal.
+1. **Forgot a few factors?** The management portal only requires 60-80% of your factors, so you may still be able to log in even if you forgot 1-2 factors.
+2. **Forgot too many?** Use one of your **8 recovery codes** (provided during enrollment). This gives you a re-enrollment token to set up new factors.
+3. **No recovery codes?** Contact the merchant who enrolled you to request re-enrollment assistance. Your old UUID may become invalid.
+
+**Prevention:** Save your recovery codes in a secure location and test your factors regularly.
 
 ---
 
@@ -864,6 +983,7 @@ It's NOT tracking - it's only used to recognize your device for security.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0 | 2026-02-22 | Account Recovery (recovery codes, tiered auth 60/80%, grace period, enrollment redirect) |
 | 2.0 | 2025-12-03 | Complete rewrite for Phase 4 features (multi-chain names, device management, billing UI) |
 | 1.0 | 2025-11-19 | Initial release |
 

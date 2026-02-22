@@ -1,6 +1,6 @@
 # Security Patterns Reference
 
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-22
 
 This document contains all mandatory security patterns for NoTap development. Following these patterns is NON-NEGOTIABLE.
 
@@ -16,6 +16,9 @@ This document contains all mandatory security patterns for NoTap development. Fo
 | XSS Prevention | Web UI Rendering | Use `append { }` DSL, never `innerHTML` |
 | Double Encryption | Long-lived secrets (30-day) | PBKDF2 + KMS layers |
 | AES-256-GCM | Symmetric encryption | Never use ECB/CBC |
+| Recovery Code Security | Account recovery codes | CSPRNG + bcrypt + KMS wrap |
+| Tiered Factor Threshold | Management portal auth | 60/80% proportional, CSPRNG selection |
+| Login Lockout | Brute-force protection | 5 attempts = 1hr lock, per-account |
 
 ---
 
@@ -320,8 +323,91 @@ When implementing encryption:
 
 ---
 
+## Recovery Code Security Pattern
+
+**Purpose:** Provide account recovery without storing plaintext recovery codes.
+
+### Cryptographic Pipeline
+
+```
+CSPRNG generation (crypto.randomBytes)
+  → Ambiguity-free alphabet (28 chars: no I/O/0/1)
+  → Format: XXXX-XXXX (8 codes per batch)
+  → bcrypt hash (12 rounds)
+  → KMS wrap (AES-256-GCM envelope encryption)
+  → PostgreSQL storage (encrypted BYTEA)
+  → wipeBuffer() after each operation
+```
+
+### Verification Checklist
+
+- [ ] Codes generated with CSPRNG (`crypto.randomBytes`), never `Math.random()`
+- [ ] bcrypt rounds >= 12 for computational cost
+- [ ] KMS wrapping provides defense-in-depth (database compromise alone is insufficient)
+- [ ] `wipeBuffer()` called on bcrypt hash after each comparison
+- [ ] Rate limited: max 3 attempts per hour per IP
+- [ ] Single-use: `used_at = NOW()` immediately on match
+- [ ] Audit logged: all operations (generation, use, failure, invalidation)
+- [ ] IP anonymized before storage (GDPR compliance)
+- [ ] Re-enrollment token uses `crypto.randomBytes(32)` with Redis TTL (1 hour)
+- [ ] Grace period stored in Redis with 7-day TTL
+
+### Login Lockout Pattern
+
+```javascript
+// Pattern: 5 failed attempts = 1 hour lock (per-account, not per-IP)
+// Applied to: merchant_users, developers, regular_users
+// Ported from: AdminAuthService.js:129-155
+
+// Check BEFORE bcrypt to prevent CPU waste:
+if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
+    return { success: false, error: 'Account temporarily locked' };
+}
+
+// On failure: increment + maybe lock
+await pool.query(`UPDATE users SET
+    failed_login_attempts = failed_login_attempts + 1,
+    account_locked_until = CASE
+        WHEN failed_login_attempts + 1 >= 5 THEN NOW() + INTERVAL '1 hour'
+        ELSE account_locked_until END
+    WHERE id = $1`, [userId]);
+
+// On success: always reset
+await pool.query(`UPDATE users SET
+    failed_login_attempts = 0, account_locked_until = NULL
+    WHERE id = $1`, [userId]);
+```
+
+### Tiered Factor Threshold Pattern
+
+```javascript
+// CSPRNG factor selection — never Math.random()
+function selectRandomFactors(factors, count) {
+    const shuffled = [...factors];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = crypto.randomInt(i + 1);  // CSPRNG
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, count);
+}
+
+// Constant-time digest comparison with length-leak prevention
+function constantTimeEquals(a, b) {
+    if (a.length !== b.length) {
+        const padded = Buffer.alloc(b.length);
+        a.copy(padded, 0, 0, Math.min(a.length, b.length));
+        crypto.timingSafeEqual(padded, b);  // Always compare
+        return false;
+    }
+    return crypto.timingSafeEqual(a, b);
+}
+```
+
+---
+
 ## Related Documentation
 
 - [SECURITY_AUDIT.md](SECURITY_AUDIT.md) - Vulnerability audit results
 - [ENCRYPTION_SECURITY_AUDIT.md](ENCRYPTION_SECURITY_AUDIT.md) - Encryption implementation audit
+- [ACCOUNT_RECOVERY_SYSTEM.md](../03-developer-guides/ACCOUNT_RECOVERY_SYSTEM.md) - Full recovery system guide
 - [CLAUDE.md](../../CLAUDE.md) - Main development instructions

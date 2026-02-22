@@ -854,3 +854,75 @@ import com.zeropay.sdk.crypto.ConstantTime
 - `documentation/05-security/SECURITY_PATTERNS_REFERENCE.md` — Constant-time implementation details
 - `documentation/10-internal/LESSONS_LEARNED.md` — Lesson 51: Constant-Time Unification
 - `documentation/05-security/SECURITY_AUDIT.md` — Part 10: Dead Code Removal (4 files fixed)
+
+---
+
+## 16. Account Recovery & Auth Patterns (CRITICAL)
+
+### Recovery Code Generation
+
+Recovery codes MUST follow the defense-in-depth pipeline:
+1. **CSPRNG generation** (`crypto.randomBytes`) — NEVER `Math.random()`
+2. **Ambiguity-free alphabet** (28 chars: no I, O, 0, 1)
+3. **bcrypt hash** (12+ rounds)
+4. **KMS wrapping** before PostgreSQL storage
+5. **Memory wipe** after each hash comparison (`wipeBuffer()`)
+
+**Reference implementation:** `backend/services/RecoveryCodeService.js`
+
+### Login Lockout (Brute-Force Protection)
+
+All user-facing login endpoints MUST implement lockout:
+
+```javascript
+// Pattern: check lockout BEFORE bcrypt (prevent CPU waste)
+if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
+    return { success: false, error: 'Account temporarily locked. Try again later.' };
+}
+
+// On failure: increment + maybe lock
+// On success: always reset to 0
+```
+
+**Configuration:** 5 failed attempts = 1 hour lockout (per-account, not per-IP).
+
+**Applied to:** `MerchantUserService`, `DeveloperUserService`, `RegularUserService` (and already existed in `AdminAuthService`).
+
+### Auth Mode System
+
+When adding new user types that support NoTap login:
+
+1. Add `auth_mode` column: `VARCHAR(20) NOT NULL DEFAULT 'password' CHECK (IN ('password', 'notap', 'both'))`
+2. Add `notap_uuid` column for linking
+3. Implement NoTap login using verification session pattern:
+   ```javascript
+   const session = await cacheService.getSession(verificationSessionId);
+   if (session?.status !== 'verified' || session?.uuid !== notapUuid) { /* reject */ }
+   ```
+4. Add `GET/PUT /settings/auth-mode` endpoints
+5. Add `POST /notap/link` and `POST /notap/login` endpoints
+
+### Tiered Factor Threshold
+
+When implementing factor-based authentication for management/admin portals:
+
+1. **Use proportional thresholds**, not 100% factor requirement
+2. **CSPRNG factor selection** (`crypto.randomInt` in Fisher-Yates shuffle)
+3. **Two-step flow**: `POST /initiate` (get factors) → `POST /verify` (submit digests)
+4. **Grace period** after recovery: reduced thresholds stored in Redis with TTL
+5. **Single-use sessions**: invalidated on success or failure
+
+### Single module.exports Rule
+
+Each Node.js service file MUST have exactly ONE `module.exports` at the bottom. Dead early exports cause silent bugs (see Lesson 52).
+
+```bash
+# Check for duplicate exports:
+grep -n "module\.exports" backend/services/*.js | awk -F: '{print $1}' | sort | uniq -d
+```
+
+### See Also:
+
+- `documentation/03-developer-guides/ACCOUNT_RECOVERY_SYSTEM.md` — Full recovery system guide
+- `documentation/05-security/SECURITY_PATTERNS_REFERENCE.md` — Recovery code crypto patterns
+- `documentation/10-internal/LESSONS_LEARNED.md` — Lessons 52-54

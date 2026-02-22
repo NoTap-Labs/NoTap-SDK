@@ -2,13 +2,18 @@
 
 **Purpose**: Comprehensive system architecture, module structure, and data flow documentation
 
-**Last Updated**: 2026-02-09
+**Last Updated**: 2026-02-22
 
 **NEW in v2.0:**
 - Web Platform Architecture (online-web module deep dive)
 - Developer Portal Architecture (self-service integration)
 - Management Portal Architecture (end-user account management)
 - Multi-Chain Name Service Architecture (ENS, Unstoppable, BASE, SNS)
+
+**NEW in v3.0:**
+- Account Recovery Architecture (recovery codes, tiered thresholds, grace period)
+- Auth Mode System (password/notap/both per-account)
+- Login Lockout (brute-force protection for all user types)
 
 ---
 
@@ -27,7 +32,8 @@
 11. [Management Portal Architecture](#management-portal-architecture) ⭐ NEW
 12. [Multi-Chain Name Service Architecture](#multi-chain-name-service-architecture) ⭐ NEW
 13. [Parallel PSP Integration Architecture](#parallel-psp-integration-architecture) ⭐ NEW
-14. [Module Dependencies](#module-dependencies)
+14. [Account Recovery & Auth Mode Architecture](#account-recovery--auth-mode-architecture) ⭐ NEW
+15. [Module Dependencies](#module-dependencies)
 
 ---
 
@@ -1215,9 +1221,12 @@ X-NoTap-Test-Mode: true
 ### Portal Structure
 
 ```
-Backend: backend/routes/managementRouter.js (~450 LOC)
-Web UI: online-web/src/jsMain/kotlin/com/zeropay/web/management/ (~1,650 LOC)
-Database: PostgreSQL (reuses existing tables: wrapped_keys, factors, devices)
+Backend: backend/routes/managementRouter.js (~736 LOC)
+Backend: backend/routes/recoveryRouter.js (~266 LOC)
+Backend: backend/services/RecoveryCodeService.js (~423 LOC)
+Web UI: online-web/src/jsMain/kotlin/com/zeropay/web/management/ (~2,500 LOC)
+Web UI: online-web/src/jsMain/kotlin/com/zeropay/web/enrollment/steps/RecoveryCodeStep.kt (~258 LOC)
+Database: PostgreSQL (recovery_codes, recovery_audit_log + existing tables)
 ```
 
 ### Database Extensions
@@ -1298,29 +1307,41 @@ POST   /v1/management/security/password # Change password
 POST   /v1/management/security/2fa      # Enable/disable 2FA
 ```
 
-### Authentication Flow
+### Authentication Flow (v3.0 — Two-Step Tiered Threshold)
 
 ```
 User visits https://manage.notap.io
   ↓
 Enter NoTap ID (UUID/alias/blockchain name)
   ↓
-POST /v1/management/login
-  ├─ Backend creates verification session
-  └─ Returns session_id + required_factors
+POST /v1/management/initiate
+  ├─ Backend retrieves enrolled factors from Redis
+  ├─ Checks grace_period:{uuid} (post-recovery reduced threshold)
+  ├─ Calculates required count: READ=60%, WRITE=80% (min 3)
+  ├─ Selects random subset via CSPRNG (Fisher-Yates shuffle)
+  ├─ Stores session in Redis (mgmt_session:{id}, 10 min TTL)
+  └─ Returns session_id + required_factors list
   ↓
-User completes 2 factors (step-up authentication)
-  ├─ Render factor canvases (PIN, Pattern, etc.)
-  ├─ Generate digests
-  └─ POST /v1/management/login/verify
+User completes N factors (tiered, not ALL)
+  ├─ Render factor canvases one-by-one with progress bar
+  ├─ Generate SHA-256 digests client-side
+  └─ Collect all digests
   ↓
-Backend verifies factors (constant-time)
-  ├─ Success → Generate JWT token
-  └─ Failure → Return error
-  ↓
-Store JWT in httpOnly cookie (15min expiry)
+POST /v1/management/verify
+  ├─ Retrieve session from Redis (single-use)
+  ├─ Verify UUID matches session
+  ├─ Constant-time digest comparison (crypto.timingSafeEqual)
+  │   └─ No early returns: always compare ALL required factors
+  ├─ Success → Mark session verified + generate HMAC-SHA256 token (15 min)
+  └─ Failure → Invalidate session (must re-initiate)
   ↓
 Navigate to account overview
+  ↓
+Can't remember enough factors?
+  ├─ Use recovery code (POST /v1/recovery/verify)
+  ├─ Receive re-enrollment token (1 hour TTL)
+  ├─ Re-enroll with new factors
+  └─ 7-day grace period activates (reduced thresholds)
 ```
 
 ### Factor Management Flow
@@ -1873,6 +1894,69 @@ const PSP_CONFIG = {
 - **Complete Guide**: `documentation/03-developer-guides/PARALLEL_PSP_INTEGRATION.md`
 - **PSP SDK**: `documentation/04-architecture/PSP_INTEGRATION_ARCHITECTURE.md`
 - **Quick Start**: `documentation/03-developer-guides/PSP_QUICKSTART_MERCADOPAGO.md`
+
+---
+
+## Account Recovery & Auth Mode Architecture
+
+**Purpose:** Prevent permanent lockout, enable multi-method authentication, protect against brute force.
+
+**Full Developer Guide:** `documentation/03-developer-guides/ACCOUNT_RECOVERY_SYSTEM.md`
+
+### Recovery Code Cryptographic Pipeline
+
+```
+CSPRNG (crypto.randomBytes)
+  → Ambiguity-free alphabet (28 chars, no I/O/0/1)
+  → Code format: XXXX-XXXX (8 per batch)
+  → bcrypt hash (12 rounds)
+  → KMS wrap (AES-256-GCM)
+  → PostgreSQL storage (encrypted BYTEA)
+  → Memory wipe (wipeBuffer) after each operation
+```
+
+### Tiered Factor Threshold
+
+| Level | Normal | Grace Period | Min |
+|-------|--------|-------------|-----|
+| READ | 60% | 40% | 3 |
+| WRITE | 80% | 60% | 3 |
+
+Factor selection uses CSPRNG Fisher-Yates shuffle (`crypto.randomInt`), making the required factor set unpredictable per session.
+
+### Auth Mode System (3 User Types)
+
+```
+┌──────────────────────────────────────────────────┐
+│  Per-Account Auth Mode (merchants/devs/users)    │
+├──────────────────────────────────────────────────┤
+│  'password'  (default) → Email + password only   │
+│  'notap'               → NoTap factors only      │
+│  'both'                → Password + NoTap 2FA    │
+└──────────────────────────────────────────────────┘
+```
+
+NoTap login validation pattern (shared across all 3 routers):
+1. Frontend completes verification flow → gets `verificationSessionId`
+2. Backend calls `cacheService.getSession(sessionId)`
+3. Checks `session.status === 'verified'` and `session.uuid === notapUuid`
+4. Issues user-type-specific JWT
+
+### Login Lockout
+
+- 5 failed attempts = 1 hour lockout (per-account)
+- Applied to: merchants, developers, regular users
+- Ported from `AdminAuthService.js:129-155`
+- Columns: `failed_login_attempts`, `account_locked_until`
+
+### Database Tables (Migrations 025-027)
+
+| Table | Migration | Purpose |
+|-------|-----------|---------|
+| `recovery_codes` | 025 | KMS-encrypted bcrypt hashes, batch management |
+| `recovery_audit_log` | 025 | Immutable audit trail (5 action types) |
+| `auth_mode` column | 026 | Per-account auth mode on 3 tables |
+| `failed_login_attempts` | 027 | Lockout tracking on 3 tables |
 
 ---
 
