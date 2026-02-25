@@ -238,33 +238,54 @@ Code change → Search all tests → Update all tests → Verify compilation →
 
 ## 7. Feature Environment Variables
 
-**ALWAYS add feature flags/variables to .env.example when building new features.**
+**ALWAYS add feature flags/variables to BOTH `.env.example` AND your local `.env`.**
 
 ### Required steps:
-1. **Add to .env.example** - Document all environment variables with:
+1. **Add to `.env.example`** (committed to git — the template) with:
    - Clear comments explaining purpose
    - Default values (disabled by default for new features)
    - Examples/recommendations
    - Required dependencies (npm packages, API keys)
    - Security warnings if applicable
 
-2. **Place in migration folder** - If feature requires database schema:
+2. **Add to your local `backend/.env`** (gitignored — your machine's config):
+   - Copy the new var from `.env.example` with an appropriate local value
+   - **This step is required.** Skipping it causes the pre-push agent to warn on every push.
+   - The agent compares `.env.example` vs `.env` and warns about missing vars.
+
+3. **Add to CI/CD workflow files** if the var is needed in automated pipelines:
+   - `.github/workflows/ci-cd.yml` and any other workflow files
+
+4. **Place in migration folder** if the feature requires database schema:
    - ✅ Add SQL to `backend/database/migrations/XXX_feature_name.sql`
    - ❌ Don't leave in `backend/database/schemas/` (won't auto-run)
    - Use sequential numbering (check highest existing number)
 
 ### Example - Crypto Payments:
 ```bash
-# .env.example
+# Step 1: Add to .env.example (committed)
 CRYPTO_PAYMENTS_ENABLED=false  # Master toggle
 SOLANA_RELAYER_PRIVATE_KEY=    # Empty = must configure
 USDC_ENABLED=true              # Sensible defaults
 
-# Migration
+# Step 2: Add to backend/.env (local, gitignored)
+CRYPTO_PAYMENTS_ENABLED=false
+SOLANA_RELAYER_PRIVATE_KEY=your-local-key-here
+USDC_ENABLED=true
+
+# Step 3: Migration (if schema changed)
 010_add_crypto_payments.sql    # Auto-runs on DB init
 ```
 
-**Why:** Ensures variables are documented, deployment is smooth, and future developers understand configuration.
+### Checking sync manually:
+```bash
+# See which vars are in .env.example but missing from .env
+grep -vE "^#|^$" backend/.env.example | cut -d= -f1 | while read var; do
+  grep -q "^$var=" backend/.env || echo "MISSING: $var"
+done
+```
+
+**Why:** `.env` is gitignored (machine-specific secrets), so it never auto-updates when `.env.example` changes. Every developer must manually copy new vars to their local `.env` after pulling changes that add them.
 
 ---
 
