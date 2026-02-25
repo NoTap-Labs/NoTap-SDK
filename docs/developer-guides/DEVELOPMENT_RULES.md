@@ -48,7 +48,7 @@ SDK is single source of truth. Both enrollment and merchant use SDK functions.
 
 ---
 
-## 6. Logging (CRITICAL - Security)
+## 6. Logging (CRITICAL - Security / GDPR Compliance)
 
 **NEVER use `console.log`, `console.error`, or `console.warn` in backend code.**
 
@@ -59,10 +59,66 @@ SDK is single source of truth. Both enrollment and merchant use SDK functions.
 - ✅ `logger.error('Failed to authenticate', { error: err.message })` - Safe
 - ✅ `logger.debug('Request details', { body: req.body })` - Disabled in prod
 
+### Three Mandatory Logging Rules (Enforced by pre-push agent)
+
+**Rule 1 — NEVER log the full `error` object. Always use `error.message`.**
+
+Full error objects contain stack traces that reveal internal paths, DB connection strings, and request context that may include credentials.
+
+```javascript
+// ❌ FORBIDDEN — stack trace leaks internal data
+logger.error('POST /keys error:', error);
+
+// ✅ REQUIRED — only log the message
+logger.error('POST /keys error:', error.message);
+```
+
+**Rule 2 — NEVER log user-supplied values in security events. Redact them.**
+
+When logging security blocks (SSRF, rate limits, invalid input), log the parameter NAME but never its VALUE — values come from untrusted user input and may contain tokens, API keys, or PII.
+
+```javascript
+// ❌ FORBIDDEN — logs user-controlled data verbatim
+logger.warn(`SSRF_BLOCKED: param ${key}="${value}" from IP ${req.ip}`);
+
+// ✅ REQUIRED — log name only, redact value
+logger.warn(`SSRF_BLOCKED: param "${key}"=[REDACTED] from IP ${req.ip}`);
+```
+
+**Rule 3 — NEVER log variable names containing sensitive terms as their value.**
+
+The compliance checker flags `logger.*` containing the words: `password`, `token`, `secret`, `key`, `credential`, `cvv`, `pan`, `biometric`. If your log message or template literal variable includes these words, it will be blocked.
+
+```javascript
+// ❌ BLOCKED — `key` variable in template string triggers checker
+logger.error(`Failed to get config ${key}:`, error);  // blocked
+
+// ✅ SAFE — log error.message (not full error), word "key" is in descriptive context
+logger.error(`Failed to get config ${key}:`, error.message);  // still shows in message
+// → add to verify-compliance.sh exclusion list if false positive
+```
+
+### Handling False Positives from the Compliance Checker
+
+If your logger line is semantically safe (logs route names, descriptive context — not actual secrets) but still flagged:
+
+1. **Fix the real risk first**: Change `error` → `error.message`, redact user values with `[REDACTED]`
+2. **If still flagged after that**: Add to the exclusion list in `scripts/verify-compliance.sh`
+3. **Add a comment** explaining why the log is safe
+4. **NEVER bypass** the check with `--no-verify` without fixing the underlying issue
+
+Safe patterns already in exclusion list (see `scripts/verify-compliance.sh`):
+- `POST /keys`, `GET /keys`, `DELETE /keys`, `PUT /keys` — route-level error logs (message not value)
+- `SSRF_BLOCKED.*REDACTED` — security blocks with redacted user data
+- `Failed to (get|set) config` — config key names (not secrets)
+- `Re-populated Redis`, `generating.*key`, `validating.*token`, etc.
+
 ### Why:
 - `logger.debug()` is DISABLED in production (NODE_ENV=production)
 - `console.*` always outputs, exposing UUIDs, IPs, tokens to logs
+- Full `error` objects contain stack traces that can leak DB credentials, file paths, internal state
 - Structured logging enables log analysis without PII exposure
+- GDPR prohibits logging sensitive user data without anonymization
 
 ### Migration:
 ```bash
@@ -72,28 +128,13 @@ SDK is single source of truth. Both enrollment and merchant use SDK functions.
 # Or manually replace:
 const logger = require('./utils/logger');
 console.log('...') → logger.info/debug('...')
-console.error('...') → logger.error('...')
-console.warn('...') → logger.warn('...')
+console.error('Failed:', err) → logger.error('Failed:', err.message)
+logger.warn(`event: ${key}="${value}"`) → logger.warn(`event: "${key}"=[REDACTED]`)
 ```
 
 ### Legacy exceptions (tests only):
 - Test files (`*.test.js`) may use `console.*` for test output
 - Standalone CLI scripts may use `console.*` for user output
-
-### Avoiding False Positives in Compliance Scans
-
-**Descriptive logging is safe**, but avoid sensitive keywords when possible:
-- ✅ `logger.error('Authentication failed:', error);` (generic, safe)
-- ⚠️ `logger.error('Password reset error:', error);` (triggers agent but safe — not logging actual password)
-- ❌ `logger.error('Password:', password);` (actual leak — FORBIDDEN)
-
-**If flagged by pre-push agent:**
-1. Verify you're NOT logging actual secret values
-2. If it's just descriptive text (endpoint name, error context), it's a false positive
-3. Consider rewording to avoid triggers: "reset-password" → "credential reset", "API key" → "API credential"
-4. NEVER log actual values: passwords, tokens, secrets, API keys, digests, biometrics
-
-**The rule:** Log context, never content. Log "authentication failed" not "password=abc123".
 
 ---
 
