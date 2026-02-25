@@ -1,6 +1,6 @@
 # Security Patterns Reference
 
-**Last Updated:** 2026-02-22
+**Last Updated:** 2026-02-24
 
 This document contains all mandatory security patterns for NoTap development. Following these patterns is NON-NEGOTIABLE.
 
@@ -402,6 +402,65 @@ function constantTimeEquals(a, b) {
     return crypto.timingSafeEqual(a, b);
 }
 ```
+
+---
+
+## Verification Loop Iteration (No Early Exit)
+
+**Purpose:** Prevent timing oracles that reveal which factor failed in a multi-factor comparison loop.
+
+### The Problem
+
+Using `break` in a factor loop exits early on the first failure. An attacker measures response time to determine WHICH factor failed — the loop position leaks via timing.
+
+```javascript
+// ❌ WRONG — timing oracle: response faster if first factor fails
+for (const [name, input] of Object.entries(factors)) {
+    if (!secureCompare(input, stored)) {
+        match = false;
+        break;  // NEVER break — reveals which factor was wrong
+    }
+}
+
+// ✅ CORRECT — always iterate ALL factors regardless of failure
+// SECURITY: Always iterate all required factors (no early return)
+for (const [name, input] of Object.entries(factors)) {
+    const stored = enrollment.factors[name];
+    if (!stored) {
+        match = false;
+        continue;  // keep going even if factor missing
+    }
+    if (!secureCompare(input, stored)) {
+        match = false;
+        // no break — keep iterating
+    }
+}
+```
+
+**Rule:** In any factor comparison loop, use `continue` not `break`, and do not return inside the loop.
+
+### `secureCompare` Must Pad on Length Mismatch (Node.js)
+
+When buffer lengths differ, `crypto.timingSafeEqual` throws — a plain `return false` is faster than a real comparison, leaking length via timing. Always pad both buffers first:
+
+```javascript
+// ❌ WRONG — early return, no timing work
+if (a.length !== b.length) return false;
+
+// ✅ CORRECT — pad, compare (consume constant time), then return false
+if (a.length !== b.length) {
+    const maxLen = Math.max(a.length, b.length);
+    const paddedA = Buffer.alloc(maxLen);
+    const paddedB = Buffer.alloc(maxLen);
+    a.copy(paddedA);
+    b.copy(paddedB);
+    crypto.timingSafeEqual(paddedA, paddedB);  // consume time even though result is discarded
+    return false;
+}
+return crypto.timingSafeEqual(a, b);
+```
+
+**Canonical implementations:** `utils/constantTimeCompare.js`, `crypto/memoryWipe.js` (`secureCompare`), `auth/jwtService.js`, `auth/tokenManager.js`.
 
 ---
 
