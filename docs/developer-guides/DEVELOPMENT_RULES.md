@@ -23,6 +23,24 @@
 
 ---
 
+## 2b. Session Storage for Browser Credentials
+
+**Use `sessionStorage` for per-tab secrets, NEVER `localStorage` for credentials.**
+
+- ❌ `localStorage.setItem('api_key', key)` — persists indefinitely (large XSS window)
+- ✅ `sessionStorage.setItem('api_key', key)` — cleared when tab closes
+- ❌ `window.location.href = '/export?apiKey=' + key` — logged in proxy/server/history
+- ✅ `fetch('/export', { headers: { 'X-Admin-API-Key': key } })` — headers only
+
+**Storage decision guide:**
+```
+localStorage  → user preferences (theme, language, non-sensitive)
+sessionStorage → auth tokens, API keys, session-scoped secrets
+Headers only   → ALL authentication (never URL params)
+```
+
+---
+
 ## 3. Module Dependency Rules
 
 ```
@@ -61,15 +79,33 @@ SDK is single source of truth. Both enrollment and merchant use SDK functions.
 
 ### Three Mandatory Logging Rules (Enforced by pre-push agent)
 
-**Rule 1 — NEVER log the full `error` object. Always use `error.message`.**
+**Rule 1 — AUTOMATIC REDACTION: Logger now redacts sensitive fields automatically.**
 
-Full error objects contain stack traces that reveal internal paths, DB connection strings, and request context that may include credentials.
+As of v3.19.8, `logger.js` auto-redacts sensitive keys (password, secret, token, key, digest, private, seed, salt, iv, hash) from all logged objects. Error objects have stack traces stripped in production.
 
 ```javascript
-// ❌ FORBIDDEN — stack trace leaks internal data
+// ✅ NOW SAFE — logger redacts sensitive fields automatically
+logger.error('Database error:', error);  // error object redacted; stack stripped in prod
+
+// ✅ SAFE — nested sensitive fields redacted
+logger.error('Auth failed:', { user_id: 'u123', password: 'xyz' });
+// → logs: { user_id: 'u123', password: '[REDACTED]' }
+
+// ✅ SAFE — messages still visible (only sensitive keys redacted)
+logger.error('Failed to get config:', { config_key: 'db.host', value: 'localhost' });
+// → logs: { config_key: 'db.host', value: 'localhost' }  (not redacted, not sensitive)
+```
+
+**When to still use `error.message`:**
+- `logger.error('message', error)` — now auto-redacts stack traces (production-safe)
+- `logger.error('message', error.message)` — also works, but no longer necessary
+
+**Old Rule (still valid but now redundant):**
+```javascript
+// ❌ FORBIDDEN in old code — stack trace leaks internal data
 logger.error('POST /keys error:', error);
 
-// ✅ REQUIRED — only log the message
+// ✅ REQUIRED in old code — only log the message
 logger.error('POST /keys error:', error.message);
 ```
 

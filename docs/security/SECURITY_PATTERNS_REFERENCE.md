@@ -1,6 +1,6 @@
 # Security Patterns Reference
 
-**Last Updated:** 2026-02-24
+**Last Updated:** 2026-02-26
 
 This document contains all mandatory security patterns for NoTap development. Following these patterns is NON-NEGOTIABLE.
 
@@ -19,6 +19,9 @@ This document contains all mandatory security patterns for NoTap development. Fo
 | Recovery Code Security | Account recovery codes | CSPRNG + bcrypt + KMS wrap |
 | Tiered Factor Threshold | Management portal auth | 60/80% proportional, CSPRNG selection |
 | Login Lockout | Brute-force protection | 5 attempts = 1hr lock, per-account |
+| JWT Rotation | Key migration without logout cascade | Support 2 active secrets (current + previous) |
+| CSRF Token Storage | Scalable token management | Use cache service (Redis) with Map fallback |
+| Session Storage | Browser credential management | Use `sessionStorage` for per-tab secrets |
 
 ---
 
@@ -461,6 +464,136 @@ return crypto.timingSafeEqual(a, b);
 ```
 
 **Canonical implementations:** `utils/constantTimeCompare.js`, `crypto/memoryWipe.js` (`secureCompare`), `auth/jwtService.js`, `auth/tokenManager.js`.
+
+---
+
+## JWT Secret Rotation
+
+**Purpose:** Allow key rotation without invalidating active tokens or requiring full restarts.
+
+**Pattern:**
+```javascript
+// backend/config/secrets.js
+function getJwtSecrets() {
+  const current = process.env.JWT_SECRET;
+  const previous = process.env.JWT_SECRET_PREVIOUS || null;
+  return [current, ...(previous ? [previous] : [])];
+}
+
+function verifyJwtWithRotation(token, secrets, jwt) {
+  let lastError;
+  for (const secret of secrets) {
+    try {
+      return jwt.verify(token, secret);
+    } catch (e) {
+      lastError = e;
+      if (e.name !== 'JsonWebTokenError') throw e;  // Rethrow expiry/other errors
+    }
+  }
+  throw lastError;  // All secrets failed
+}
+
+// In all 5 auth middleware:
+const JWT_SECRETS = getJwtSecrets();
+
+// Signing: always use current secret
+jwt.sign(payload, JWT_SECRETS[0], { expiresIn: '30m' });
+
+// Verification: try current then previous
+verifyJwtWithRotation(token, JWT_SECRETS, jwt);
+```
+
+**Rotation process:**
+1. Set `JWT_SECRET_PREVIOUS=<old_secret>` in env
+2. Update `JWT_SECRET=<new_secret>` in env
+3. Restart server
+4. Old tokens remain valid until natural expiry (30 minutes)
+5. New tokens use new secret only
+
+**Key rules:**
+- Always try current secret first (index 0) — fastest path
+- Only retry on `JsonWebTokenError` (signature mismatch)
+- Immediately rethrow expiry/other errors (no fallback needed)
+- Support only 2 versions (current + previous) — no ancient keys
+
+---
+
+## CSRF Token Storage with Cache Service
+
+**Purpose:** Scale CSRF tokens across multiple instances and survive server restarts.
+
+**Pattern:**
+```javascript
+// backend/middleware/security.js
+
+// Uses cache service (Redis) when available, falls back to in-memory Map
+const csrfTokensFallback = new Map();
+const CSRF_TTL_SECONDS = 3600;  // 1 hour
+const CSRF_PREFIX = 'csrf:';
+
+function _getCacheService(req) {
+  return req.app.locals.cacheService;  // Available in production
+}
+
+async function _getStoredToken(req, sessionId) {
+  const cache = _getCacheService(req);
+  if (cache) {
+    return cache.get(CSRF_PREFIX + sessionId);  // Redis-backed
+  }
+  return csrfTokensFallback.get(sessionId);  // Fallback for tests
+}
+
+async function csrfProtection(req, res, next) {
+  // ... validation ...
+  const storedToken = await _getStoredToken(req, sessionId);
+  if (!storedToken || !constantTimeCompare(storedToken, token)) {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  next();
+}
+```
+
+**Key rules:**
+- Functions must be `async` to support cache operations
+- Always try cache service first (Redis in production)
+- Automatic fallback to in-memory Map for test environments
+- Use TTL on cache (Redis) instead of manual cleanup (setTimeout)
+- Prefix all cache keys (`csrf:sessionId`) to avoid collisions
+
+---
+
+## Session Storage for Browser Credentials
+
+**Purpose:** Store sensitive data (auth tokens, API keys) per-tab, not persistently.
+
+**Pattern:**
+```javascript
+// Good: API key cleared when tab closes
+const apiKey = sessionStorage.getItem('admin_api_key');
+sessionStorage.setItem('admin_api_key', apiKey);
+
+// Bad: Persists indefinitely, larger XSS exposure window
+const apiKey = localStorage.getItem('admin_api_key');
+localStorage.setItem('admin_api_key', apiKey);
+
+// Good: API key in headers, never in URL
+fetch('/v1/export', {
+  headers: { 'X-Admin-API-Key': apiKey }
+});
+
+// Bad: API key logged in proxy/server logs, bookmarkable, shareable
+window.location.href = `/v1/export?apiKey=${apiKey}`;
+```
+
+**Storage decision:**
+- `localStorage` — user preferences, theme, language (non-sensitive)
+- `sessionStorage` — auth tokens, API keys, temp session data (sensitive)
+- HTTP Headers — all authentication/secrets (never URL params)
+
+**Key rules:**
+- Session keys = cleared on tab close
+- Credentials in headers only (never URL params)
+- Use fetch + Blob for authenticated downloads (not `window.location.href`)
 
 ---
 
