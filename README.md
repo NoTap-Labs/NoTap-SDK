@@ -27,401 +27,141 @@
 
 # NoTap
 
-**Authentication Reimagined**
-
-*Your identity is a master key that opens any door — but it lives in your mind, not your pocket.*
+**Device-Independent Authentication Layer for Payments and Access**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kotlin](https://img.shields.io/badge/kotlin-1.9+-blue.svg)](https://kotlinlang.org)
-[![PSD3 SCA Compliant](https://img.shields.io/badge/PSD3-SCA%20Compliant-green.svg)](https://www.ecb.europa.eu)
+[![SCA-Ready Architecture](https://img.shields.io/badge/SCA-Ready%20Architecture-green.svg)](https://www.ecb.europa.eu)
+[![Android SDK](https://img.shields.io/badge/Android-Production-brightgreen.svg)](https://docs.notap.io)
+[![Web SDK](https://img.shields.io/badge/Web-Production-brightgreen.svg)](https://docs.notap.io)
 
 </div>
 
 ---
 
-## The Master Key Idea
+NoTap is a device-independent fallback authentication layer. When phone-based authentication fails — lost device, dead battery, no signal — NoTap allows users to verify their identity from any available interface, and PSPs to recover the transaction.
 
-Imagine your identity as a **master key** — it opens any door (any device), without you having to carry it physically.
+---
 
-**A physical key** requires you to carry it. Lose it? You're locked out.
-**Your phone** is just another physical key. Dead battery? Stolen? You're locked out.
-**NoTap** puts the key in your mind. It can't be stolen, lost, or run out of battery.
+## The Problem
+
+Today, digital identity is tightly bound to personal devices.
+
+Authentication methods like SMS OTP, authenticator apps, and device biometrics all assume the user has access to their phone. When the device is unavailable — lost, out of battery, not present, or blocked — authentication fails.
+
+For PSPs and merchants, this means:
+
+- Legitimate transactions are declined
+- Customers abandon purchases
+- Support costs increase
+- Fraud exploits gaps in device-dependent flows
+
+**Authentication failure is not only a security issue. It is a revenue problem.**
+
+| Problem | Annual Cost | Source |
+|---------|-------------|--------|
+| False declines (legitimate transactions blocked) | $443 billion | Javelin Strategy & Research |
+| Cart abandonment due to authentication friction | $18 billion | Baymard Institute |
+| Payment fraud | $28 billion | Nilson Report 2024 |
+| IT helpdesk costs from device lockouts | $4.2 billion | Gartner |
+
+---
+
+## The NoTap Approach
+
+NoTap is a fallback and recovery layer, not a replacement for existing authentication.
+
+When a user's primary device-based authentication fails, NoTap activates. It verifies identity using memory-based identity factors the user enrolled in advance — factors they can reproduce from any available interface: a store terminal, a kiosk, a browser, or another device.
+
+The transaction continues. The PSP never sees a failure.
 
 ```
-PHYSICAL KEY                         YOUR NOTAP
-────────────                         ──────────
-Lose it → locked out                 Can't lose what's in your mind
-Someone steals it → they have access Can't steal your memory
-Only opens specific doors            Opens any door (any device)
+┌─────────────────────────────────────────────────┐
+│                 Payment Attempt                  │
+└─────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────┐
+│         PSP Authentication Step                  │
+│   SMS OTP / device biometric / push notification │
+│                                                  │
+│   ✗  Device unavailable — authentication fails  │
+└─────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────┐
+│         NoTap Fallback Verification              │
+│                                                  │
+│  User ID:    tiger-4829                          │
+│  Factor 1:   PIN          ✓ Verified             │
+│  Factor 2:   Pattern      ✓ Verified             │
+│                                                  │
+│  ✅ Identity confirmed — 14 seconds              │
+└─────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────┐
+│     PSP continues transaction                    │
+│     Process payment → Transaction complete       │
+└─────────────────────────────────────────────────┘
 ```
 
-**Your phone number works from any phone** — your phone, a friend's phone, a hotel phone. The number follows you, not the device.
+**NoTap integrates as a secondary verification layer within existing payment and access flows. It does not process payments. It verifies identity.**
 
-**NoTap works the same way.** Your PIN, your pattern, your rhythm — they follow you. Use them on any device: a store's tablet, a friend's laptop, a hospital kiosk, any browser.
+Users enroll once (5 minutes, on their own device). They configure multiple authentication factors — a PIN, a drawn pattern, a tap rhythm, a color sequence, an emoji sequence, or others. These are converted into cryptographic fingerprints. The raw values never leave the device.
 
-**Enroll once on your device. Authenticate anywhere without it.**
+After enrollment, they authenticate from any device. The system selects 2–3 factors per transaction based on risk:
 
----
-
-## What NoTap Is (And Isn't)
-
-### We Are: The Bouncer at the Club
-
-**NoTap is an authentication service.** Think of us as the bouncer at a nightclub:
-
-| The Bouncer | NoTap |
-|-------------|-------|
-| Checks your ID | Verifies your identity through multiple factors |
-| Confirms you're on the list | Confirms you are who you claim to be |
-| Lets you in | Grants access |
-| **Doesn't serve drinks** | **Doesn't process payments** |
-
-**Our job is answering one question: "Is this person who they claim to be?"**
-
-### We Enable: Authentication Without Your Phone
-
-**The fundamental problem with modern authentication:**
-
-| Method | Requires |
-|--------|----------|
-| SMS codes | Your phone |
-| Authenticator apps | Your phone |
-| Push notifications | Your phone |
-| Face ID / Touch ID | Your phone |
-
-**NoTap solution:** Authenticate on **any device** — the merchant's POS, a kiosk, a web browser, a friend's phone. Your authentication factors live in **your memory**, not a device.
-
-### We Are NOT Competing With:
-
-| Company/Service | What They Do | What NoTap Does |
-|-----------------|--------------|-----------------|
-| **Apple Pay / Google Pay** | Payment processing | We **integrate** with them |
-| **Face ID / Secure Enclave** | Device biometrics | We **use** them when available |
-| **Stripe / Adyen / Square** | Payment processing | We **hand off** to them |
-| **Hardware biometric scanners** | Fingerprint/face readers | We **leverage** their infrastructure |
-
-### How It Fits Together
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    USER AUTHENTICATION                       │
-│                         (NoTap)                              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  "Is this person who they claim to be?"                 │ │
-│  │  • 3-15 authentication factors                          │ │
-│  │  • Works on ANY device (no phone required!)             │ │
-│  │  • Uses device biometrics when available                │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-                     ✅ Identity Verified
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    PAYMENT PROCESSING                        │
-│              (Stripe, Apple Pay, Adyen, etc.)               │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  "Process this $49.99 transaction"                      │ │
-│  │  • Your chosen payment provider handles the money       │ │
-│  │  • We don't touch funds, ever                          │ │
-│  │  • Users keep their preferred payment methods           │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Users keep their preferred services:**
-- Already use Apple Pay? Great — we authenticate, Apple Pay processes
-- Prefer Google Wallet? No problem — we verify identity, Google handles payment
-- Love Samsung Pay? Perfect — we confirm it's you, Samsung does the rest
+| Transaction | Factors | Time |
+|-------------|---------|------|
+| Lower-risk transactions | 2 factors | ~10 seconds |
+| Higher-risk transactions | 3 factors | ~25 seconds |
+| Flagged / unusual | 3 factors | ~25 seconds |
 
 ---
 
-## The Problem NoTap Solves
+## What Makes NoTap Different
 
-**You need to make a purchase or access something secure, but:**
+Every existing authentication method verifies the device. NoTap verifies the person.
 
-- 📱 Your phone was **stolen** or the **battery died**
-- 💳 You **forgot your wallet** at the hotel
-- 🏃 You're at the **gym** and left everything in your locker
-- 🏖️ You're at the **beach** and don't want to risk losing your phone
-- 🎢 You're at a **theme park** and want to store everything safely
-- 🚕 Your **credit card was declined** and you need a taxi home
-- 🏥 You're a **nurse** with phone locked away (hospital rules)
-- 💻 You need to pay on an **untrusted device** (public computer, friend's phone)
+| Method | Fails When |
+|--------|------------|
+| SMS OTP | Phone unavailable, no signal, SIM swapped |
+| Authenticator app | Phone unavailable, switched, or stolen |
+| Device biometrics | Customer is at a different device |
+| Push notification | No signal, dead battery, wrong device |
+| **NoTap** | **Does not depend on the user's device** |
 
-**Traditional solutions all fail the same way:**
+Because NoTap factors are memory-based and reproducible from any interface, authentication continues through scenarios where every other method fails.
 
-| Solution | The Problem |
-|----------|-------------|
-| **Apple Pay / Google Pay** | Requires your phone |
-| **Credit Cards** | Requires your wallet |
-| **SMS 2FA** | Requires your phone |
-| **Authenticator Apps** | Requires your phone |
-| **Amazon One** | Only works at Amazon/Whole Foods |
-| **Cash** | Requires you to carry cash |
+Additional properties:
 
-**Every solution requires you to CARRY something.** NoTap requires only what you already have: your memory.
+- **Bot-resistant** — Behavioral timing patterns make automation significantly harder
+- **SIM-swap proof** — No phone number dependency, no SIM swap attack surface
+- **No replay attacks** — Each session uses a nonce and timestamp; factor grids randomize per transaction
+- **24-hour key rotation** — Daily digest rotation limits breach exposure to a single day
 
 ---
 
-## "Wait, Is This Complicated?"
+## Business Impact
 
-**No. Here's why NoTap is actually EASIER than traditional passwords:**
+Organizations using NoTap can:
 
-| Your Concern | The Reality |
-|--------------|-------------|
-| **"15 factors sounds overwhelming!"** | You **choose 3-6** factors. System asks for only **2-3 per transaction** (NOT all of them!) |
-| **"Too much to remember!"** | **Diversity = easier**: 4 colors (red, blue, green, yellow) is easier than "P@ssw0rd123!" |
-| **"Takes too long!"** | **10-30 seconds total**: Coffee = 2 factors (10 sec), Groceries = 3 factors (25 sec) |
-| **"What if I forget one?"** | **Forgiving system**: Wrong factor? System asks for different ones. Not locked out! |
-| **"I'm bad at memorizing!"** | **Biometrics available**: Fingerprint/face = zero memorization. Pattern/rhythm = muscle memory. |
+- **Recover failed transactions** that would otherwise be lost to device unavailability
+- **Reduce false declines** by providing higher-confidence identity verification
+- **Reduce fraud** by eliminating the attack vectors that exploit device-based authentication
+- **Designed for SCA compliance** — knowledge, behavioral, and biometric factors across 3 categories satisfy PSD3 requirements without 3D Secure friction
+- **Reduce support costs** from authentication-related access issues
 
-### Real Example
-
-**You enroll 6 factors** (one-time, 10 minutes):
-PIN + Pattern + Emoji + Rhythm + Fingerprint + Colors
-
-**Daily usage** (every transaction):
-
-| Coffee ($4) | Lunch ($15) | Groceries ($75) |
-|-------------|-------------|-----------------|
-| PIN + Fingerprint | Pattern + Colors | Rhythm + Emoji + Fingerprint |
-| **10 seconds** | **15 seconds** | **25 seconds** |
-
-**You NEVER complete all 6 factors in one transaction.** The system picks 2-3 based on purchase amount.
+NoTap does not replace your PSP. It sits in front of it. When authentication succeeds, your existing payment flow handles everything else.
 
 ---
 
-## How It Works
+## Integration
 
-### Step 1: Enroll Once (5 minutes, on your device)
+### PSP Integrations
 
-Pick 3+ things only you know or do (6+ recommended):
+NoTap integrates with major payment providers including Stripe, Adyen, Square, Tilopay, and MercadoPago.
 
-| Factor | What It Is | Example |
-|--------|------------|---------|
-| **PIN** | 4-12 digits you choose | `4829` |
-| **Pattern** | Shape you draw | Like an unlock pattern, but timed |
-| **Colors** | Sequence of colors | Red → Blue → Green → Yellow |
-| **Emoji** | Sequence of emoji | 🌙 → 🎸 → 🍕 → 🚀 |
-| **Rhythm** | Tap pattern you create | *tap-tap---tap-tap-tap* |
-| **Words** | 4 words you pick | ocean-tiger-melody-spark |
+PSP sessions can be created in parallel with authentication to reduce checkout latency.
 
-**Optional:** Add fingerprint or face for extra security when your phone IS available.
-
-These get turned into math (cryptographic digests). The actual values never leave your phone. We only store the "puzzle" — not the answer.
-
-### Step 2: Get Your NoTap Name
-
-Choose how you want to be identified:
-
-| Type | Example | Best For |
-|------|---------|----------|
-| **Alias** | `tiger-4829` | Easy to remember, say out loud |
-| **Blockchain Name** | `alice.notap.sol` | Professional, like an email |
-| **UUID** | `a1b2c3d4-5678-90ab...` | Maximum security |
-
-### Step 3: Use It Anywhere
-
-Walk up to any device. Enter your name. Complete 2-3 of your factors. Done.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   Welcome to NoTap                                          │
-│                                                             │
-│   Enter your NoTap ID: [tiger-4829          ]              │
-│                                                             │
-│   ─────────────────────────────────────────────────────     │
-│                                                             │
-│   Enter PIN:  [• • • •]                     ✓ Verified     │
-│                                                             │
-│   Draw Pattern: [        ]                  ✓ Verified     │
-│                 [   ───  ]                                  │
-│                 [     │  ]                                  │
-│                                                             │
-│   ─────────────────────────────────────────────────────     │
-│                                                             │
-│   ✅ Identity Verified                                      │
-│   Processing payment of $4.99...                            │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**That's it.** No phone. No card. No wallet. Just you.
-
----
-
-## Real Stories: When This Matters
-
-### 🔋 The Dead Phone
-
-> *You're at the airport. Flight boards in 20 minutes. Phone battery: 0%. You need coffee.*
->
-> **Before NoTap:** Beg strangers for a charger. Miss your flight.
->
-> **With NoTap:** Walk to the cafe. Say "tiger-4829". Enter your PIN on their tablet. Tap your rhythm. Coffee paid. **15 seconds.**
-
-### 🏥 The Locked-Out Nurse
-
-> *Your phone is in your locker (hospital rules). A patient needs medication from the secure cabinet. Now.*
->
-> **Before NoTap:** Run to locker. Unlock phone. Get 2FA code. Run back. Critical minutes lost.
->
-> **With NoTap:** Walk to cabinet. Type your NoTap ID. Draw your pattern. Cabinet unlocks. **Patient gets medication.**
-
-### 🏖️ The Beach Day
-
-> *Phone locked in the car (smart). Kids want ice cream.*
->
-> **Before NoTap:** Walk back to car. Get phone. Walk back. Ice cream melted.
->
-> **With NoTap:** Walk to vendor. Use their device. Authenticate. **Ice cream for everyone.**
-
-### 🎢 The Theme Park
-
-> *You're at a theme park with the family. You want to store everything in a locker — phone, wallet, everything — and just enjoy the rides worry-free.*
->
-> **Before NoTap:** Keep your phone in a zippered pocket. Worry about it on every roller coaster.
->
-> **With NoTap:** Lock everything away. Buy lunch, souvenirs, whatever — **completely hands-free.** Enjoy the day.
-
-### 🚕 The Declined Card
-
-> *It's 2 AM. You're stranded. Your credit card was declined. You need a taxi home.*
->
-> **Before NoTap:** Call a friend to send money. Wait 30 minutes. Feel helpless.
->
-> **With NoTap:** Open the taxi's payment tablet. Authenticate with your backup payment method. **Get home safe.**
-
-### 🏃 The Post-Workout Smoothie
-
-> *Finished your workout. Wallet and phone locked in the locker. Just want a smoothie.*
->
-> **Before NoTap:** Go back to locker. Get dressed. Get phone. Come back. The moment's gone.
->
-> **With NoTap:** Walk to the counter. Use their tablet. PIN + pattern. **Smoothie paid. Stay in the zone.**
-
----
-
-## Two Operating Modes
-
-| Mode | What Happens | Use Case |
-|------|--------------|----------|
-| **Authentication Only** | NoTap verifies identity → Grant access | Building entry, server login, secure cabinet |
-| **Auth + Payment** | NoTap verifies identity → PSP processes payment | Store checkout, restaurant bill, online purchase |
-
-### Authentication Mode Use Cases
-
-- **Enterprise:** Building entry, computer login, secure rooms, time clocks
-- **Healthcare:** HIPAA-compliant device-free login, prescription verification, lab equipment access
-- **Finance:** ATM without card, wire transfer approval, vault access
-- **Education:** Campus access, exam authentication, dorm entry
-
----
-
-## Security (Without the Jargon)
-
-**What we store:** A math puzzle that only your factors can solve.
-
-**What we DON'T store:** Your actual PIN, pattern, colors, or words.
-
-**How it works:**
-1. You enter your PIN on any device
-2. That device turns it into a math result (a "digest")
-3. We check if the math result matches — without ever seeing your PIN
-
-It's like a teacher checking if your math homework answer is correct, without seeing your work.
-
-### Security Features
-
-| Feature | What It Does |
-|---------|--------------|
-| **Double Encryption** | PBKDF2 + AWS KMS |
-| **24-Hour Expiry** | Factors auto-refresh daily |
-| **Factor Shuffling** | Different factors asked each time |
-| **Risk-Based Auth** | $5 coffee = 2 factors, $100 purchase = 3 factors |
-| **Zero-Knowledge Proofs** | Merchant never sees which factors you used |
-| **Constant-Time Operations** | Prevents timing attacks |
-
-### If Your Phone Is Stolen
-
-**Traditional auth:** Attacker has your 2FA forever until you notice.
-
-**NoTap:**
-- Your authentication factors live in your memory, not your phone
-- Stored digests expire in 24 hours with daily rotation
-- After 24h: Attacker is **completely locked out**
-
----
-
-## Available Factors (15 Total)
-
-You choose 3+ from these:
-
-### Knowledge (Something You Know)
-- **PIN** — 4-12 digits
-- **Colors** — Sequence of 3-6 colors
-- **Emoji** — Sequence of 3-8 emojis
-- **Words** — 4 memorable words
-
-### Inherence (Something You Are)
-- **Pattern** — Visual unlock pattern with timing
-- **Rhythm Tap** — Your unique tapping pattern
-- **Voice** — Spoken passphrase
-- **Image Tap** — Tap specific points on an image
-- **Mouse/Stylus Draw** — Your signature style
-- **Balance** — Device tilt pattern
-- **Fingerprint** — Via device sensor
-- **Face** — Via device camera
-
-### Possession (Something You Have)
-- **NFC** — Tap your NFC tag/card
-
----
-
-## Blockchain Name Support
-
-Use human-readable names instead of UUIDs:
-
-| Service | Example |
-|---------|---------|
-| **Solana Name Service** | `alice.notap.sol` (free during enrollment) |
-| **Ethereum Name Service** | `alice.eth` (bring your own) |
-| **Unstoppable Domains** | `alice.crypto`, `.nft`, `.wallet` |
-| **BASE Name Service** | `alice.base.eth` |
-
-**Merchant asks:** "What's your NoTap ID?"
-**You can say:** `tiger-4829` or `alice.notap.sol` — both work.
-
----
-
-## For Developers
-
-### Quick Start
-
-```kotlin
-// Android
-val noTap = NoTap(context, NoTapConfig(
-    baseUrl = "https://api.notap.io",
-    enableBiometrics = true
-))
-
-// Start enrollment
-noTap.enrollment.enroll(
-    factors = listOf(Factor.PIN, Factor.PATTERN, Factor.EMOJI),
-    paymentProvider = PaymentProvider.STRIPE,
-    onSuccess = { noTapId -> println("NoTap ID: $noTapId") }
-)
-
-// Merchant verification
-noTap.verification.verify(
-    noTapId = "tiger-4829",
-    amount = 49.99,
-    onSuccess = { result -> processPayment(result.paymentToken) }
-)
-```
-
-### SDKs Available
+### SDKs
 
 | Platform | Status |
 |----------|--------|
@@ -429,96 +169,23 @@ noTap.verification.verify(
 | **Web** | ✅ Production |
 | **iOS** | 🚧 Q1 2026 |
 
-### Supported PSPs
+### Quick Start
 
-Stripe, Adyen, Square, Tilopay, MercadoPago — with parallel session creation (28% faster checkout).
+```kotlin
+val noTap = NoTap(context, NoTapConfig(
+    baseUrl = "https://api.notap.io",
+    apiKey = "your_api_key"
+))
 
-### Developer Portal
-
-- **API Keys:** Generate sandbox + production keys
-- **Webhooks:** enrollment.completed, verification.succeeded, etc.
-- **Analytics:** Usage stats, success rates, response times
-- **Sandbox:** Test mode with fake payments
-
----
-
-## For Merchants
-
-### Why Integrate NoTap?
-
-| Problem | NoTap Solution |
-|---------|----------------|
-| 30% of transactions fail during auth | Backup when primary payment fails |
-| $443B in falsely declined transactions | Reduce false declines |
-| PSD3 SCA compliance (mandatory 2026) | 15 factors vs. 2 minimum required |
-
-### Integration Options
-
-- **E-Commerce Plugins:** Shopify, WooCommerce (via Startup tier)
-- **Direct API:** RESTful + SDKs
-- **White-Label:** Enterprise tier only
-
-### Pricing (Pay per Verification)
-
-**Merchant Plans:**
-- **Sandbox:** Free (500 verifications/month)
-- **Startup:** $49/month (10,000 verifications/month)
-- **Pro:** $299/month (100,000 verifications/month)
-- **Business:** $1,299/month (1,000,000 verifications/month)
-- **Enterprise:** Custom (Unlimited)
-
-**Consumer Plans:**
-- **Free:** $0 forever (unlimited authentications)
-- **Plus:** $2.99/month (Cloud Backup, Advanced Security)
-
-See [Pricing Tiers Summary](documentation/08-business/PRICING_TIERS_SUMMARY.md) for details.
-
----
-
-## Who This Is For
-
-### For People
-- **Athletes & gym-goers** — Leave phone in locker, still buy post-workout
-- **Beach/pool lovers** — Don't risk your phone near water
-- **Travelers** — Phone stolen abroad? Still get home
-- **Parents** — Phone with kids? Still buy groceries
-
-### For Businesses
-- **Hospitals** — Staff authenticate without phones in sterile areas
-- **Warehouses** — Workers with gloves authenticate on terminals
-- **Call centers** — Agents log in without personal devices
-- **Any business** — No more badge replacements, no more lockouts
-
----
-
-## Technical Architecture
-
-> **Note:** NoTap is the public brand. Code uses `zeropay` for API stability (like Meta/Facebook).
-
-### Kotlin Multiplatform (95% code reuse)
-
-```
-zeropay-android/
-├── sdk/                    # Core SDK (KMP)
-│   ├── commonMain/        # Platform-agnostic
-│   ├── androidMain/       # Android-specific
-│   └── jsMain/            # Web-specific
-├── enrollment/            # User enrollment module
-├── merchant/              # Merchant verification module
-├── online-web/            # Web SDK (Kotlin/JS)
-└── backend/               # Node.js API server
+noTap.verification.verify(
+    noTapId = "tiger-4829",
+    amount = 49.99,
+    onSuccess = { result -> processPayment(result.paymentToken) },
+    onFailure = { error -> handleAuthFailure(error) }
+)
 ```
 
-### Data Storage
-
-| Storage | Purpose | Encryption |
-|---------|---------|------------|
-| **Device KeyStore** | NoTap ID + cached digests | Hardware-backed |
-| **Redis** | Encrypted digests | AES-256-GCM + TLS |
-| **PostgreSQL** | KMS-wrapped keys + names | AWS KMS |
-| **Solana** | Audit trail (hashed UUIDs) | Public blockchain |
-
-**Privacy Guarantee:** Only cryptographic hashes stored. Never raw biometric data, PINs, or patterns.
+Full API reference: [docs.notap.io/api](https://docs.notap.io/api)
 
 ---
 
@@ -526,69 +193,69 @@ zeropay-android/
 
 | Standard | Status |
 |----------|--------|
-| **PSD3 SCA** | ✅ Compliant (15 factors across 3 categories) |
-| **GDPR** | ✅ Compliant (24h TTL, right to erasure) |
+| **PSD3 SCA** | ✅ Designed for compliance — knowledge, behavioral, and biometric categories |
+| **GDPR** | ✅ Compliant — 24h TTL, right to erasure, no raw biometric storage |
 | **OWASP Top 10** | ✅ Mitigated |
-| **NIST Crypto** | ✅ Compliant (SHA-256, PBKDF2, AES-256-GCM) |
+| **NIST Cryptography** | ✅ SHA-256, PBKDF2, AES-256-GCM |
+| **SOC 2 Type II** | 🚧 Q2 2026 |
+| **HIPAA** | 🚧 Q3 2026 |
 
 ---
 
-## The Vision
+## Pricing
 
-> *I see a future where people live freer: shop at the beach risk-free, travel worry-free, and businesses attract customers who used to abandon carts. NoTap isn't just authentication; it's pure freedom.*
+Pricing depends on verification volume. Enrollments are free and unlimited.
 
-**What this unlocks:**
-
-| For People | For Businesses |
-|------------|----------------|
-| Shop at the beach risk-free | Capture abandoned transactions |
-| Travel without worry | Attract customers who left wallets behind |
-| Leave phone in locker at gym | Reduce fraud with stronger auth |
-| Never be stranded with dead battery | PSD3 compliance built-in |
-
-**NoTap enables new consumer behaviors and new ways of doing business.**
-
-> *And you — how do you see the future? Can you imagine the potential this has in the markets you know?*
+See [notap.io/pricing](https://notap.io/pricing) for full tier details, or [Extended Features](documentation/02-user-guides/EXTENDED_FEATURES.md) for consumer pricing.
 
 ---
 
-## Documentation
+## Product Scope
 
-- **[API Reference](https://docs.notap.io/api)**
-- **[Integration Guides](https://docs.notap.io/integrations)**
-- **[Developer Portal](https://developer.notap.io)**
-- **[Investment Analysis](documentation/08-business/INVESTMENT_ANALYSIS_REVISED.md)**
+### Core Platform
+
+Device-independent authentication fallback for payments and access control. This is what NoTap is today and what every integration is built on.
+
+The core platform works independently of blockchain, AI, or agentic payment systems. It requires only an API connection and one of the available SDKs.
+
+### Future Extensions
+
+The same authentication infrastructure will extend to support:
+
+- **AI agent authentication** — Identity verification for autonomous agents initiating payments
+- **Decentralized identity** — Integration with self-sovereign identity systems
+- **Blockchain name services** — Human-readable identifiers (.sol, .eth, .crypto) resolved to NoTap IDs
+- **Autonomous payment agents** — Authentication flows for agent-to-agent commerce
+
+These are extensions of the core primitive. They do not change how the core platform works.
 
 ---
 
-## Support & Community
+## Summary
+
+NoTap is authentication infrastructure for payments and access. It fills the gap that exists when device-based authentication fails — which happens more often, and costs more, than most organizations measure.
+
+**One sentence:** NoTap is a device-independent fallback authentication layer — when device-based authentication fails, it verifies identity from any available interface so PSPs can recover the transaction.
+
+---
+
+## Resources
 
 - **Website:** [https://notap.io](https://notap.io)
 - **Documentation:** [https://docs.notap.io](https://docs.notap.io)
-- **General Inquiries:** hello@notap.io
+- **Developer Portal:** [https://developer.notap.io](https://developer.notap.io)
+- **API Reference:** [https://docs.notap.io/api](https://docs.notap.io/api)
+- **General:** hello@notap.io
 - **Technical Support:** support@notap.io
 - **Partnerships:** partnership@notap.io
-- **X/Twitter:** [@NoTapAuth](https://x.com/NoTapAuth)
-- **Solana Name Service:** notap.sol
-
----
-
-## License
-
-Licensed under Apache License 2.0 - see [LICENSE](LICENSE).
-
-**Commercial Use:** Permitted with attribution. Contact us for white-label licensing.
 
 ---
 
 <div align="center">
-  <p><strong>Made with ❤️ by the NoTap Team</strong></p>
-  <p>
-    <a href="https://notap.io">Website</a> •
-    <a href="https://docs.notap.io">Documentation</a> •
-    <a href="https://github.com/keikworld/zero-pay-sdk">GitHub</a>
-  </p>
+<p>Licensed under <a href="LICENSE">Apache License 2.0</a></p>
+<p>Made with ❤️ by the NoTap Team</p>
 </div>
+
 
 ---
 
