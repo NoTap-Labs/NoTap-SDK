@@ -1019,8 +1019,92 @@ Each Node.js service file MUST have exactly ONE `module.exports` at the bottom. 
 grep -n "module\.exports" backend/services/*.js | awk -F: '{print $1}' | sort | uniq -d
 ```
 
+---
+
+## 11. Compliance-First Development (MANDATORY)
+
+**Every new feature >100 LOC MUST include a Compliance Matrix BEFORE writing code.**
+
+### Why This Rule Exists
+
+Root cause (2026-03-16): An implementation plan for Agent Protocol Integration was designed feature-first instead of compliance-first. This produced 6 violations that were caught only during post-design audit:
+- Callback URL stored without SSRF middleware wired in
+- Callback secret stored unencrypted in Redis
+- Usage log used bare SHA-256 instead of salted hash via `privacyUtils`
+- Biometric factors via new flow skipped BIPA jurisdiction check
+- External response body logged without sanitization
+- Enrollment info endpoint returned more data than needed (data minimization)
+
+**Fix:** Compliance matrix is the FIRST deliverable, not the last. Code is designed around the matrix.
+
+### Required Deliverables (Before Code)
+
+1. **Data Handling Matrix** — What data enters, is stored, leaves, and is explicitly NOT collected. For each: format, encryption, anonymization, retention, cleanup method.
+
+2. **Legal Basis Matrix** — GDPR Article 6 basis for each stored data point: Contract 6(1)(b), Legitimate Interest 6(1)(f), Legal Obligation 6(1)(c), or Consent 6(1)(a).
+
+3. **Security Controls Matrix** — For each new endpoint: auth method, rate limit, replay protection, SSRF check, audit logging, input sanitization.
+
+4. **Risk Assessment** — Threat model (what if key compromised? what if URL manipulated? what if data leaked?), blast radius, regulatory fine exposure.
+
+5. **Regulatory Matrix** — Map each data point against: GDPR, BIPA (if biometric), CCPA, PIPEDA, LGPD.
+
+### Where To Put It
+
+`documentation/05-security/[FEATURE_NAME]_COMPLIANCE.md`
+
+**Reference template:** `documentation/05-security/AGENT_INTEGRATION_COMPLIANCE.md`
+
+### Never Bypass
+
+- NEVER skip compliance matrix for speed
+- NEVER store data without identified legal basis
+- NEVER accept external URLs without SSRF validation
+- NEVER store secrets without encryption + memory wipe
+- NEVER log data without checking sanitization rules
+- NEVER expose user data without data minimization check
+- NEVER allow biometric factors without jurisdiction/BIPA check
+
+---
+
+## 12. Stateless Service Design — Scalability-First (MANDATORY)
+
+**All backend services MUST be safe for horizontal scaling (multiple instances).**
+
+### Why This Rule Exists
+
+Root cause (2026-03-20): The `dataRetentionCleanup.js` used a module-level mutable `CleanupStats` singleton. If two cleanup runs execute concurrently (e.g., two containers), they overwrite each other's statistics — a race condition. Similar patterns in other services could cause data corruption under horizontal scaling.
+
+### Rules
+
+1. **No module-level mutable state** — Use factory functions (`createX()`) that return fresh objects. Module-level `const` config is fine; module-level `let`/mutable objects are not.
+
+2. **Use cacheService/dbService abstractions** — Never call Redis or PostgreSQL directly. Abstractions enable provider swaps (Redis → Valkey, PG → CockroachDB) without touching service code.
+
+3. **Batch operations for bulk data** — Use `BATCH_SIZE` pattern with SCAN/cursor pagination. Never `KEYS *` or unbounded `SELECT`.
+
+4. **Non-blocking side effects** — Fire-and-forget operations (audit logs, callback delivery, usage tracking) must use `.catch()` pattern. Never let a side effect failure block the main flow.
+
+5. **SSRF re-validation at delivery time** — URLs validated at registration may resolve differently later (DNS rebinding). Always re-validate with `validateURL()` before making outbound HTTP requests.
+
+6. **Dependency injection via constructor/config** — Services should accept dependencies (db, cache, logger) as parameters, not import singletons. Enables testing and provider swaps.
+
+7. **Plug-and-play services** — Each service must be independently replaceable. No circular imports between services. Shared utilities go in `utils/` or `crypto/`.
+
+### Quick Checklist
+
+- [ ] No `let` or mutable objects at module scope (except lazy singletons with `resetX()`)
+- [ ] All Redis/DB access through abstraction layer
+- [ ] Bulk operations use SCAN + BATCH_SIZE
+- [ ] Side effects are non-blocking (`.catch()`)
+- [ ] Outbound URLs re-validated before delivery
+- [ ] Service accepts deps as params, not global imports
+
+---
+
 ### See Also:
 
 - `documentation/03-developer-guides/ACCOUNT_RECOVERY_SYSTEM.md` — Full recovery system guide
 - `documentation/05-security/SECURITY_PATTERNS_REFERENCE.md` — Recovery code crypto patterns
+- `documentation/05-security/AGENT_INTEGRATION_COMPLIANCE.md` — Reference compliance document
 - `documentation/10-internal/LESSONS_LEARNED.md` — Lessons 52-54
