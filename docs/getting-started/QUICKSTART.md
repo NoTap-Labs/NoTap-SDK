@@ -1,7 +1,7 @@
 # ZeroPay SDK - Internal Development Quick Start
 
-**Version:** 2.0.0 (internal build)
-**Last Updated:** 2026-02-09
+**Version:** 3.22.0 (internal build)
+**Last Updated:** 2026-03-21
 **Target:** Internal developers working on the codebase
 
 ---
@@ -169,6 +169,10 @@ npm run test:integration
 
 # E2E tests
 npm run test:e2e
+
+# Coverage report (c8 + V8 native)
+npm run test:coverage          # Enforces thresholds (60% lines, 50% functions)
+npm run test:coverage:report   # HTML report → coverage/
 ```
 
 ### SDK Tests

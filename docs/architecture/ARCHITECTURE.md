@@ -2,7 +2,7 @@
 
 **Purpose**: Comprehensive system architecture, module structure, and data flow documentation
 
-**Last Updated**: 2026-02-22
+**Last Updated**: 2026-03-21
 
 **NEW in v2.0:**
 - Web Platform Architecture (online-web module deep dive)
@@ -14,6 +14,12 @@
 - Account Recovery Architecture (recovery codes, tiered thresholds, grace period)
 - Auth Mode System (password/notap/both per-account)
 - Login Lockout (brute-force protection for all user types)
+
+**NEW in v3.21.0:**
+- Agentic Payment Framework (MCP server, A2A Agent Card, agent auth/registration/callbacks)
+- GDPR Data Retention (scheduled cleanup jobs for all agent tables)
+- BIPA Biometric Consent Management
+- 3-Layer Violation Detection (startup validator + pre-push agent + CI audit)
 
 ---
 
@@ -33,7 +39,8 @@
 12. [Multi-Chain Name Service Architecture](#multi-chain-name-service-architecture) ⭐ NEW
 13. [Parallel PSP Integration Architecture](#parallel-psp-integration-architecture) ⭐ NEW
 14. [Account Recovery & Auth Mode Architecture](#account-recovery--auth-mode-architecture) ⭐ NEW
-15. [Module Dependencies](#module-dependencies)
+15. [Agentic Payment Framework](#agentic-payment-framework) ⭐ NEW v3.21.0
+16. [Module Dependencies](#module-dependencies)
 
 ---
 
@@ -50,7 +57,8 @@
 | **merchant** | Android | Verification flow (4 screens, 15 canvases) | ✅ Complete | 38 files |
 | **online-web** | Kotlin/JS | Web enrollment + verification (10 canvases) | ✅ Complete | 45 files, 13,000+ LOC |
 | **psp-sdk** | KMP | PSP integration SDK | ✅ Complete | 19 files |
-| **backend** | Node.js | API server (43 routers) | ✅ Complete | 43 route files, 47 test files |
+| **backend** | Node.js | API server (48 routers) | ✅ Complete | 48 route files, 54 test files |
+| **mcp-server** | Node.js | MCP server for agentic payments | ✅ Complete | 8 files |
 | **app** | Android | Demo application | ✅ Complete | 15 files |
 
 ### Core Security Features
@@ -1957,6 +1965,62 @@ NoTap login validation pattern (shared across all 3 routers):
 | `recovery_audit_log` | 025 | Immutable audit trail (5 action types) |
 | `auth_mode` column | 026 | Per-account auth mode on 3 tables |
 | `failed_login_attempts` | 027 | Lockout tracking on 3 tables |
+
+---
+
+## Agentic Payment Framework
+
+> **Added in v3.21.0** — Enables AI agents to initiate and complete NoTap-authenticated payments on behalf of users.
+
+### Architecture Overview
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  AI Agent    │────▶│  MCP Server  │────▶│  Backend API │
+│  (Client)    │     │  (Bridge)    │     │  /v1/agent/* │
+└──────────────┘     └──────────────┘     └──────────────┘
+                                                │
+                                          ┌─────┴─────┐
+                                          │  User App  │
+                                          │  (Approve) │
+                                          └───────────┘
+```
+
+### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| **MCP Server** | `mcp-server/` | Model Context Protocol bridge — exposes 3 tools (initiate_auth, check_status, cancel_auth) |
+| **Agent Registration** | `backend/routes/agentRegistrationRouter.js` | Agent CRUD, credential management, key rotation |
+| **Agent Auth** | `backend/routes/agentAuthRouter.js` | Auth session lifecycle (initiate → user approval → verify → complete) |
+| **Agent Auth Service** | `backend/services/AgentAuthService.js` | Session state machine with Redis-backed TTL |
+| **Agent Callback Service** | `backend/services/AgentCallbackService.js` | Async callback delivery with retry (exponential backoff) |
+| **Agent Registration Service** | `backend/services/AgentRegistrationService.js` | Credential hashing, scope validation, GDPR compliance |
+| **A2A Agent Card** | `backend/.well-known/agent.json` | Google A2A protocol discovery |
+
+### Auth Flow
+
+1. **Agent** calls `initiate_auth` via MCP with user identifier + amount + currency
+2. **Backend** creates pending session (5-min TTL), notifies user app
+3. **User** reviews and approves in their app (biometric/PIN confirmation)
+4. **Backend** marks session verified, delivers callback to agent
+5. **Agent** polls `check_status` or receives callback with auth token
+
+### Security
+
+- Agent credentials: API key + secret (hashed with bcrypt, secret shown once)
+- Permission scopes: `payment:initiate`, `payment:status`, `payment:cancel`
+- SSRF protection on callback URLs (validated at registration AND delivery)
+- Rate limiting: 30 req/min for auth, 60 req/min for status checks
+- GDPR: Agent data included in data retention cleanup (configurable retention period)
+
+### Database Tables (Migration 028-030)
+
+| Table | Migration | Purpose |
+|-------|-----------|---------|
+| `registered_agents` | 028 | Agent profiles, hashed credentials, scopes |
+| `agent_auth_sessions` | 029 | Auth session state machine (pending→verified→completed/expired) |
+| `agent_audit_log` | 030 | Immutable agent action audit trail |
 
 ---
 
