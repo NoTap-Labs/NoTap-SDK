@@ -1107,4 +1107,48 @@ Root cause (2026-03-20): The `dataRetentionCleanup.js` used a module-level mutab
 - `documentation/03-developer-guides/ACCOUNT_RECOVERY_SYSTEM.md` — Full recovery system guide
 - `documentation/05-security/SECURITY_PATTERNS_REFERENCE.md` — Recovery code crypto patterns
 - `documentation/05-security/AGENT_INTEGRATION_COMPLIANCE.md` — Reference compliance document
-- `documentation/10-internal/LESSONS_LEARNED.md` — Lessons 52-54
+- `documentation/10-internal/LESSONS_LEARNED.md` — Lessons 52-54, 58-64
+
+---
+
+## 13. Automated Violation Detection (MANDATORY)
+
+**Three layers of automated detection prevent security/privacy regressions.**
+
+### Why This Rule Exists
+
+Root cause (2026-03-20): Full-project audit discovered 30+ violations (unsalted hashes, raw IPs in logs, console.log bypassing PII redaction, private DB pools, Redis without TTL) that had been present for months. No automated system caught them because checks only covered KMP separation and a few security patterns.
+
+### Layer 1: Startup Validator (`backend/utils/startupValidator.js`)
+
+Runs at server boot. Checks environment configuration (required/recommended env vars, PRIVACY_APP_SALT strength, production-specific settings). Logs structured warnings — does NOT block startup. Violations appear in observability dashboards.
+
+### Layer 2: Pre-Push Agent (`scripts/verify-patterns.sh`)
+
+Runs before every `git push`. Checks 20-23 added for this audit:
+- Check 20: `console.*` in backend production code → **BLOCKS push**
+- Check 21: Unsalted SHA-256 hashes → **BLOCKS push**
+- Check 22: Private `new Pool()` creation → **BLOCKS push**
+- Check 23: Broken `require('../config/redis')` → **BLOCKS push**
+
+### Layer 3: CI Audit Script (`scripts/audit-violations.sh`)
+
+Run in CI pipeline or manually. 10 checks covering all audit violations:
+1. console.* in production code
+2. Unsalted SHA-256 hashes
+3. Raw IP addresses in logs
+4. Redis .set() without TTL
+5. Private DB Pool creation
+6. Module-level mutable state
+7. Math.random() usage
+8. Hardcoded secrets
+9. Broken redis config imports
+10. Permission leaks in error responses
+
+### Adding New Checks
+
+When a new violation pattern is discovered:
+1. Add a lesson to `LESSONS_LEARNED.md` (root cause + fix)
+2. Add a check to `scripts/audit-violations.sh` (CI detection)
+3. If blocking, add to `scripts/verify-patterns.sh` (pre-push gate)
+4. If runtime-detectable, add to `backend/utils/startupValidator.js`
