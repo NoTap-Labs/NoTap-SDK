@@ -174,7 +174,7 @@ logger.warn(`event: ${key}="${value}"`) → logger.warn(`event: "${key}"=[REDACT
 
 ---
 
-## 7. No Inline Tests (CRITICAL)
+## 7a. No Inline Tests (CRITICAL)
 
 **NEVER include test code inside production source files.**
 
@@ -206,7 +206,7 @@ grep -r "_test:" backend/
 
 ---
 
-## 7. Test-Driven Development & Test Maintenance (CRITICAL)
+## 7b. Test-Driven Development & Test Maintenance (CRITICAL)
 
 **Every code change MUST update ALL related tests IMMEDIATELY.**
 
@@ -272,7 +272,7 @@ Code change → Search all tests → Update all tests → Verify compilation →
 
 ---
 
-## 7. Feature Environment Variables
+## 7c. Feature Environment Variables
 
 **ALWAYS add feature flags/variables to BOTH `.env.example` AND your local `.env`.**
 
@@ -1021,7 +1021,7 @@ grep -n "module\.exports" backend/services/*.js | awk -F: '{print $1}' | sort | 
 
 ---
 
-## 11. Compliance-First Development (MANDATORY)
+## 17. Compliance-First Development (MANDATORY)
 
 **Every new feature >100 LOC MUST include a Compliance Matrix BEFORE writing code.**
 
@@ -1067,7 +1067,7 @@ Root cause (2026-03-16): An implementation plan for Agent Protocol Integration w
 
 ---
 
-## 12. Stateless Service Design — Scalability-First (MANDATORY)
+## 18. Stateless Service Design — Scalability-First (MANDATORY)
 
 **All backend services MUST be safe for horizontal scaling (multiple instances).**
 
@@ -1111,7 +1111,7 @@ Root cause (2026-03-20): The `dataRetentionCleanup.js` used a module-level mutab
 
 ---
 
-## 13. Automated Violation Detection (MANDATORY)
+## 19. Automated Violation Detection (MANDATORY)
 
 **Three layers of automated detection prevent security/privacy regressions.**
 
@@ -1152,3 +1152,86 @@ When a new violation pattern is discovered:
 2. Add a check to `scripts/audit-violations.sh` (CI detection)
 3. If blocking, add to `scripts/verify-patterns.sh` (pre-push gate)
 4. If runtime-detectable, add to `backend/utils/startupValidator.js`
+
+---
+
+## 20. Verify Before You Write (MANDATORY — BLOCKING)
+
+**Severity: BLOCKING — applies to ALL contributors (human, LLM agent, AI assistant, IDE copilot)**
+
+**NEVER write code that references existing modules, services, utilities, or APIs without first reading the actual source files.** Assumptions about file paths, export names, function signatures, or class APIs are FORBIDDEN.
+
+### Why This Rule Exists
+
+**Incident (2026-03-22):** `bipaConsentRouter.js` was deployed to production with 3 non-existent imports:
+1. `require('../database/pool')` — file was `../database/database`
+2. `require('../services/auditService')` — file was `../services/AuditService` (PascalCase)
+3. Called `logAuditEvent({eventAction, metadata})` — actual API was `new AuditService(pool).logEvent({eventType, uuid, details, severity})`
+
+Each was an assumption that could have been caught in <30 seconds by reading the actual files. Result: **3 consecutive production crashes, 4 emergency commits, ~30 minutes of downtime.**
+
+### What You MUST Verify
+
+Before writing ANY `require()`, `import`, or function call to an existing module:
+
+| Check | How to verify | Example of failure |
+|-------|---------------|-------------------|
+| **File exists** | `ls` / Glob the exact path | `require('../database/pool')` — file was `database/database` |
+| **Correct casing** | Read the actual filename on disk | `require('../services/auditService')` — file was `AuditService.js` |
+| **Export shape** | Read the `module.exports` or `export` block | Expected standalone `logAuditEvent()` — actual was `AuditService` class |
+| **Function signature** | Read the function/method definition | Called with `{eventAction, metadata}` — actual params were `{eventType, uuid, details, severity}` |
+| **Pattern consistency** | Check how other files in the same directory use the module | All routers used `require('../database/database')` — bipaConsentRouter guessed `../database/pool` |
+| **Transitive deps** | Verify the module's own imports also resolve | A module that imports a non-existent file will crash at require time |
+
+### The Verification Workflow
+
+```
+1. PLAN    → Identify which existing modules/services you need
+2. READ    → Open each module, read its exports and function signatures
+3. COMPARE → If your planned usage doesn't match the actual API, adjust your plan
+4. ASK     → If unsure about the intended pattern — ASK, don't guess
+5. CODE    → Only now write the implementation
+6. VERIFY  → Run `node -e "require('./path/to/file')"` to confirm no import crashes
+```
+
+### Planning is MANDATORY
+
+For any non-trivial work (>50 LOC or >2 files), you MUST plan before coding. The plan MUST include:
+
+- **Dependency inventory:** List every existing file that will be imported or modified
+- **Verified exports:** For each dependency, document the actual export shape (read from source, not assumed)
+- **Pattern check:** How do other files in the codebase use this module? Follow the same pattern
+- **Compliance review:** Cross-reference with DEVELOPMENT_RULES.md, LESSONS_LEARNED.md, SECURITY_PATTERNS_REFERENCE.md
+- **Architecture review:** Does the plan align with ARCHITECTURE.md and existing module boundaries?
+
+**If you have doubts about a module's API, file location, or pattern — READ the codebase. If still unclear — ASK. Never proceed on assumption.**
+
+### Quick Reference: Common Patterns to Verify
+
+| Module | Correct import | Common mistake |
+|--------|---------------|----------------|
+| Database pool | `require('../database/database')` | `require('../database/pool')` |
+| Audit logging | `new AuditService(pool).logEvent({...})` | Standalone `logAuditEvent()` |
+| Privacy utils | `require('../utils/privacyUtils')` | `require('../utils/privacy')` |
+| Logger | `require('../utils/logger')` | `require('../logger')` or `console.log` |
+| Secrets | `require('../config/secrets')` | `process.env.SECRET` directly |
+| Constant-time | `require('../utils/constantTimeCompare')` | Inline `timingSafeEqual` |
+| Cache service | `require('../services/cacheService')` | Direct `redis.set()` |
+| DB service | `require('../services/dbService')` | Direct `pool.query()` from new Pool |
+
+### Enforcement
+
+This rule cannot be fully enforced by static analysis, but:
+1. **`node -e "require('./server')"` in pre-push** catches broken imports before they reach production
+2. **Code review** must verify imports match actual source files
+3. **LLM system prompts** (CLAUDE.md, GEMINI.md) mandate this as a blocking rule
+4. **Planning phase** must include dependency verification as a checklist item
+
+### NEVER
+
+- ❌ Assume a module exists because the name "sounds right"
+- ❌ Assume a function signature because "it probably works like X"
+- ❌ Assume file casing — Node.js on Linux is case-sensitive
+- ❌ Skip reading exports when using a module for the first time
+- ❌ Copy import patterns from AI training data instead of reading actual project files
+- ❌ Proceed with coding when unsure about a dependency — ask first
