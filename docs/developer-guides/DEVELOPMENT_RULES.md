@@ -1235,3 +1235,86 @@ This rule cannot be fully enforced by static analysis, but:
 - ❌ Skip reading exports when using a module for the first time
 - ❌ Copy import patterns from AI training data instead of reading actual project files
 - ❌ Proceed with coding when unsure about a dependency — ask first
+
+---
+
+## 21. Kotlin/JS Object Singletons — Always Store Parameters Explicitly (MANDATORY)
+
+**Applies to:** `online-web` canvas objects (and any Kotlin/JS `object` declaration that receives params in one function and uses them in another)
+
+### The Problem
+
+Kotlin `object` declarations are singletons. A parameter received in `render()` is **not** automatically available in `submit()` — they are separate function invocations. Without an explicit field assignment, the submit function reads the zero-value field (`""`), not the caller's value.
+
+### The Rule
+
+**Every `object` canvas MUST store caller parameters to object fields immediately in `render()`, after `cleanup()`, before creating the coroutine scope:**
+
+```kotlin
+fun render(root: HTMLDivElement, onComplete: suspend (ByteArray) -> Unit, uuid: String = "") {
+    cleanup()
+    this.uuid = uuid   // ← MANDATORY — do this for every parameter used outside render()
+    coroutineScope = CoroutineScope(...)
+```
+
+### Checklist for new canvas objects
+
+- [ ] `private var uuid: String = ""` declared as object field
+- [ ] `this.uuid = uuid` first assignment after `cleanup()` in `render()`
+- [ ] All other caller parameters that `submit*()` needs are also stored as object fields
+- [ ] Object fields reset in `cleanup()` if they should not persist across re-renders
+
+### See Also
+
+Lesson 82 in `documentation/10-internal/LESSONS_LEARNED.md`
+
+---
+
+## 22. Drawing Canvas Input — Always Register Document-Level Pointer End Events (MANDATORY)
+
+**Applies to:** Any canvas using `isDrawing` state tracked by mousedown/mouseup (or pointerdown/pointerup)
+
+### The Problem
+
+Element-scoped `mouseup` only fires when the pointer is released **over that element**. On desktop, users frequently press on canvas, drag beyond its bounds (common in pattern selection), and release outside — the element-level listener never fires, `isDrawing` stays `true`, and the Submit button stays permanently disabled.
+
+### Required Listener Pattern
+
+```kotlin
+// For mouse-based drawing canvases:
+canvasMouseLeaveListener = { _: Event -> endDrawing() }   // stops mid-drag exit
+canvas?.addEventListener("mouseleave", canvasMouseLeaveListener!!)
+
+documentMouseUpListener = { _: Event -> endDrawing() }    // catches release anywhere
+document.addEventListener("mouseup", documentMouseUpListener!!)
+
+// For touch/stylus (Pointer Events API):
+documentPointerUpListener = { _: Event -> if (isDrawing) stopDrawing() }
+document.addEventListener("pointerup", documentPointerUpListener!!)
+```
+
+### Mandatory Cleanup
+
+All document-level listeners MUST be removed in `cleanup()`:
+
+```kotlin
+fun cleanup() {
+    documentMouseUpListener?.let { document.removeEventListener("mouseup", it) }
+    documentPointerUpListener?.let { document.removeEventListener("pointerup", it) }
+    documentMouseUpListener = null
+    documentPointerUpListener = null
+}
+```
+
+**Why:** Document listeners survive DOM removal. Without cleanup, each re-render accumulates ghost listeners that call `endDrawing()`/`stopDrawing()` on the next canvas.
+
+### Checklist
+
+- [ ] `isDrawing` canvases have `mouseleave` OR `pointerleave` on the canvas element
+- [ ] `isDrawing` canvases have `mouseup`/`pointerup` on `document`
+- [ ] Touch canvases have `touchend` on `document`
+- [ ] All document listeners tracked in nullable fields and removed in `cleanup()`
+
+### See Also
+
+Lesson 83 in `documentation/10-internal/LESSONS_LEARNED.md`
