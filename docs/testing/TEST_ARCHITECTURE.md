@@ -445,27 +445,131 @@ expected_result: Feature completed successfully with confirmation displayed
 
 ### 3. SDK Unit Test (Kotlin)
 
-**File:** `sdk/src/commonTest/kotlin/MyProcessorTest.kt`
+**File:** `sdk/src/test/kotlin/com/zeropay/sdk/factors/MyFactorTest.kt`
 
 ```kotlin
-import kotlin.test.Test
-import kotlin.test.assertTrue
-import kotlin.test.assertEquals
+import com.zeropay.sdk.security.FactorDigest
+import org.junit.Before
+import org.junit.Test
+import org.junit.Assert.*
 
-class MyProcessorTest {
-    @Test
-    fun `should validate valid input`() {
-        val result = MyProcessor.validate("valid-input")
-        assertTrue(result.isValid)
+class MyFactorTest {
+
+    companion object {
+        private val TEST_SALT = "test-salt-32-bytes-long-enough!!".encodeToByteArray()
+        private const val TEST_UUID = "550e8400-e29b-41d4-a716-446655440000"
+    }
+
+    @Before
+    fun setUp() {
+        FactorDigest.resetForTesting()
+        FactorDigest.configure(TEST_SALT)
     }
 
     @Test
-    fun `should reject invalid input`() {
-        val result = MyProcessor.validate("invalid")
-        assertFalse(result.isValid)
-        assertEquals("Invalid input", result.error)
+    fun testDigest_ValidInput_Returns32Bytes() {
+        val result = MyFactor.digest("valid-input", TEST_UUID)
+        assertEquals(32, result.size)
+    }
+
+    @Test
+    fun testVerify_MatchingInput_ReturnsTrue() {
+        val fixedSalt = ByteArray(16) { 0 }
+        val digest = MyFactor.digestWithSalt("valid-input", TEST_UUID, fixedSalt, 0L)
+        assertTrue(MyFactor.verify("valid-input", TEST_UUID, digest, 0L, fixedSalt))
     }
 }
+```
+
+**Key requirements for ALL SDK factor tests:**
+- Always call `FactorDigest.resetForTesting()` + `FactorDigest.configure(TEST_SALT)` in `@Before`
+- Always pass `TEST_UUID` to `digest()` and `verify()` calls
+- Use `digestWithSalt(input, uuid, fixedSalt, fixedTimestamp)` for deterministic tests
+
+### 4. SDK Timing Tests (Constant-Time Verification)
+
+**Purpose:** Verify that `verify()` takes the same time regardless of whether the input is correct or incorrect (prevents timing attacks).
+
+**Critical rules — violating any of these causes false test results:**
+
+**Rule 1 — Test `verify()`, NOT `digest()` with invalid input.**
+
+`digest()` validates input before crypto. Calling `digest("abc")` on a digits-only factor throws an exception before any HMAC runs. That exception overhead is ~100x faster than HMAC — the test measures exception-vs-HMAC, not constant-time comparison. This gives false confidence.
+
+```kotlin
+// ❌ WRONG — tests exception overhead, not constant-time comparison
+@Test fun timing_WRONG() {
+    val correctTime = measureTimeMillis { repeat(100) { PinFactor.digest("1234", uuid) }}
+    val wrongTime   = measureTimeMillis { repeat(100) { PinFactor.digest("abc",  uuid) }}
+    // wrongTime is 100x faster because "abc" throws before HMAC. This is not a timing test.
+}
+
+// ✅ CORRECT — tests the actual constant-time comparison in verify()
+@Test fun timing_CORRECT() {
+    val fixedSalt = ByteArray(16) { 0 }
+    val digest = PinFactor.digestWithSalt("1234", TEST_UUID, fixedSalt, 0L)
+    // ... measure verify() with correct and wrong input
+}
+```
+
+**Rule 2 — Always warmup before measuring.**
+
+JVM JIT compilation optimizes hot code paths. Without warmup, the first measurement block runs interpreted bytecode while the second runs JIT-compiled code, creating an inherent asymmetry.
+
+```kotlin
+// Always warmup 50+ iterations before any timed measurement
+repeat(50) {
+    MyFactor.verify(correctInput, TEST_UUID, digest, 0L, fixedSalt)
+    MyFactor.verify(wrongInput,   TEST_UUID, digest, 0L, fixedSalt)
+}
+```
+
+**Rule 3 — Use 500% tolerance, not 50%.**
+
+A single GC pause (1–3 ms) on a 5ms measurement = 20–60% noise. 50% tolerance fails spuriously. 500% is still meaningful: real timing leaks from `contentEquals` (short-circuits at first mismatch) produce >1000% difference. 500% catches real vulnerabilities while tolerating GC noise.
+
+**Canonical template:**
+
+```kotlin
+@Category(TimingTest::class)
+@Test
+fun testVerify_ConstantTime_TimingIndependent() {
+    // Arrange — use fixed salt/timestamp for determinism
+    val fixedSalt = ByteArray(16) { 0 }
+    val fixedTimestamp = 0L
+    val digest = MyFactor.digestWithSalt(correctInput, TEST_UUID, fixedSalt, fixedTimestamp)
+    val iterations = 100
+
+    // Warmup JVM/JIT before measuring
+    repeat(50) {
+        MyFactor.verify(correctInput, TEST_UUID, digest, fixedTimestamp, fixedSalt)
+        MyFactor.verify(wrongInput,   TEST_UUID, digest, fixedTimestamp, fixedSalt)
+    }
+
+    // Act
+    val correctTime = measureTimeMillis {
+        repeat(iterations) { MyFactor.verify(correctInput, TEST_UUID, digest, fixedTimestamp, fixedSalt) }
+    }
+    val wrongTime = measureTimeMillis {
+        repeat(iterations) { MyFactor.verify(wrongInput, TEST_UUID, digest, fixedTimestamp, fixedSalt) }
+    }
+
+    // Assert — 500% tolerance for GC noise; real timing leaks cause >1000%
+    val diff = kotlin.math.abs(correctTime - wrongTime)
+    val avg  = (correctTime + wrongTime) / 2.0
+    val pct  = if (avg > 0) (diff / avg) * 100 else 0.0
+    assertTrue(
+        "Verification should be constant-time (within 500%). " +
+        "Correct: ${correctTime}ms, Wrong: ${wrongTime}ms, Diff: ${pct.toInt()}%",
+        pct < 500
+    )
+}
+```
+
+**Add the `TimingTest` category marker** so timing tests can be excluded from CI if needed:
+```kotlin
+// sdk/src/test/kotlin/com/zeropay/sdk/testing/TimingTest.kt
+interface TimingTest
 ```
 
 ---
@@ -544,7 +648,29 @@ it('should work', async () => {
 });
 ```
 
-### 5. Error Testing
+### 5. SDK Thread-Safety Tests
+
+Use `runBlocking` + `async` on `Dispatchers.Default` to launch truly concurrent coroutines. Always await all jobs before asserting.
+
+```kotlin
+@Test
+fun `test concurrent access is thread-safe`() = runBlocking {
+    val subject = MyCounter()
+
+    val jobs = List(10) {
+        async(Dispatchers.Default) { subject.increment() }
+    }
+    jobs.forEach { it.await() }  // wait for ALL to complete
+
+    assertEquals(10L, subject.count)  // would be <10 if not thread-safe
+}
+```
+
+**Key rule:** `async { ... }` inside `runBlocking` without an explicit dispatcher inherits the `runBlocking` thread (single-threaded). To get true parallelism you MUST use `async(Dispatchers.Default)` or `withContext(Dispatchers.Default)`.
+
+**Checking thread-safety before writing:** Any class with `var` mutable fields accessed from `Dispatchers.Default` needs either `AtomicLong`/`AtomicInt` (for counters) or `synchronizedCommon` (for compound state). See Lesson 67.
+
+### 6. Error Testing
 
 **✅ DO:**
 ```javascript
@@ -586,6 +712,33 @@ Solution: Start required services before running tests
 ```
 Problem: Missing dependencies
 Solution: Run npm install in backend directory
+```
+
+**5. SDK timing tests fail intermittently**
+```
+Problem: GC pause skews measurement (1–3ms pause on 5ms total = 60% noise)
+Solution: Add 50-iteration warmup before measuring. Use 500% tolerance, not 50%.
+See: Lesson 65 in LESSONS_LEARNED.md
+```
+
+**6. SDK timing test passes but the wrong code path is tested**
+```
+Problem: Testing digest(invalid) instead of verify(wrong) — throws before HMAC runs
+Solution: Always test verify() for constant-time behavior, never digest() with invalid input
+See: Lesson 66 in LESSONS_LEARNED.md
+```
+
+**7. "FactorDigest not configured" in SDK tests**
+```
+Problem: Missing @Before setup — FactorDigest.configure() not called
+Solution: Add @Before setUp() with FactorDigest.resetForTesting() + FactorDigest.configure(TEST_SALT)
+```
+
+**8. SDK concurrent test count is wrong (e.g. 9/10)**
+```
+Problem: var Long counter in class accessed from Dispatchers.Default — lost updates due to race
+Solution: Replace var Long with com.zeropay.sdk.platform.AtomicLong
+See: Lesson 67 in LESSONS_LEARNED.md
 ```
 
 ---
