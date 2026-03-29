@@ -2,8 +2,8 @@
 
 **NoTap Authentication Services**
 
-**Version:** 1.0.0  
-**Last Updated:** 2026-03-08  
+**Version:** 1.1.0
+**Last Updated:** 2026-03-29
 **Document Type:** Living Document (CI/CD Integrated)  
 **Audience:** Compliance Officers, Data Protection Officers, Legal Counsel, Auditors  
 **Classification:** Confidential - For Audit & Compliance Purposes  
@@ -15,6 +15,7 @@
 | Version | Date | Author | Changes | Approved By |
 |---------|------|--------|---------|-------------|
 | 1.0.0 | 2026-03-08 | Technical Team | Initial comprehensive manual | Pending DPO Review |
+| 1.1.0 | 2026-03-29 | Technical Team | Merchant onboarding data (v3.28.0): added email, owner_full_name, business contact fields, tax_id, verification tokens, SMTP processor, `created_from_ip` anonymization requirement, merchant_api_keys retention | Pending DPO Review |
 
 **Review Schedule:** Quarterly (March, June, September, December)  
 **Next Review:** 2026-06-08  
@@ -73,7 +74,7 @@ This manual provides comprehensive documentation of NoTap's compliance with inte
 ### 1.3 Key Highlights
 
 **Privacy-First Architecture:**
-- ✅ Zero-knowledge authentication (only SHA-256 hashes stored)
+- ✅ Zero-knowledge authentication (factor digests stored as **HMAC-SHA256** keyed hashes — not plain SHA-256)
 - ✅ Data minimization by design (no PII required)
 - ✅ Geographic compliance routing (show only relevant regulations)
 - ✅ Automated data retention cleanup (90-day audit logs, 365-day device IDs)
@@ -251,6 +252,17 @@ This manual provides comprehensive documentation of NoTap's compliance with inte
 | **Audit logging** | IP prefix, event type | **Legitimate interest** | Art. 6(1)(f) | Security monitoring, regulatory compliance (GDPR Art. 30) | `auditService.js` |
 | **Account recovery** | Recovery codes (hashed) | **Contract** | Art. 6(1)(b) | Necessary to restore account access | `RecoveryCodeService.js` |
 | **Jurisdiction detection** | IP address (coarse location) | **Legitimate interest** | Art. 6(1)(f) | Determine applicable regulations (LIA documented) | `jurisdictionService.js` |
+| **Merchant registration — identity** | `email`, `owner_full_name` | **Contract** | Art. 6(1)(b) | Necessary to identify the contracting party, enable account login, and send contractual notices (verification, password reset) | `MerchantUserService.js:registerWithEmail()` |
+| **Merchant registration — business profile** | `business_name`, `business_type`, `business_website` | **Contract** | Art. 6(1)(b) | Necessary to configure and operate the merchant's integration; sole-trader business name may identify a natural person | `merchant_users` table |
+| **Merchant registration — contact data** | `business_phone`, `business_address_*` (nullable) | **Contract** | Art. 6(1)(b) | Required for business verification (KYB) and regulatory onboarding; collected only when voluntarily provided by merchant | `merchant_users` table |
+| **Merchant KYB — tax identifier** | `tax_id`, `tax_id_type` (nullable) | **Legal obligation** | Art. 6(1)(c) | AML/KYB compliance; required by payment processing regulations when activating payment features; not collected at registration | `merchant_users` table |
+| **Email verification token** | `email_verification_token`, `email_verification_expires` | **Contract** | Art. 6(1)(b) | Necessary to confirm ownership of the email address before activating the account; token is single-use and auto-nulled on use | `MerchantUserService.js:verifyEmail()` |
+| **Password / credential reset token** | `password_reset_token`, `password_reset_expires` | **Contract** | Art. 6(1)(b) | Necessary to allow account recovery; token is single-use, auto-nulled on use, expires in 1 hour | `MerchantUserService.js:resetPassword()` |
+| **Transactional email delivery** | Merchant email + business name transmitted to SMTP provider | **Contract** | Art. 6(1)(b) | Necessary to deliver contractual notices (email verification, password reset); no marketing use; SMTP provider acts as data processor under DPA | `emailService.js` |
+| **Merchant API key management** | `api_key_hash` (SHA-256), `api_key_prefix` (not personal data) | **Contract** | Art. 6(1)(b) | Necessary to authenticate merchant API calls; only hash stored — raw key shown once and never retained | `merchantRouter.js`, migration 032 |
+
+> **⚠️ v1.1.0 Implementation Note — `created_from_ip` column:**
+> The `merchant_users` table schema (migration 015) includes a `created_from_ip VARCHAR(50)` column. This column is **not currently populated** by `MerchantUserService.registerWithEmail()`. If it is ever populated, GDPR Art. 5(1)(c) data-minimisation and our existing IP anonymisation policy **require** storing only the first 3 octets (e.g. `203.0.113.0` not `203.0.113.42`), consistent with audit log handling. Legal basis: Legitimate Interest Art. 6(1)(f) (fraud detection, account security). Retention: 30 days per `IP_ADDRESS_RETENTION_DAYS=30`. Before implementing IP capture in registration, this must be reviewed by the DPO.
 
 **Legitimate Interest Assessment Summary:**
 - **Device ID Hashing:**
@@ -482,6 +494,10 @@ PHONE_COLLECTION=$(grep -rE "phoneNumber|phone_number|mobileNumber|emailAddress"
 | **Factor digests (Redis)** | 24 hours | Technical necessity (active sessions) | Redis TTL (automatic) | `ENROLLMENT_RETENTION_DAYS=1` |
 | **Factor digests (PostgreSQL)** | Until user deletion | Contract performance (ongoing authentication) | User-initiated deletion | N/A (permanent until deleted) |
 | **Soft-deleted records** | 30 days | Grace period for accidental deletion | Automated hard deletion | Hardcoded 30 days |
+| **Merchant account data** | Until deletion + 30d grace | Contract Art. 6(1)(b) | Merchant-initiated | N/A |
+| **Email / password reset tokens** | 24h / 1h or first use | Security (single-use) | Auto-nulled on use | Hardcoded in service |
+| **Merchant KYB/tax data** | Legal minimum (5–7 years) | Legal obligation Art. 6(1)(c) | Manual after legal period | DPO-reviewed |
+| **API key history** | Until account deletion | Audit trail | With account deletion | N/A |
 
 **Implementation:**
 ```javascript
@@ -1056,7 +1072,7 @@ DELETE /v1/bipa/consent/:userUuid    - Revoke consent (triggers deletion)
 │    └─> CCPA Disclosure (California residents)               │
 │                                                               │
 │ 3. Factor Enrollment                                         │
-│    └─> Raw factors → SHA-256 → Encrypt → Store              │
+│    └─> Raw factors → HMAC-SHA256 → Encrypt → Store           │
 │                                                               │
 │ 4. Double Encryption Storage                                 │
 │    ├─> Redis: AES-256-GCM (24h TTL)                         │
@@ -1084,7 +1100,7 @@ DELETE /v1/bipa/consent/:userUuid    - Revoke consent (triggers deletion)
       │                                            │
       v                                            v
 ┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│  Capture    │─────>│   SHA-256    │─────>│  AES-256    │
+│  Capture    │─────>│  HMAC-SHA256 │─────>│  AES-256    │
 │  Factors    │ Raw  │   Hashing    │Digest│ Encryption  │
 └─────────────┘      └──────────────┘      └─────────────┘
                                                   │
@@ -1099,7 +1115,7 @@ DELETE /v1/bipa/consent/:userUuid    - Revoke consent (triggers deletion)
 
 | Layer | Algorithm | Key Size | Purpose |
 |-------|-----------|----------|---------|
-| **1. Factor Hashing** | SHA-256 | 256-bit | Irreversible one-way hashing |
+| **1. Factor Hashing** | **HMAC-SHA256** (keyed with `PRIVACY_APP_SALT`) | 256-bit | Irreversible keyed hashing — salt prevents rainbow-table attacks; upgraded from plain SHA-256 in v3.24.x |
 | **2. Symmetric Encryption** | AES-256-GCM | 256-bit | Encrypt factor digests |
 | **3. Key Derivation** | PBKDF2-SHA256 | 256-bit | Derive encryption key from factors |
 | **4. Key Wrapping** | AWS KMS | 4096-bit RSA | Wrap derived key with master key |
@@ -1128,32 +1144,51 @@ DELETE /v1/bipa/consent/:userUuid    - Revoke consent (triggers deletion)
 
 | Data Category | Examples | Legal Basis | Retention | Special Category |
 |---------------|----------|-------------|-----------|------------------|
-| **Identity Data** | UUID (not name) | Contract | Until deletion | No |
-| **Authentication Data** | Factor digests (SHA-256) | Contract | 24h (Redis) / Until deletion (PG) | No |
+| **Identity Data (user)** | UUID (not name) | Contract | Until deletion | No |
+| **Authentication Data** | Factor digests (**HMAC-SHA256** keyed with `PRIVACY_APP_SALT`) | Contract | 24h (Redis) / Until deletion (PG) | No |
 | **Biometric Data** | Face template hash, fingerprint hash, voice hash | Consent | Until deletion | **Yes** (GDPR Art. 9) |
 | **Device Data** | Device ID hash (optional) | Legitimate interest | 365 days | No |
 | **Location Data** | IP prefix (3 octets), country/state | Legitimate interest | 30 days (IP), ephemeral (country) | No |
 | **Transaction Data** | Audit logs | Legitimate interest | 90 days | No |
+| **Merchant Contact Identity** | `email`, `owner_full_name` | Contract Art. 6(1)(b) | Until account deletion + 30-day grace | No |
+| **Merchant Business Profile** | `business_name`, `business_type`, `business_website` | Contract Art. 6(1)(b) | Until account deletion | No (unless sole trader — then conditional) |
+| **Merchant Contact Data** | `business_phone`, `business_address_*` (nullable, voluntary) | Contract Art. 6(1)(b) | Until account deletion | Conditional (sole traders) |
+| **Merchant KYB Data** | `tax_id`, `tax_id_type` (nullable, collected only at payment activation) | Legal obligation Art. 6(1)(c) | Until deletion; minimum per applicable tax law (5–7 years depending on jurisdiction) | No |
+| **Merchant Security Credentials** | `password_hash` (bcrypt), `api_key_hash` (SHA-256), `webhook_secret` | Contract Art. 6(1)(b) | Until account deletion | No |
+| **Ephemeral Security Tokens** | `email_verification_token` (24h), `password_reset_token` (1h) | Contract Art. 6(1)(b) | Auto-deleted on use or expiry | No |
+| **Merchant API Key History** | `merchant_api_keys`: `key_prefix`, `key_hash`, `environment`, `revoke_reason` | Contract Art. 6(1)(b) | Until account deletion (soft-delete 30d) | No |
 
 ### 6.2 Data Processing Activities
 
 | Activity | Purpose | Data Types | Recipients | Transfers |
 |----------|---------|------------|------------|-----------|
-| **Enrollment** | Account creation | All categories | None | None |
+| **User Enrollment** | Account creation | All categories | None | None |
 | **Verification** | Authentication | Identity, Authentication | None | None |
 | **Fraud Detection** | Security monitoring | Device, Location | None | None |
 | **Audit Logging** | Compliance, security | Transaction | None | None |
 | **Jurisdiction Detection** | Determine regulations | Location (ephemeral) | None | None |
+| **Merchant Registration** | B2B merchant onboarding | Merchant Contact Identity, Business Profile | SMTP provider (transactional email only) | To SMTP host (see 6.3) |
+| **Merchant Email Verification** | Confirm email ownership | `email`, `email_verification_token` | SMTP provider (link in email) | To SMTP host (see 6.3) |
+| **Merchant Business Verification** | KYB — confirm legitimacy | Business Profile, KYB Data | None (admin review only) | None |
+| **Merchant API Key Issuance** | Enable SDK integration | `api_key_hash`, `api_key_prefix` | None | None |
+| **Transactional Email Delivery** | Contractual notices (verify, reset) | `email`, `business_name` | SMTP provider (data processor) | To SMTP host (see 6.3) |
 
-**Cross-border transfers:** None (all data stored in EU/US with adequacy decision or SCCs)
+**Cross-border transfers:** Merchant email addresses and business names are transmitted to the configured SMTP provider for transactional email delivery. All other data stored in EU/US with adequacy decision or SCCs. SMTP provider must be covered by a DPA (see 6.3).
 
 ### 6.3 Third-Party Data Sharing
 
-| Recipient | Purpose | Data Shared | Legal Basis | Location |
-|-----------|---------|-------------|-------------|----------|
-| **AWS (KMS)** | Key management | Encrypted keys only | Processor agreement | EU/US |
-| **Railway** | Hosting | Encrypted database | Processor agreement | US |
-| **None** | N/A | No raw data shared | N/A | N/A |
+| Recipient | Purpose | Data Shared | Legal Basis | Location | DPA Required |
+|-----------|---------|-------------|-------------|----------|--------------|
+| **AWS (KMS)** | Key management | Encrypted keys only | Processor agreement | EU/US | ✅ AWS DPA |
+| **Railway** | Hosting | Encrypted database | Processor agreement | US | ✅ Railway DPA |
+| **SMTP Provider** (configurable via `SMTP_HOST`) | Transactional email delivery | Merchant `email`, `business_name`; email body contains single-use token only (no other PII) | Contract Art. 6(1)(b); processor agreement | Depends on configured SMTP host — must be EU/US (SCCs or adequacy) | ⚠️ **DPA required before production use.** If using Gmail/Google Workspace: covered by Google Workspace DPA. If using AWS SES: covered by AWS DPA. Custom SMTP: obtain DPA before enabling. |
+
+**Note on SMTP privacy by design:**
+- Email verification links contain **only the token** (`?token=<hex>`) — no email address or name in URL
+- Password reset links follow the same pattern — no PII in URL
+- SMTP provider sees: recipient address, business name in email body — no authentication factors, no financial data
+- Emails are transactional only (not marketing) — no profiling, no tracking pixels
+- If SMTP_HOST is not configured, emails are logged locally (dev-mode) — no external transfer occurs
 
 **Note:** We do NOT share personal data with payment processors (Tilopay, Stripe). We only provide authentication results (pass/fail).
 
@@ -1172,6 +1207,14 @@ DELETE /v1/bipa/consent/:userUuid    - Revoke consent (triggers deletion)
 | **Factor digests (PostgreSQL)** | Until user requests deletion | Contract performance (ongoing auth) | User-initiated via API |
 | **BIPA consents** | 3 years after last interaction | Illinois BIPA requirement | Automated after 3 years of inactivity |
 | **Soft-deleted records** | 30 days | Grace period for accidental deletion | Automated hard deletion |
+| **Merchant account (`merchant_users`)** | Until account deletion + 30-day soft-delete grace | Contract Art. 6(1)(b) — account management | Merchant-initiated deletion; soft-delete 30d then hard delete |
+| **Merchant identity fields** (`email`, `owner_full_name`) | Same as merchant account | Contract Art. 6(1)(b) | With account deletion |
+| **Merchant business contact** (`business_phone`, `business_address_*`) | Same as merchant account | Contract Art. 6(1)(b) | With account deletion |
+| **Merchant KYB / tax data** (`tax_id`) | Longer of: account deletion OR applicable legal retention (typically 5–7 years, jurisdiction-dependent) | Legal obligation Art. 6(1)(c) — AML/tax compliance | Manual deletion after legal retention period expires |
+| **Email verification token** | 24 hours or until used (whichever is sooner) | Security (single-use) | Auto-nulled on use; expiry enforced in `verifyEmail()` |
+| **Password reset token** | 1 hour or until used (whichever is sooner) | Security (single-use) | Auto-nulled on use; expiry enforced in `resetPassword()` |
+| **Merchant API key hash** | Until key is revoked | Contract — active key needed for API auth | Admin or merchant-initiated revocation |
+| **Merchant API key history** (`merchant_api_keys`) | Until account deletion + 30-day grace | Audit trail for key rotation events | With account deletion |
 
 ### 7.2 Deletion Procedures
 
@@ -1367,7 +1410,7 @@ Illinois Biometric Information Privacy Act (740 ILCS 14/)
 Before collecting biometric data (face, fingerprint, voice), 
 Illinois law requires we inform you:
 
-1. Retention Policy: Stored as SHA-256 hashes for up to 3 years
+1. Retention Policy: Stored as HMAC-SHA256 (keyed) hashes for up to 3 years
 2. Purpose: Authentication only (never sold or shared)
 3. Destruction: Deleted within 3 years or upon your request
 4. Security: AES-256-GCM encryption, AWS KMS key protection

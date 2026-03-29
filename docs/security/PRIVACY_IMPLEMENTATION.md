@@ -1,8 +1,8 @@
 # NoTap Privacy Implementation Guide
 
-**Version:** 1.1.0
-**Date:** 2026-02-09
-**Status:** ✅ Production Ready (Enhanced with Blockchain Privacy)
+**Version:** 1.2.0
+**Date:** 2026-03-29
+**Status:** ✅ Production Ready (Enhanced with Blockchain Privacy + Merchant Onboarding)
 
 ---
 
@@ -54,12 +54,13 @@ NoTap implements **privacy by design** to comply with global data protection reg
 
 | Article | Requirement | NoTap Implementation | Status |
 |---------|-------------|---------------------|--------|
-| **5(1)(c)** | Data Minimization | Device ID optional, IP anonymized | ✅ Compliant |
-| **5(1)(e)** | Storage Limitation | 90-day audit logs, 365-day device IDs | ✅ Compliant |
-| **17** | Right to Erasure | DELETE endpoint + blockchain revocation | ✅ Compliant |
-| **25** | Privacy by Design | Hashing/anonymization at collection | ✅ Compliant |
-| **30** | Record Keeping | Privacy migration log table | ✅ Compliant |
-| **32** | Security of Processing | Constant-time comparisons, KMS encryption | ✅ Compliant |
+| **5(1)(c)** | Data Minimization | Device ID optional, IP anonymized; merchant contact fields nullable (voluntary only) | ✅ Compliant |
+| **5(1)(e)** | Storage Limitation | 90-day audit logs, 365-day device IDs; verification tokens auto-nulled on use | ✅ Compliant |
+| **17** | Right to Erasure | DELETE endpoint + blockchain revocation; merchant account deletion wipes all personal data | ✅ Compliant |
+| **25** | Privacy by Design | Hashing/anonymization at collection; email links carry token only, no PII in URL | ✅ Compliant |
+| **28** | Processor Agreement | SMTP provider for transactional email must have DPA (see REGULATORY_COMPLIANCE_MANUAL.md §6.3) | ⚠️ DPA required before production SMTP |
+| **30** | Record Keeping | Privacy migration log table; data inventory updated in REGULATORY_COMPLIANCE_MANUAL.md v1.1.0 | ✅ Compliant |
+| **32** | Security of Processing | Constant-time comparisons, KMS encryption; bcrypt for passwords, SHA-256 for API keys | ✅ Compliant |
 
 ### CCPA (California)
 
