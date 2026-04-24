@@ -1,12 +1,12 @@
 # Documentation Sync Report
 
-**Date:** 2026-04-20 04:52:49 UTC
+**Date:** 2026-04-24 14:13:31 UTC
 **Source:** NoTap-Labs/zero-pay-sdk
-**Commit:** d205acd2
+**Commit:** 21d5bf6b
 
 ## Summary
 
-- Total files synced: 131
+- Total files synced: 144
 - Sync method: Automated (GitHub Actions)
 
 ## Folders Synced

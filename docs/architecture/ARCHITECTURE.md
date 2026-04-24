@@ -101,6 +101,7 @@ NoTap SDK follows Kotlin Multiplatform (KMP) best practices with proper code seg
 
 **Biometrics:**
 - `GoogleBiometricProvider.kt` - Uses Android BiometricPrompt API
+- **Cross-device support (v3.31.0)**: Per-factor SALT enables verification on ANY device
 
 **Blockchain:**
 - `WalletLinkingManager.kt` - Uses Android storage & deep linking
