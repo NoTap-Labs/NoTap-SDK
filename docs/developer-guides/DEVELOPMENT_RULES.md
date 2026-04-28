@@ -1318,3 +1318,55 @@ fun cleanup() {
 ### See Also
 
 Lesson 83 in `documentation/10-internal/LESSONS_LEARNED.md`
+
+---
+
+## Rule 23: Ownership Verification on All User-Scoped Endpoints (Backend)
+
+**Date added:** 2026-04-27
+**Trigger:** BIPA IDOR found during full security audit sprint
+
+### The Problem
+
+Authentication confirms WHO the caller is. It does not confirm they have the RIGHT to access a specific resource. Without an explicit ownership check, an authenticated user can read or write any other user's data by substituting a different UUID in the URL or body.
+
+```javascript
+// ❌ WRONG — authenticated but no ownership check
+router.delete('/consent/:userUuid', authenticateUser, async (req, res) => {
+  const { userUuid } = req.params;
+  await revokeConsent(userUuid);  // ANY user can revoke ANY other user's consent
+});
+```
+
+### The Fix
+
+```javascript
+// ✅ CORRECT — authentication + ownership assertion
+router.delete('/consent/:userUuid', authenticateUser, async (req, res) => {
+  const { userUuid } = req.params;
+  if (req.user.uuid !== userUuid) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  await revokeConsent(userUuid);
+});
+```
+
+### When This Rule Applies
+
+Add an ownership check whenever:
+- The route URL or body contains a user UUID that identifies the resource owner
+- The route reads, updates, or deletes user-specific data (consent, payment tokens, account settings, biometrics)
+- The caller is a regular user (not an admin acting on behalf of a user)
+
+Admin routes that intentionally allow cross-user access are exempt — but must be protected by admin auth middleware (`requireAdminAuth`).
+
+### Checklist
+
+- [ ] Every user-scoped route has auth middleware (`authenticateUser` or `authenticateMerchant`)
+- [ ] The handler compares `req.user.uuid` (or `req.merchantUuid`) to the resource's owner before mutating
+- [ ] 403 is returned (not 404) when ownership check fails — 404 leaks resource existence
+
+### See Also
+
+- Lesson 94 in `documentation/10-internal/LESSONS_LEARNED.md`
+- SECURITY_PATTERNS_REFERENCE.md — Ownership Assertion Pattern

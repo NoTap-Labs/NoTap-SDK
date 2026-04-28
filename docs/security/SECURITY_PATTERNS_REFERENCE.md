@@ -22,6 +22,9 @@ This document contains all mandatory security patterns for NoTap development. Fo
 | JWT Rotation | Key migration without logout cascade | Support 2 active secrets (current + previous) |
 | CSRF Token Storage | Scalable token management | Use cache service (Redis) with Map fallback |
 | Session Storage | Browser credential management | Use `sessionStorage` for per-tab secrets |
+| Ownership Assertion | User-scoped endpoint IDOR prevention | `req.user.uuid !== resourceOwnerId → 403` |
+| Server-Derived IP | Audit logging and rate limiting | Always `req.ip`, never body field |
+| Safe Error Messages | API error information disclosure | `safeErrorMessage(err, 'fallback')` everywhere |
 
 ---
 
@@ -594,6 +597,82 @@ window.location.href = `/v1/export?apiKey=${apiKey}`;
 - Session keys = cleared on tab close
 - Credentials in headers only (never URL params)
 - Use fetch + Blob for authenticated downloads (not `window.location.href`)
+
+---
+
+## Ownership Assertion Pattern
+
+**Purpose:** Prevent IDOR — authenticated users accessing or modifying another user's resources.
+
+**Required on all user-scoped endpoints** (biometrics, consent, payment methods, account data):
+
+```javascript
+// After auth middleware sets req.user:
+const { userUuid } = req.params; // or req.body
+if (req.user.uuid !== userUuid) {
+  return res.status(403).json({ error: 'Access denied' });
+}
+// Only reach here if caller owns the resource
+```
+
+**Two layers required:**
+1. Auth middleware at mount or route level (establishes `req.user`)
+2. Explicit ownership check in handler (compares identity to resource owner)
+
+**When to use:**
+- Any route that reads/writes data keyed by user UUID
+- Biometric consent endpoints (BIPA: $5K/violation)
+- Payment token endpoints
+- Account management endpoints
+
+**Never use `==`** — use identity comparison (`!==`) or `constantTimeCompare()` for sensitive fields.
+
+---
+
+## Server-Derived IP Pattern
+
+**Purpose:** Ensure audit logs and rate limiters use the real client IP, not an attacker-supplied value.
+
+```javascript
+// ✅ CORRECT — server-derived, trust-proxy-aware
+const { anonymizeIP } = require('../utils/privacyUtils');
+const clientIP = anonymizeIP(req.ip);  // for storage/logging
+
+// For rate-limiter keys (raw IP needed for blocking — do NOT anonymize):
+const rateLimitKey = `rl:${req.ip}`;
+
+// ❌ WRONG — attacker controls this value
+const { ipAddress } = req.body;  // never use for audit/security
+```
+
+**Rules:**
+- `req.ip` is the only trustworthy source (set by Express from TCP + `X-Forwarded-For` per `trust proxy`)
+- Always wrap with `anonymizeIP()` before storage (GDPR: IP = personal data)
+- Rate-limiter keys use raw `req.ip` intentionally — do NOT anonymize those
+- Never accept `ipAddress`, `clientIP`, `sourceIP` etc. from the request body for security purposes
+
+---
+
+## Safe Error Message Pattern
+
+**Purpose:** Prevent internal error details (stack traces, DB error messages, dependency names) from leaking to API callers.
+
+```javascript
+const { safeErrorMessage } = require('../utils/safeErrorResponse');
+
+// ✅ CORRECT — sanitized message with safe fallback
+return res.status(500).json({
+  error: safeErrorMessage(err, 'Operation failed'),
+});
+
+// ❌ WRONG — leaks internal details
+return res.status(500).json({
+  error: err.message,  // may contain DB query, file path, stack trace
+  message: `Failed: ${err.message}`,  // same risk in template literal
+});
+```
+
+**Apply to every catch block** that sends an HTTP response. The `safeErrorMessage` utility returns the error message only if it is safe (no internal path, query, or stack content); otherwise returns the fallback string.
 
 ---
 
