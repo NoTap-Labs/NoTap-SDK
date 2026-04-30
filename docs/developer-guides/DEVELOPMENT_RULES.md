@@ -1370,3 +1370,101 @@ Admin routes that intentionally allow cross-user access are exempt — but must 
 
 - Lesson 94 in `documentation/10-internal/LESSONS_LEARNED.md`
 - SECURITY_PATTERNS_REFERENCE.md — Ownership Assertion Pattern
+
+---
+
+## Rule 24: KMP `expect class` Must Explicitly Declare All Interface Members (Kotlin 2.x) (MANDATORY)
+
+**Date added:** 2026-04-29
+**Trigger:** `compileCommonMainKotlinMetadata` failure after Kotlin 2.1.20 upgrade
+
+### The Problem
+
+Kotlin 2.x K2 compiler requires that every abstract member of an interface supertype be explicitly listed in the `expect class` body. Kotlin 1.x inferred them silently. Omitting members causes `compileCommonMainKotlinMetadata` to fail:
+```
+error: 'actual' modifier is required on 'size' in ConcurrentMap
+error: 'actual' modifier is required on 'entries' in ConcurrentMap
+```
+
+### The Rule
+
+When writing `expect class Foo : SomeInterface`, list **every** abstract member in the expect body:
+
+```kotlin
+// ✅ CORRECT — all members declared explicitly
+expect class ConcurrentMap<K : Any, V : Any>() : MutableMap<K, V> {
+    override val size: Int
+    override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
+    override val keys: MutableSet<K>
+    override val values: MutableCollection<V>
+    override fun isEmpty(): Boolean
+    override fun containsKey(key: K): Boolean
+    override fun containsValue(value: V): Boolean
+    override fun get(key: K): V?
+    override fun put(key: K, value: V): V?
+    override fun remove(key: K): V?
+    override fun putAll(from: Map<out K, V>)
+    override fun clear()
+}
+
+// ❌ WRONG — compiles on Kotlin 1.x, breaks compileCommonMainKotlinMetadata on 2.x
+expect class ConcurrentMap<K : Any, V : Any>() : MutableMap<K, V>
+```
+
+### Corresponding `actual` classes
+
+Every member declared in the `expect` must use `actual override` (not just `override`) in each `actual` implementation:
+
+```kotlin
+actual class ConcurrentMap<K : Any, V : Any> : MutableMap<K, V> {
+    private val map = ConcurrentHashMap<K, V>()
+    actual override val size: Int get() = map.size   // ← actual override, not just override
+    actual override fun isEmpty(): Boolean = map.isEmpty()
+    // ... all other members
+}
+```
+
+### Checklist
+
+- [ ] Every `expect class : Interface` lists all abstract members in its body
+- [ ] Every member in the expect body uses `actual override` in each actual implementation
+- [ ] `compileCommonMainKotlinMetadata` runs cleanly (triggered by any JS target)
+
+### See Also
+
+Lesson 97 in `documentation/10-internal/LESSONS_LEARNED.md`
+
+---
+
+## Rule 25: `commonTest` Tests Must Not Call Synchronous Platform-Specific APIs (MANDATORY)
+
+**Date added:** 2026-04-29
+**Trigger:** `DoubleLayerEncryptionTest` failed on JS browser target after being placed in `commonTest`
+
+### The Problem
+
+`commonTest` runs on **all** enabled KMP targets. APIs that are synchronous on JVM throw `NotImplementedError` on JS (Web Crypto is async-only). A test placed in `commonTest` may pass on Android but fail at runtime on JS browser.
+
+### Decision Guide
+
+| Test calls… | Correct source set |
+|-------------|--------------------|
+| Only `kotlin.test.*`, no platform APIs | `commonTest` ✅ |
+| `CryptoUtils.sha256()` or any synchronous crypto | `src/test/kotlin/` (JVM unit tests) |
+| `KeyDerivation.deriveKey()` (internally calls sha256) | `src/test/kotlin/` |
+| `runTest { sha256Suspend(...) }` | `commonTest` ✅ |
+| Android APIs (`Context`, `Intent`, etc.) | `androidInstrumentedTest` |
+
+### The Rule
+
+Before placing a test in `commonTest`, verify: **Does this test call any API that throws or behaves differently on non-JVM targets?** If yes, move it to the appropriate platform-specific test source set.
+
+```
+sdk/src/commonTest/    → runs on Android + JS browser (+ iOS if enabled)
+sdk/src/test/          → JVM/Android unit tests only (androidUnitTest source set)
+sdk/src/androidTest/   → Android instrumented tests (requires device/emulator)
+```
+
+### See Also
+
+Lesson 98 in `documentation/10-internal/LESSONS_LEARNED.md`
