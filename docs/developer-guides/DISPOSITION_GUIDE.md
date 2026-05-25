@@ -199,9 +199,191 @@ Blocked: Need formal information security policy document before proceeding. /bl
 
 ---
 
+## Stalled Run Lifecycle
+
+When a Paperclip agent starts a run but doesn't complete in a reasonable time, the issue enters a **stalled** state. This is common with CPU-only inference (qwen2.5-coder:3b at ~50-100ms/token) when the agent's context is large.
+
+```
+Stalled Run Detection:
+         │
+         ▼
+  ┌──────────────────┐
+  │ Run in_progress  │
+  │ for > 10 min     │
+  └────────┬─────────┘
+           │
+    ┌──────▼──────┐
+    │ Check last  │
+    │ heartbeat?  │
+    └──────┬──────┘
+           │
+    ┌──────┴──────────────────┐
+    ▼                         ▼
+  Heartbeat                   No recent
+  recent →                    heartbeat →
+  agent is busy               agent may be
+  but slow.                   dead/hung.
+  Wait longer.                Force cancel.
+           │                         │
+     ┌─────▼─────┐           ┌───────▼────────┐
+     │ Release   │           │ Cancel issue + │
+     │ run, set  │           │ release run.   │
+     │ blocked   │           │ /gate:watchdog │
+     │ with      │           └────────────────┘
+     │ /stalled  │
+     └───────────┘
+```
+
+### Detection & Resolution
+
+| Signal | Assessment | Action |
+|--------|-----------|--------|
+| Run > 10 min, last heartbeat < 2 min ago | Agent is slow but alive | Release run + set `blocked` with `/stalled:timeout` |
+| Run > 10 min, last heartbeat > 5 min ago | Agent may be hung | Cancel issue + release run. Create retry if needed. |
+| Run completed but no status set | Missing disposition | Apply disposition manually |
+| Run accumulating log but not progressing | Stuck in loop | Cancel + `/stalled:loop` |
+
+### Watchdog Script
+
+Use the built-in watchdog to detect and auto-resolve stalled runs:
+
+```bash
+# Dry-run: list issues that would be affected
+bash scripts/paperclip-watchdog.sh --dry-run
+
+# Auto-resolve: cancel issues stalled > 15 min
+bash scripts/paperclip-watchdog.sh --timeout 15
+
+# Force-clean: release stuck runs without cancelling issues
+bash scripts/paperclip-watchdog.sh --release-only
+```
+
+The watchdog script lives at `scripts/paperclip-watchdog.sh` and:
+1. Lists all issues `in_progress` for longer than `--timeout` minutes
+2. For each: checks the last heartbeat, logs the situation
+3. If confirmed stalled: releases the run + cancels the issue with `/stalled:<reason>`
+4. If heartbeat is recent: warns but does not cancel
+
+### For Agent Instructions (preventing stalls)
+
+Add this to each agent's instruction file under a "Time Management" section:
+
+```
+### Time Management
+- You have 5 minutes of wall-clock time per task. If you can't finish, stop and say why.
+- Always set a status when done. Never leave an issue `in_progress` without a result.
+- If your model is slow, output a minimal response first, then elaborate if time permits.
+- For ping/health-check tasks: respond immediately with just the status line.
+```
+
+---
+
+## Paperclip Activity API (Monitoring)
+
+Use the activity endpoint to monitor agent state without polling issues:
+
+```bash
+# Recent activity
+curl -s "http://127.0.0.1:3100/api/companies/${COMPANY_ID}/activity?limit=10"
+
+# Live runs (currently executing)
+curl -s "http://127.0.0.1:3100/api/companies/${COMPANY_ID}/live-runs"
+
+# Live runs with minimum count filter
+curl -s "http://127.0.0.1:3100/api/companies/${COMPANY_ID}/live-runs?minCount=4"
+```
+
+---
+
+## Model Management
+
+The local agent stack runs on Ollama with `qwen2.5-coder:3b` (~3GB loaded, CPU-only). On a laptop CPU (Ryzen 5 7520U), each agent takes 5-10 minutes to complete a task because the full instruction context (~3-5KB) must be processed before the model can respond. Managing model state is essential for reliable operation.
+
+### Quick Reference
+
+```bash
+# ── Model Lifecycle ────────────────────────────────────
+
+# Check if model is loaded and ready (exit 0 = ready, 1 = loading, 2 = down)
+bash scripts/paperclip-warmup.sh --status
+
+# Warm up the model (loads into memory, sets keep_alive=-1)
+bash scripts/paperclip-warmup.sh
+
+# Unload the model from memory
+ollama stop qwen2.5-coder:3b
+
+# Check model state directly
+curl -s http://127.0.0.1:11434/api/ps
+
+# ── Pre-flight Check (before dispatching tasks) ───────
+
+# Use in scripts or CI to gate task dispatch:
+if bash scripts/paperclip-warmup.sh --check; then
+    echo "Model ready — dispatch task"
+    # create Paperclip issue here
+else
+    echo "Model not ready — warming up..."
+    bash scripts/paperclip-warmup.sh
+fi
+
+# ── Keep-alive (optional) ──────────────────────────────
+
+# Send a minimal request to keep model loaded for 30 more min
+bash scripts/paperclip-warmup.sh --keep-alive
+
+# Set up a cron job to keep model alive permanently
+crontab -e
+# Add: */25 * * * * /path/scripts/paperclip-warmup.sh --keep-alive > /dev/null 2>&1
+
+# Remove keep-alive cron:
+(crontab -l | grep -v paperclip-warmup) | crontab -
+
+# ── Diagnostics ────────────────────────────────────────
+
+# Is Ollama running?
+curl -s --max-time 5 http://127.0.0.1:11434/api/tags > /dev/null && echo "Ollama OK" || echo "Ollama down"
+
+# What is the model doing?
+ps aux | grep "ollama runner" | grep -v grep
+
+# Is Paperclip receiving agent heartbeats?
+curl -s http://127.0.0.1:3100/api/companies/YOUR_COMPANY_ID/agents | python3 -c "import json,sys; [print(f'{a[\"name\"]:25s} status={a[\"status\"]:10s} last_hb={a.get(\"lastHeartbeatAt\",\"\")[:19]}') for a in json.load(sys.stdin)]"
+
+# Are agent runs making progress? (check log offsets)
+journalctl --user -u paperclip --no-pager -n 10 | grep "GET /heartbeat-runs/" | grep -oP 'offset=\K[0-9]+' | sort -n | tail -3
+```
+
+### Why Agents Are Slow
+
+| Factor | Typical Value | Impact |
+|--------|--------------|--------|
+| Model | qwen2.5-coder:3b (3.1B params, Q4_K_M) | ~3GB RAM when loaded |
+| Hardware | 4-core CPU (no GPU) | ~2-5 tok/s inference |
+| Context per agent | ~3-5KB instructions + history | 1000-2000 prompt tokens |
+| First token (cold model) | ~3m40s | Model loads from disk (3GB file) |
+| First token (warm model) | ~30-60s | Full context processing |
+| Completion (simple task) | 5-10 min per agent | 7 agents × concurrent = queue |
+
+The model must process the entire agent instruction set before generating any output. Reducing instruction size improves speed, but the fundamental bottleneck is CPU-only inference.
+
+### When to Warm vs. When to Stop
+
+| Scenario | Action |
+|----------|--------|
+| About to create a Paperclip task | Run `bash scripts/paperclip-warmup.sh` first |
+| Frequent tasks throughout the day | Keep model loaded (use keep-alive cron) |
+| Done working for the day | `ollama stop qwen2.5-coder:3b` |
+| Debugging agent issues | Check model status first — tasks fail silently if model is cold |
+| Seeing heartbeat reaper warnings | Model is likely cold — warm it up |
+
+---
+
 ## Related
 
 - `documentation/04-architecture/PAPERCLIP_ORCHESTRATION.md` — Paperclip setup and agent roles
 - `documentation/10-internal/AGENT_KNOWLEDGE_BASE.md` — agent domain knowledge
 - `documentation/10-internal/AGENTS.md` — development guidelines
 - `CLAUDE.md` — project governance
+- `scripts/paperclip-watchdog.sh` — Watchdog script for stalled run detection
+- `scripts/paperclip-warmup.sh` — Model pre-flight check and warm-up
