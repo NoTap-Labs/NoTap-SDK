@@ -598,10 +598,10 @@ Every commit that changes code MUST also update:
 2. **planning.md** — Add to completed features list, update version
 3. **SECURITY_AUDIT.md** — Add new Part for security fixes
 4. **LESSONS_LEARNED.md** — Add new lesson for novel patterns discovered
-5. **CLAUDE.md + GEMINI.md** — If >500 LOC changed or new patterns/commands (MUST stay in sync)
+5. **CLAUDE.md + GEMINI.md + .antigravity.md** — If >500 LOC changed or new patterns/commands (MUST stay in sync)
 
 ### Documentation File Routing
-- NEVER create .md files in repository root (only README.md, CLAUDE.md, LICENSE allowed)
+- NEVER create .md files in repository root (only README.md, CLAUDE.md, GEMINI.md, .antigravity.md, LICENSE allowed)
 - All documentation → `documentation/[XX-folder]/` with UPPER_SNAKE_CASE naming
 - Full routing rules: `documentation/10-internal/DOCUMENTATION_ROUTING_RULES.md`
 
@@ -1224,7 +1224,7 @@ For any non-trivial work (>50 LOC or >2 files), you MUST plan before coding. The
 This rule cannot be fully enforced by static analysis, but:
 1. **`node -e "require('./server')"` in pre-push** catches broken imports before they reach production
 2. **Code review** must verify imports match actual source files
-3. **LLM system prompts** (CLAUDE.md, GEMINI.md) mandate this as a blocking rule
+3. **LLM system prompts** (CLAUDE.md, gemini.md, .antigravity.md) mandate this as a blocking rule
 4. **Planning phase** must include dependency verification as a checklist item
 
 ### NEVER
