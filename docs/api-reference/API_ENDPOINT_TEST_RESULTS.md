@@ -86,7 +86,7 @@ These return 400 because test sent empty/incomplete payloads:
 | POST /v1/auth/merchant/register | email, password, fullName, businessName |
 | POST /v1/auth/merchant/login | email, password |
 | POST /v1/auth/admin/register | email, password, fullName, notapUuid |
-| POST /v1/auth/admin/login | email, password, mfaVerification |
+| POST /v1/auth/admin/login | email, password, verificationSessionId |
 | PUT /v1/enrollment/renew/:uuid | factors |
 | POST /v1/verification/initiate | user_uuid |
 | POST /v1/verification/verify | session_id, factors |

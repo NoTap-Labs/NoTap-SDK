@@ -16,7 +16,7 @@ This file is the authoritative source for security vulnerability status across t
 
 | Property | Value |
 |----------|-------|
-| **Last Updated** | 2026-02-16 |
+| **Last Updated** | 2026-06-17 |
 | **Owner** | Security Team |
 | **Review Frequency** | Weekly or after any security fix |
 | **Location** | `documentation/05-security/SECURITY_STATUS_REGISTRY.md` |
@@ -40,6 +40,12 @@ This file is the authoritative source for security vulnerability status across t
 | V011 | Scalability | Unverified Performance | 🔴 OPEN | - | - | - | No load testing performed |
 | V012 | Documentation | Stale Status Markers | ✅ FIXED | - | 2026-02-16 | Created this registry | Reconciled contradictory docs |
 | V013 | Architecture | Direct Redis Access (no abstraction) | ✅ FIXED | - | 2026-02-16 | All routes now use cacheService | Fixed 7 locations in verificationRouter, enrollmentRouter |
+| V014 | Backend | X-Forwarded-For Spoofing (11 locations) | ✅ FIXED | 9.0 | 2026-06-17 | req.ip for all rate limiters/services | server.js has trust proxy: 1; req.ip is correct client IP |
+| V015 | Backend | MFA Factor Name Timing/Enumeration | ✅ FIXED | 8.5 | 2026-06-17 | Constant-time factor validation | Buffer.alloc for unknown names + secureCompare |
+| V016 | Backend | Lockout Timing Oracle (3 services) | ✅ FIXED | 7.4 | 2026-06-17 | Lockout after bcrypt | Eliminated 200-500ms timing difference |
+| V017 | Backend | NoTap Login Timing & Enumeration | ✅ FIXED | 6.5 | 2026-06-17 | getDummyHash baseline + generic messages | Also added lockout tracking to NoTap paths |
+| V018 | Backend | Admin Error Disclosure | ✅ FIXED | 5.3 | 2026-06-17 | Unified "Invalid credentials" | Locked/inactive/suspended/general all same message |
+| V019 | Backend | Session Replay on /verify | ✅ FIXED | 5.3 | 2026-06-17 | session.status === 'verified' guard | Duplicate submissions blocked |
 
 ---
 
@@ -130,6 +136,7 @@ grep "V00X" documentation/05-security/SECURITY_STATUS_REGISTRY.md
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-06-17 | Fixed 9 auth vulns (X-Forwarded-For, MFA, lockout timing, NoTap, admin errors, session replay) | Security Remediation |
 | 2026-02-16 | Created registry, fixed 7 vulnerabilities | Security Remediation |
 | 2026-01-23 | SSRF/Replay fixes verified | Pentest |
 | 2026-01-19 | Race condition fixed | Security Team |

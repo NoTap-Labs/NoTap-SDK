@@ -973,12 +973,17 @@ Recovery codes MUST follow the defense-in-depth pipeline:
 All user-facing login endpoints MUST implement lockout:
 
 ```javascript
-// Pattern: check lockout BEFORE bcrypt (prevent CPU waste)
+// Pattern: check lockout AFTER bcrypt (prevent timing oracle — locked vs unlocked timing diff)
+// Order: bcrypt comparison → lockout check → status checks → all return "Invalid email or password"
+const bcryptMatch = await bcrypt.compare(password, user.password_hash);
+if (!bcryptMatch) {
+    await incrementFailedAttempts(user.uuid);
+    return { success: false, error: 'Invalid email or password' };
+}
 if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
-    return { success: false, error: 'Account temporarily locked. Try again later.' };
+    return { success: false, error: 'Invalid email or password' };
 }
 
-// On failure: increment + maybe lock
 // On success: always reset to 0
 ```
 
@@ -1436,7 +1441,48 @@ Lesson 97 in `documentation/10-internal/LESSONS_LEARNED.md`
 
 ---
 
-## Rule 25: `commonTest` Tests Must Not Call Synchronous Platform-Specific APIs (MANDATORY)
+## Rule 25b: Cache-Control on ALL API Responses (CRITICAL — CDN/Proxy Defense)
+
+**Date added:** 2026-06-19
+**Trigger:** Cache security audit: 50+ routers / ~200 endpoints returned JSON without `Cache-Control`.
+
+### The Problem
+
+Without `Cache-Control`, CDNs (CloudFront default: 24h cache) and forward proxies cache authenticated API responses, causing cross-user data exposure. This is dormant without an active CDN but becomes **critical** the moment one is deployed.
+
+### The Rule
+
+```javascript
+// ✅ CORRECT — set via global middleware in backend/middleware/security.js
+res.setHeader('Cache-Control', 'no-store', 'private');
+```
+
+| Context | Cache-Control | Implementation |
+|---------|--------------|----------------|
+| API JSON responses | `no-store, private` | `securityHeaders()` middleware (covers all ~200 endpoints) |
+| 500/404 errors | `no-store, private` | `backend/server.js` error handlers |
+| SPA HTML catch-all | `no-cache, no-store, must-revalidate` | `online-web/server.js` app.get('*') |
+| Admin/merchant dashboards | `private, max-age=3600` | `backend/server.js` staticOptions('private') |
+| `.well-known` files | `public, max-age=3600, must-revalidate` | `backend/server.js` staticOptions('public') |
+| iOS HTTP client | `URLCache = null` | `PSPApiClient.ios.kt` |
+
+### Checklist
+
+- [ ] New routes are covered by global `securityHeaders()` middleware
+- [ ] New `express.static` mounts use `staticOptions()` helper
+- [ ] New iOS HTTP clients disable NSURLCache
+- [ ] New Android HTTP clients set `OkHttpClient.cache = null`
+- [ ] CDN cache behaviors documented for new origin deployments
+
+### See Also
+
+- `documentation/05-security/CACHE_SECURITY_AUDIT.md` — Full audit & 7-phase remediation
+- `documentation/05-security/SECURITY_PATTERNS_REFERENCE.md` — Cache-Control Pattern section
+- `CLAUDE.md` — KEY SECURITY PATTERNS > Cache-Control
+
+---
+
+## Rule 26: `commonTest` Tests Must Not Call Synchronous Platform-Specific APIs (MANDATORY)
 
 **Date added:** 2026-04-29
 **Trigger:** `DoubleLayerEncryptionTest` failed on JS browser target after being placed in `commonTest`

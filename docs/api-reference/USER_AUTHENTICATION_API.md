@@ -769,17 +769,13 @@ Login with email, password, and MFA verification.
 {
   "email": "admin@notap.io",
   "password": "VerySecureAdmin1234",
-  "mfaVerification": {
-    "success": true,
-    "uuid": "notap-enrollment-uuid",
-    "verified": true
-  }
+  "verificationSessionId": "session-uuid-from-verify-endpoint"
 }
 ```
 
 **Security:**
 - Password must be correct
-- MFA verification must succeed
+- MFA verification session must be valid (looked up server-side, status must be `verified`, session UUID must match admin's `notap_uuid`)
 - Account must not be locked (failed attempts)
 - Account must be active and not suspended
 
@@ -1019,7 +1015,7 @@ curl -X POST https://api.notap.io/v1/auth/admin/register \
 # Login (requires MFA)
 curl -X POST https://api.notap.io/v1/auth/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@notap.io","password":"AdminSecure1234","mfaVerification":{"success":true,"uuid":"notap-uuid","verified":true}}'
+  -d '{"email":"admin@notap.io","password":"AdminSecure1234","verificationSessionId":"session-uuid-from-verify-endpoint"}'
 ```
 
 ---

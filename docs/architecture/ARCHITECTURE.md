@@ -2,7 +2,7 @@
 
 **Purpose**: Comprehensive system architecture, module structure, and data flow documentation
 
-**Last Updated**: 2026-03-21
+**Last Updated**: 2026-06-19
 
 **NEW in v2.0:**
 - Web Platform Architecture (online-web module deep dive)
@@ -757,6 +757,7 @@ Wrapped Key → KMS Unwrap → Derived Key → AES-GCM Decrypt → Digest → Co
 5. **Forward Secrecy**: Compromised day N digest cannot derive day N+1 (HKDF)
 6. **Replay Protection**: Timestamps + nonces prevent replay attacks
 7. **Rate Limiting**: Max 5 verification attempts per UUID per hour
+8. **Cache-Control on All Responses**: Every API endpoint includes `Cache-Control: no-store, private` via global `securityHeaders()` middleware — prevents CDN/proxy caching of authenticated data. See `documentation/05-security/CACHE_SECURITY_AUDIT.md`.
 
 ---
 

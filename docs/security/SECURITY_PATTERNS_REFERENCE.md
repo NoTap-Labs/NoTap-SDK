@@ -1,6 +1,6 @@
 # Security Patterns Reference
 
-**Last Updated:** 2026-02-26
+**Last Updated:** 2026-06-19
 
 This document contains all mandatory security patterns for NoTap development. Following these patterns is NON-NEGOTIABLE.
 
@@ -25,6 +25,7 @@ This document contains all mandatory security patterns for NoTap development. Fo
 | Ownership Assertion | User-scoped endpoint IDOR prevention | `req.user.uuid !== resourceOwnerId → 403` |
 | Server-Derived IP | Audit logging and rate limiting | Always `req.ip`, never body field |
 | Safe Error Messages | API error information disclosure | `safeErrorMessage(err, 'fallback')` everywhere |
+| Cache-Control | ALL API responses — CDN/proxy defense | `res.setHeader('Cache-Control', 'no-store, private')` |
 
 ---
 
@@ -676,8 +677,96 @@ return res.status(500).json({
 
 ---
 
+## Lockout Check Ordering (Timing Oracle Prevention)
+
+**Purpose:** Prevent attackers from determining account lockout state via response timing.
+
+```javascript
+// ✅ CORRECT — bcrypt first, lockout after (constant response time)
+const bcryptMatch = await bcrypt.compare(password, user.password_hash);
+if (!bcryptMatch) {
+  await incrementFailedAttempts(uuid);
+  return { success: false, error: 'Invalid email or password' };
+}
+if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
+  return { success: false, error: 'Invalid email or password' };
+}
+
+// ❌ WRONG — lockout check before bcrypt (timing oracle)
+if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
+  return { success: false, error: 'Account locked' };  // ~5ms vs ~200ms = oracle
+}
+const bcryptMatch = await bcrypt.compare(password, user.password_hash);
+```
+
+**Rules:**
+- **Order:** bcrypt comparison → lockout check → status checks. Always.
+- **Messages:** All post-bcrypt errors return the same generic message ("Invalid email or password", "Invalid credentials", etc.) — never reveal whether the account is locked, inactive, or suspended
+- **Applies to:** All user types (regular, merchant, developer, admin)
+- **Same pattern for NoTap login:** `getDummyHash()` timing baseline before NoTap query, then lockout check, all returning the same generic error
+
+---
+
+## Cache-Control Pattern (CRITICAL — CDN/Proxy Defense)
+
+**Last Updated:** 2026-06-19
+**Trigger:** Cache security audit found zero Cache-Control headers on any of ~200 API endpoints. See `documentation/05-security/CACHE_SECURITY_AUDIT.md`.
+
+### The Problem
+
+Without `Cache-Control` headers, CDNs (CloudFront, Cloudflare) and forward proxies fall back to default caching policies:
+- **CloudFront default**: 24h cache for GET/HEAD responses
+- **Corporate proxies**: RFC 7234 heuristic caching (10% of Date-Last-Modified delta)
+- **Browser heuristics**: Some browsers cache even without explicit directives
+
+### The Fix
+
+**Every API response MUST include `Cache-Control: no-store, private`:**
+
+```javascript
+// ✅ CORRECT — global middleware in backend/middleware/security.js
+res.setHeader('Cache-Control', 'no-store, private');
+```
+
+### Rules by Content Type
+
+| Content Type | Cache-Control | When |
+|-------------|---------------|------|
+| API JSON responses (all) | `no-store, private` | Every `res.json()`, `res.send()` — applied globally via `securityHeaders()` middleware |
+| SPA HTML pages | `no-cache, no-store, must-revalidate` | `online-web/server.js` app.get('*') catch-all |
+| Authenticated static assets | `private, max-age=3600` | Admin/merchant dashboards (express.static with auth) |
+| Public static assets | `public, max-age=3600, must-revalidate` | `.well-known` endpoints |
+| CDN assets (content-hash) | `public, max-age=31536000, immutable` | Only for content-hash filenames |
+
+### Implementation
+
+- **Backend API**: `backend/middleware/security.js` — `securityHeaders()` function sets `no-store, private` for all routes
+- **Backend errors**: `backend/server.js` — 500 and 404 handlers include explicit `Cache-Control`
+- **Static files**: `backend/server.js:348-357` — `staticOptions()` helper with per-mount policies
+- **Online-web**: `online-web/server.js` — SPA catch-all sets `no-cache, no-store, must-revalidate`
+- **iOS SDK**: `PSPApiClient.ios.kt` — NSURLCache disabled via `URLCache = null` + `requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData`
+
+### When to Add Cache-Control
+
+Every code change that:
+1. Adds a new route or endpoint — covered by global middleware, no manual action needed
+2. Adds a new static file mount — MUST use `staticOptions()` or equivalent
+3. Adds a new HTTP client on mobile — MUST disable NSURLCache/OkHttp cache
+4. Deploys behind a CDN — MUST verify Cache-Control headers are present
+
+### Checklist
+
+- [ ] New routes are covered by global middleware (check if securityHeaders() runs before route mount)
+- [ ] New express.static mounts use `maxAge` + `setHeaders`
+- [ ] New HTTP clients on iOS disable NSURLCache
+- [ ] New HTTP clients on Android set `OkHttpClient.cache = null`
+- [ ] CDN cache behaviors documented for any new origin deployment
+
+---
+
 ## Related Documentation
 
+- [CACHE_SECURITY_AUDIT.md](CACHE_SECURITY_AUDIT.md) — Full audit report & 7-phase remediation
 - [SECURITY_AUDIT.md](SECURITY_AUDIT.md) - Vulnerability audit results
 - [ENCRYPTION_SECURITY_AUDIT.md](ENCRYPTION_SECURITY_AUDIT.md) - Encryption implementation audit
 - [ACCOUNT_RECOVERY_SYSTEM.md](../03-developer-guides/ACCOUNT_RECOVERY_SYSTEM.md) - Full recovery system guide
