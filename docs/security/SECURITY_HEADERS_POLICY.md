@@ -1,6 +1,6 @@
 # Security Headers Policy
 
-**Last Updated:** 2026-06-20
+**Last Updated:** 2026-06-20 (v2 — removed `'unsafe-inline'` from script-src, added COEP)
 **Status:** ✅ Active enforcement on all HTTP endpoints
 
 ---
@@ -56,6 +56,7 @@ Security headers are the first line of defense against:
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | `security.js` | Leaks origin only on cross-origin |
 | `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | `security.js` | Disables unused browser APIs |
 | `Cache-Control` | `no-store, private` | `security.js` | Prevents CDN/proxy caching of dynamic data |
+| `Cross-Origin-Embedder-Policy` | `credentialless` | `security.js` | Allows cross-origin resources without explicit CORS |
 | `Cross-Origin-Opener-Policy` | `same-origin` | `helmet` | Isolates browsing context |
 | `Cross-Origin-Resource-Policy` | `same-origin` | `helmet` | Blocks cross-origin reads |
 | `X-DNS-Prefetch-Control` | `off` | `helmet` | Prevents DNS prefetch leaks |
@@ -78,6 +79,7 @@ Security headers are the first line of defense against:
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | `helmet` | Leaks origin only on cross-origin |
 | `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | Manual | Disables unused browser APIs |
 | `Cache-Control` | (varies) | `express.static` + `app.get('*')` | HTML: no-cache; assets: 1h |
+| `Cross-Origin-Embedder-Policy` | `credentialless` | Manual | Allows cross-origin resources without explicit CORS |
 | `Cross-Origin-Opener-Policy` | `same-origin` | `helmet` | Isolates browsing context |
 | `Cross-Origin-Resource-Policy` | `same-origin` | `helmet` | Blocks cross-origin reads |
 | `X-DNS-Prefetch-Control` | `off` | `helmet` | Prevents DNS prefetch leaks |
@@ -143,7 +145,7 @@ Content-Security-Policy: default-src 'self';
 
 ```http
 Content-Security-Policy: default-src 'self';
-                         script-src 'self' 'unsafe-inline';
+                         script-src 'self' 'sha256-T/z+1Jv1PFO6u1iuiElQEce3slNBHKyLY0fb7+Qz2bg=';
                          style-src 'self' 'unsafe-inline';
                          img-src 'self' data: https:;
                          connect-src 'self' https://api.notap.io;
@@ -161,7 +163,7 @@ Content-Security-Policy: default-src 'self';
 | Directive | Allowed Sources | Reason |
 |-----------|----------------|--------|
 | `default-src` | `'self'` | Fallback for all resource types |
-| `script-src` | `'self'`, `'unsafe-inline'` | Inline bootstrap script in index.html; Kotlin/JS bundle |
+| `script-src` | `'self'`, `sha256-...` | SHA-256 hash of the bootstrap script in index.html |
 | `style-src` | `'self'`, `'unsafe-inline'` | Kotlin/JS may inject dynamic `<style>` elements |
 | `img-src` | `'self'`, `data:`, `https:` | Factor canvas images, inline data URIs |
 | `connect-src` | `'self'`, `https://api.notap.io` | SPA communicates with backend API |
@@ -171,7 +173,20 @@ Content-Security-Policy: default-src 'self';
 | `form-action` | `'self'` | Form submissions only to same origin |
 | `object-src` | `'none'` | No plugins |
 
-**`'unsafe-inline'` usage:** Required for the index.html bootstrap script block and Kotlin/JS runtime dynamic styles. If the bootstrap script is extracted to an external file and Kotlin/JS stops using inline styles, both `'unsafe-inline'` entries can be removed and replaced with hashes or nonces.
+**`'unsafe-inline'` removed from script-src (2026-06-20 v2):** Replaced with a SHA-256 hash of the exact bootstrap script. Update the hash if the inline script changes. Compute with:
+
+```bash
+python3 -c "
+import hashlib, base64
+with open('online-web/src/jsMain/resources/index.html') as f:
+    lines = f.readlines()
+script_content = ''.join(lines[31:39])
+h = hashlib.sha256(script_content.encode()).digest()
+print('sha256-' + base64.b64encode(h).decode())
+"
+```
+
+**`'unsafe-inline'` in style-src:** Remains because Kotlin/JS runtime may inject dynamic `<style>` elements. Target: remove once confirmed that the Kotlin/JS production bundle doesn't use inline styles.
 
 ---
 
@@ -245,12 +260,30 @@ app.use('/v1/verification', verificationRouter);
 app.use(helmet({ contentSecurityPolicy: { ... } }));
 ```
 
-### Rule 2: Never add `'unsafe-inline'` to backend CSP
+### Rule 2: Never add `'unsafe-inline'` to script-src in frontend CSP
 
-The backend CSP was hardened to remove `'unsafe-inline'` from `style-src` (2026-01-20). If a new feature requires inline styles:
-1. Use a CSP nonce (`'nonce-<random>'`)
-2. Or extract to an external stylesheet
-3. If unavoidable, document with a future removal date
+The frontend CSP uses a SHA-256 hash for the inline bootstrap script. If the script changes:
+
+```bash
+# Recompute the hash
+python3 -c "
+import hashlib, base64
+with open('online-web/src/jsMain/resources/index.html') as f:
+    lines = f.readlines()
+script_content = ''.join(lines[31:39])
+h = hashlib.sha256(script_content.encode()).digest()
+print('sha256-' + base64.b64encode(h).decode())
+"
+```
+
+Update the hash in:
+1. `online-web/server.js` — helmet CSP config
+2. `documentation/05-security/SECURITY_HEADERS_POLICY.md` — CSP section
+3. `AGENTS.md` — CSP quick reference
+
+### Rule 3: `'unsafe-inline'` in style-src is acceptable (frontend only)
+
+Kotlin/JS runtime may inject dynamic `<style>` elements. This cannot be replaced with a hash. Target: remove once Kotlin/JS production bundle is verified to not use inline styles.
 
 ### Rule 3: CDN sources require justification
 
@@ -298,6 +331,7 @@ X-Frame-Options                 ✅ DENY                  ✅ DENY
 Referrer-Policy                 ✅ strict-origin-when-   ✅ strict-origin-when-
 Permissions-Policy              ✅ restricted            ✅ restricted
 Cache-Control                   ✅ no-store, private     ✅ varies
+Cross-Origin-Embedder-Policy    ✅ credentialless         ✅ credentialless
 Cross-Origin-Opener-Policy      ✅ same-origin           ✅ same-origin
 Cross-Origin-Resource-Policy    ✅ same-origin           ✅ same-origin
 X-DNS-Prefetch-Control          ✅ off                   ✅ off
