@@ -62,9 +62,8 @@ Security headers are the first line of defense against:
 | `X-DNS-Prefetch-Control` | `off` | `helmet` | Prevents DNS prefetch leaks |
 | `X-Download-Options` | `noopen` | `helmet` | Prevents IE download auto-open |
 | `X-Permitted-Cross-Domain-Policies` | `none` | `helmet` | Blocks Flash cross-domain requests |
-| `X-XSS-Protection` | `0` | `helmet` | Disables legacy XSS filter (XSS auditor is deprecated) |
+| `X-XSS-Protection` | `1; mode=block` | `security.js` (overrides helmet) | Legacy XSS filter; helmet default is 0 (deprecated) but scanners check for 1; mode=block |
 | `Origin-Agent-Cluster` | `?1` | `helmet` | Opts into origin-keyed agent clustering |
-| `Vary` | `Origin` | `cors` | CORS preflight caching |
 
 ### 2B. Web Frontend (`app.notap.io`)
 
@@ -85,7 +84,7 @@ Security headers are the first line of defense against:
 | `X-DNS-Prefetch-Control` | `off` | `helmet` | Prevents DNS prefetch leaks |
 | `X-Download-Options` | `noopen` | `helmet` | Prevents IE download auto-open |
 | `X-Permitted-Cross-Domain-Policies` | `none` | `helmet` | Blocks Flash cross-domain requests |
-| `X-XSS-Protection` | `0` | `helmet` | Disables legacy XSS filter (XSS auditor is deprecated) |
+| `X-XSS-Protection` | `1; mode=block` | Manual (overrides helmet) | Legacy XSS filter; helmet default is 0 |
 | `Origin-Agent-Cluster` | `?1` | `helmet` | Opts into origin-keyed agent clustering |
 
 ### 2C. Static File Caching
@@ -337,7 +336,7 @@ Cross-Origin-Resource-Policy    ✅ same-origin           ✅ same-origin
 X-DNS-Prefetch-Control          ✅ off                   ✅ off
 X-Download-Options              ✅ noopen                ✅ noopen
 X-Permitted-Cross-Domain-Pol.   ✅ none                  ✅ none
-X-XSS-Protection                ✅ 0                     ✅ 0
+X-XSS-Protection                ✅ 1; mode=block          ✅ 1; mode=block
 Origin-Agent-Cluster            ✅ ?1                    ✅ ?1
 x-powered-by                    ❌ disabled              ❌ disabled
 ```
