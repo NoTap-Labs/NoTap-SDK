@@ -1,6 +1,6 @@
 # Security Patterns Reference
 
-**Last Updated:** 2026-06-19
+**Last Updated:** 2026-06-21
 
 This document contains all mandatory security patterns for NoTap development. Following these patterns is NON-NEGOTIABLE.
 
@@ -26,6 +26,7 @@ This document contains all mandatory security patterns for NoTap development. Fo
 | Server-Derived IP | Audit logging and rate limiting | Always `req.ip`, never body field |
 | Safe Error Messages | API error information disclosure | `safeErrorMessage(err, 'fallback')` everywhere |
 | Cache-Control | ALL API responses — CDN/proxy defense | `res.setHeader('Cache-Control', 'no-store, private')` |
+| Content-Type Validation | Body-receiving endpoints | `contentTypeValidator` middleware before `express.json()` |
 
 ---
 
@@ -704,6 +705,34 @@ const bcryptMatch = await bcrypt.compare(password, user.password_hash);
 - **Messages:** All post-bcrypt errors return the same generic message ("Invalid email or password", "Invalid credentials", etc.) — never reveal whether the account is locked, inactive, or suspended
 - **Applies to:** All user types (regular, merchant, developer, admin)
 - **Same pattern for NoTap login:** `getDummyHash()` timing baseline before NoTap query, then lockout check, all returning the same generic error
+
+---
+
+## Content-Type Validation
+
+**Purpose:** Prevent charset-based parsing bypass, body parser confusion, and DoS via invalid Content-Type headers.
+
+**File:** `backend/middleware/contentTypeValidator.js`
+
+**Rules:**
+1. MUST be registered BEFORE `express.json()` to prevent body parsing of invalid Content-Types
+2. Only `application/json` Content-Type accepted
+3. Only `utf-8` / `utf8` charset accepted — `charset=utf-16`, `charset=iso-8859-1`, etc. rejected with 415
+4. Only enforced on POST, PUT, PATCH methods (GET/DELETE/OPTIONS bypass)
+5. Empty/missing Content-Type on body methods returns 415
+
+```javascript
+const contentTypeValidator = require('./middleware/contentTypeValidator');
+// Must be before express.json():
+app.use(contentTypeValidator);
+app.use(express.json({ limit: '10kb' }));
+```
+
+**Error responses:**
+- Missing Content-Type: `{ success: false, error: 'UNSUPPORTED_MEDIA_TYPE', message: 'Content-Type header is required. Use application/json' }`
+- Invalid Content-Type/charset: `{ success: false, error: 'UNSUPPORTED_MEDIA_TYPE', message: 'Only application/json with charset=utf-8 is accepted' }`
+
+**Violations are logged** via structured logger with `contentType`, `ip`, and `path` for audit.
 
 ---
 
