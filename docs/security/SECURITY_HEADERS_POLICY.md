@@ -1,6 +1,6 @@
 # Security Headers Policy
 
-**Last Updated:** 2026-06-20 (v2 — removed `'unsafe-inline'` from script-src, added COEP)
+**Last Updated:** 2026-06-21 (v3 — COEP/COOP consolidated into helmet config to eliminate double-set race condition)
 **Status:** ✅ Active enforcement on all HTTP endpoints
 
 ---
@@ -56,13 +56,13 @@ Security headers are the first line of defense against:
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | `security.js` | Leaks origin only on cross-origin |
 | `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | `security.js` | Disables unused browser APIs |
 | `Cache-Control` | `no-store, private` | `security.js` | Prevents CDN/proxy caching of dynamic data |
-| `Cross-Origin-Embedder-Policy` | `credentialless` | `security.js` | Allows cross-origin resources without explicit CORS |
+| `Cross-Origin-Embedder-Policy` | `credentialless` | `helmet` | Allows cross-origin resources without explicit CORS |
 | `Cross-Origin-Opener-Policy` | `same-origin` | `helmet` | Isolates browsing context |
 | `Cross-Origin-Resource-Policy` | `same-origin` | `helmet` | Blocks cross-origin reads |
 | `X-DNS-Prefetch-Control` | `off` | `helmet` | Prevents DNS prefetch leaks |
 | `X-Download-Options` | `noopen` | `helmet` | Prevents IE download auto-open |
 | `X-Permitted-Cross-Domain-Policies` | `none` | `helmet` | Blocks Flash cross-domain requests |
-| `X-XSS-Protection` | `1; mode=block` | `security.js` (overrides helmet) | Legacy XSS filter; helmet default is 0 (deprecated) but scanners check for 1; mode=block |
+| `X-XSS-Protection` | `1; mode=block` | `security.js` (helmet xssFilter disabled) | Legacy XSS filter; helmet default is 0 (deprecated) but scanners check for 1; mode=block |
 | `Origin-Agent-Cluster` | `?1` | `helmet` | Opts into origin-keyed agent clustering |
 
 ### 2B. Web Frontend (`app.notap.io`)
@@ -78,13 +78,13 @@ Security headers are the first line of defense against:
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | `helmet` | Leaks origin only on cross-origin |
 | `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | Manual | Disables unused browser APIs |
 | `Cache-Control` | (varies) | `express.static` + `app.get('*')` | HTML: no-cache; assets: 1h |
-| `Cross-Origin-Embedder-Policy` | `credentialless` | Manual | Allows cross-origin resources without explicit CORS |
+| `Cross-Origin-Embedder-Policy` | `credentialless` | `helmet` | Allows cross-origin resources without explicit CORS |
 | `Cross-Origin-Opener-Policy` | `same-origin` | `helmet` | Isolates browsing context |
 | `Cross-Origin-Resource-Policy` | `same-origin` | `helmet` | Blocks cross-origin reads |
 | `X-DNS-Prefetch-Control` | `off` | `helmet` | Prevents DNS prefetch leaks |
 | `X-Download-Options` | `noopen` | `helmet` | Prevents IE download auto-open |
 | `X-Permitted-Cross-Domain-Policies` | `none` | `helmet` | Blocks Flash cross-domain requests |
-| `X-XSS-Protection` | `1; mode=block` | Manual (overrides helmet) | Legacy XSS filter; helmet default is 0 |
+| `X-XSS-Protection` | `1; mode=block` | Manual (helmet xssFilter disabled) | Legacy XSS filter; helmet default is 0 |
 | `Origin-Agent-Cluster` | `?1` | `helmet` | Opts into origin-keyed agent clustering |
 
 ### 2C. Static File Caching
@@ -330,13 +330,13 @@ X-Frame-Options                 ✅ DENY                  ✅ DENY
 Referrer-Policy                 ✅ strict-origin-when-   ✅ strict-origin-when-
 Permissions-Policy              ✅ restricted            ✅ restricted
 Cache-Control                   ✅ no-store, private     ✅ varies
-Cross-Origin-Embedder-Policy    ✅ credentialless         ✅ credentialless
+Cross-Origin-Embedder-Policy    ✅ credentialless        ✅ credentialless
 Cross-Origin-Opener-Policy      ✅ same-origin           ✅ same-origin
 Cross-Origin-Resource-Policy    ✅ same-origin           ✅ same-origin
 X-DNS-Prefetch-Control          ✅ off                   ✅ off
 X-Download-Options              ✅ noopen                ✅ noopen
 X-Permitted-Cross-Domain-Pol.   ✅ none                  ✅ none
-X-XSS-Protection                ✅ 1; mode=block          ✅ 1; mode=block
+X-XSS-Protection                ✅ 1; mode=block (non-helmet)  ✅ 1; mode=block (non-helmet)
 Origin-Agent-Cluster            ✅ ?1                    ✅ ?1
 x-powered-by                    ❌ disabled              ❌ disabled
 ```
