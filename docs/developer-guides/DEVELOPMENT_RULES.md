@@ -1511,6 +1511,55 @@ sdk/src/test/          → JVM/Android unit tests only (androidUnitTest source s
 sdk/src/androidTest/   → Android instrumented tests (requires device/emulator)
 ```
 
+---
+
+## 26. UUID Must Be Set Before Factor Capture — Never at Submit Time
+
+**Any HMAC identity context (UUID, salt, session ID) MUST be present before factors are captured. Never defer identity generation to the submit callback.**
+
+```kotlin
+// WRONG: UUID set after factor capture → all digests use empty-string HMAC context
+fun start() {
+    showStep(FactorCaptureStep(uuid = enrollmentData.userId ?: ""))  // userId is null here!
+}
+fun submitEnrollment() {
+    enrollmentData.userId = generateUUIDv4()  // too late — digests already computed
+}
+
+// RIGHT: UUID exists before any factor is captured
+fun start() {
+    val uuid = enrollmentData.userId ?: generateUUIDv4()
+    enrollmentData.userId = uuid
+    showStep(FactorCaptureStep(uuid = uuid))
+}
+```
+
+**Enforcement**: When reviewing enrollment/verification flows, trace the identity value from the capture step constructor to its mutation point. If it can be read as null/empty during capture, it is a bug.
+
+---
+
+## 27. K/JS Interop Functions Must Have Explicit Return Types
+
+**ALL Kotlin/JS `external` functions or `js()` interop functions that return runtime values MUST declare explicit return types. IR compiler silently coerces inferred types to undefined/0.**
+
+```kotlin
+// WRONG: No return type — clearTimeout receives 0/undefined
+private fun setTimeout(callback: () -> Unit, delay: Int) = js("setTimeout(callback, delay)")
+
+// RIGHT: Explicit Int return type
+private fun setTimeout(callback: () -> Unit, delay: Int): Int = js("setTimeout(callback, delay)")
+```
+
+**High-risk interop targets:**
+- `setTimeout` / `setInterval` → `: Int` (timer ID)
+- `requestAnimationFrame` → `: Int` (handle)
+- `document.getElementById` → `: dynamic` or typed cast
+- `JSON.parse` / `JSON.stringify` → `: dynamic`
+
+**Enforcement**: grep for `fun.*= js\(` in Kotlin/JS modules and verify every match has an explicit return type.
+
+---
+
 ### See Also
 
 Lesson 98 in `documentation/10-internal/LESSONS_LEARNED.md`
