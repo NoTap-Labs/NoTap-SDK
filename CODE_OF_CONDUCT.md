@@ -148,7 +148,7 @@ For questions about this Code of Conduct, contact:
 
 ---
 
-**Last Updated:** December 5, 2025
+**Last Updated:** 2026-08-31
 
 **Version:** 1.0
 
