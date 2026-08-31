@@ -9,7 +9,7 @@ No phone. No code. No email. No support ticket.
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Status: Pre-release](https://img.shields.io/badge/status-pre--release-orange.svg)](#-status)
 [![Android](https://img.shields.io/badge/Android-in%20development-yellow.svg)](#-status)
-[![Web](https://img.shields.io/badge/Web-in%20development-yellow.svg)](#-status)
+[![Web](https://img.shields.io/badge/Web-testable%20now-brightgreen.svg)](#-status)
 
 </div>
 
@@ -20,6 +20,10 @@ phone-based method can't help you: a new laptop, a kiosk, a borrowed machine,
 a phone that's lost, dead, or out of signal. On your own device, a passkey
 (Touch ID, Windows Hello) already gives you everything you need — NoTap is
 the lane that runs when there's no device credential to fall back on.
+
+Read more on the [NoTap website](https://notap.io) — including our current
+security-boundary claims and how we're validating this with people who live
+the recovery problem.
 
 ## 🧠 How it works
 
@@ -46,12 +50,30 @@ everything you know.
   (SMS, email resets, support-desk social engineering) that this class of
   breach has actually exploited.
 
+## 🧪 Help us validate NoTap
+
+We're validating this with people who live the recovery problem — product
+teams, security teams, developers, and researchers who want to test whether
+device-independent recovery is useful, understandable, and safe.
+
+| Who | How you can help |
+|---|---|
+| 🎨 **Design partners** | Help us test real recovery journeys inside your application. |
+| 🛡️ **Security & identity reviewers** | Review the threat model, challenge our design, and probe our implementation assumptions. |
+| 🧑‍💻 **Open-source contributors** | Help improve factor usability, accessibility, SDKs, testing, and documentation. |
+
+We're asking for feedback, pilot conversations, and technical review — not
+asking anyone to move payments or replace an existing identity stack.
+
+- 💬 **Start here:** [GitHub Discussions](https://github.com/NoTap-Labs/NoTap-SDK/discussions)
+- 🌐 **Or reach the team directly:** [notap.io](https://notap.io) → *Help validate NoTap*
+
 ## 📊 Status
 
 | Platform | Status |
 |---|---|
 | 🤖 **Android SDK** | 🚧 In active development |
-| 🌐 **Web SDK** | 🚧 In active development |
+| 🌐 **Web SDK** | ✅ Testable now — enrollment and verification work end-to-end |
 | 🍎 **iOS** | 📋 Not yet started |
 
 This project is pre-release. Treat any specific compliance, certification, or
