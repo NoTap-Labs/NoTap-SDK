@@ -33,7 +33,7 @@ Before creating bug reports, please check existing issues to avoid duplicates.
 - Sample code (if applicable)
 - Screenshots or logs
 
-**Submit bugs via:** [GitHub Issues](https://github.com/keikworld/NoTap-SDK/issues)
+**Submit bugs via:** [GitHub Issues](https://github.com/NoTap-Labs/NoTap-SDK/issues)
 
 ### 💡 Suggesting Enhancements
 
@@ -80,7 +80,7 @@ Documentation improvements are always welcome:
 
 ```bash
 # Clone the repository
-git clone https://github.com/keikworld/NoTap-SDK.git
+git clone https://github.com/NoTap-Labs/NoTap-SDK.git
 cd NoTap-SDK
 
 # Note: This is a documentation repository
@@ -351,7 +351,7 @@ When adding features, update relevant documentation:
 
 ## Questions?
 
-- **General Questions:** [GitHub Discussions](https://github.com/keikworld/NoTap-SDK/discussions)
+- **General Questions:** [GitHub Discussions](https://github.com/NoTap-Labs/NoTap-SDK/discussions)
 - **Security Issues:** security@notap.io (private disclosure)
 - **Contributor Help:** contributors@notap.io
 

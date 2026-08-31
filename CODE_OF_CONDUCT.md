@@ -144,7 +144,7 @@ Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcem
 For questions about this Code of Conduct, contact:
 
 - **Email:** conduct@notap.io
-- **Discussions:** [GitHub Discussions](https://github.com/keikworld/NoTap-SDK/discussions)
+- **Discussions:** [GitHub Discussions](https://github.com/NoTap-Labs/NoTap-SDK/discussions)
 
 ---
 

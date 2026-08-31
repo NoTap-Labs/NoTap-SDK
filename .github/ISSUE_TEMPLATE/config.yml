@@ -4,7 +4,7 @@ contact_links:
     url: https://docs.notap.io
     about: Check our documentation for guides and API reference
   - name: 💬 GitHub Discussions
-    url: https://github.com/keikworld/NoTap/discussions
+    url: https://github.com/NoTap-Labs/NoTap-SDK/discussions
     about: Ask questions and discuss with the community
   - name: 📧 Email Support
     url: mailto:support@notap.io
