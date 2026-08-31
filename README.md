@@ -37,18 +37,35 @@ of your enrolled factors — never the same fixed set forever, and never your
 whole enrolled set at once, so a single observed session can't reproduce
 everything you know.
 
-## 🚫 What NoTap is not
+## ✅ What NoTap is — and isn't
 
-- **Not a payment rail.** It's an authentication layer, not a payment
-  processor.
-- **Not biometric on every factor.** Voice, where supported, is a spoken
-  password (speech-to-text), not a voiceprint.
-- **Not a defense against a fully compromised device.** If the screen you're
-  typing on already has a keylogger or screen recorder, nothing typed on it
-  is safe — no authentication scheme can fix that. Our honest claim is
-  narrower and real: NoTap removes the *account-recovery* attack surface
-  (SMS, email resets, support-desk social engineering) that this class of
-  breach has actually exploited.
+| NoTap **is** | NoTap **is not** |
+|---|---|
+| Recovery and step-up authentication | A replacement for a passkey on your own device |
+| A way to avoid phone/email/OTP/support-agent recovery | Protection against a malware-controlled terminal |
+| A verified-identity signal an app can act on | A card vault, payment processor, or PSP |
+| Useful after device loss, or on any unfamiliar device | PSD3/SCA compliant today (that's a design intent, not a certification) |
+
+If the screen you're typing on already has a keylogger or a screen recorder,
+nothing typed or tapped on it is safe — no authentication scheme fixes that.
+NoTap's claim is narrower and real: it removes the *account-recovery* attack
+surface (SMS, email resets, support-desk social engineering) that this class
+of breach has actually exploited.
+
+**Optional payment handoff.** NoTap does not process payments, store card
+details, or replace a payment provider. After it verifies a user, an
+application may pass that verified session to its own existing payment
+provider to resume or start a checkout — useful when *authentication*, not
+payment processing, is the missing step.
+
+### Why it's worth trying
+
+| For users | For businesses |
+|---|---|
+| No dependency on a phone during a recovery event | Fewer costly manual/agent-assisted recovery cases |
+| No email reset link, no OTP to copy | A recovery path independent of SMS delivery or telecom providers |
+| No support call — less friction, less social-engineering exposure | A second lane alongside passkeys, not a replacement for them |
+| Memorable factors, not one long password to forget | Payment-provider handoff is optional infrastructure, not the core product |
 
 ## 🧪 Help us validate NoTap
 
