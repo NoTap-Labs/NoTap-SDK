@@ -8,8 +8,7 @@ No phone. No code. No email. No support ticket.
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Status: Pre-release](https://img.shields.io/badge/status-pre--release-orange.svg)](#-status)
-[![Android](https://img.shields.io/badge/Android-in%20development-yellow.svg)](#-status)
-[![Web](https://img.shields.io/badge/Web-testable%20now-brightgreen.svg)](#-status)
+[![Web SDK](https://img.shields.io/badge/Web%20SDK-testable%20now-brightgreen.svg)](#-status)
 
 </div>
 
@@ -87,11 +86,12 @@ asking anyone to move payments or replace an existing identity stack.
 
 ## 📊 Status
 
-| Platform | Status |
-|---|---|
-| 🤖 **Android SDK** | 🚧 In active development |
-| 🌐 **Web SDK** | ✅ Testable now — enrollment and verification work end-to-end |
-| 🍎 **iOS** | 📋 Not yet started |
+**🌐 Web SDK — testable now.** Enrollment and verification work end-to-end:
+real browser, real cryptography, real backend. This is the platform we're
+focusing public examples and documentation on for the moment.
+
+Other platforms are in progress; we'll say more about them here once
+there's something concrete to show and test, not before.
 
 This project is pre-release. Treat any specific compliance, certification, or
 production-readiness claim you don't see here as **not yet true** — we'd
@@ -100,8 +100,8 @@ rather under-claim than publish something we can't stand behind.
 ## 📚 Documentation
 
 Public documentation is being rebuilt deliberately, file by file, rather than
-mirrored wholesale from internal docs — see [`docs/`](docs/) for what's
-available so far.
+mirrored wholesale from internal docs — see [`docs/`](docs/), starting with
+the [architecture overview](docs/architecture-overview.md).
 
 ## 🤝 Contributing
 

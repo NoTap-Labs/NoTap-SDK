@@ -8,29 +8,20 @@ folder grows in stages, same as the rest of this repo's public docs.
 
 ## 📱 Available Examples
 
-### Android Quick Start
+### Web quickstart (preview)
 
-**Path:** [`android-quickstart/`](android-quickstart/)
+**Path:** [`web-quickstart/`](web-quickstart/)
 
-A minimal Android activity showing SDK initialization, enrollment, and
-verification.
+What integration is designed to look like on the one platform proven working
+end-to-end so far — see the main [README](../README.md#-status). We're
+focusing public examples here for the moment; more will follow in stages.
 
 ---
 
 ## 🔐 Security Notes
 
-**Never commit API keys to version control.** Use environment variables or
-your platform's build configuration instead:
-
-**Android (`build.gradle.kts`):**
-```kotlin
-android {
-    defaultConfig {
-        val apiKey = project.findProperty("notap.api.key") as String? ?: ""
-        buildConfigField("String", "NOTAP_API_KEY", "\"$apiKey\"")
-    }
-}
-```
+**Never commit API keys to version control.** Use environment variables,
+not literals in source.
 
 ---
 
